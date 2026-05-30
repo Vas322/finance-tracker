@@ -40,39 +40,11 @@
 </div>
 
 <script>
-    const categories = {{ categories|tojson }};
-    const typeSelect = document.getElementById('type');
-    const categorySelect = document.getElementById('category');
-    const subcategorySelect = document.getElementById('subcategory');
-
-    typeSelect.addEventListener('change', function() {
-        const type = this.value;
-        categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
-        subcategorySelect.innerHTML = '<option value="">Выберите категорию</option>';
-        if (type && categories[type]) {
-            for (let cat in categories[type]) {
-                const option = document.createElement('option');
-                option.value = cat;
-                option.textContent = cat;
-                categorySelect.appendChild(option);
-            }
-        }
-    });
-
-    categorySelect.addEventListener('change', function() {
-        const type = typeSelect.value;
-        const category = this.value;
-        subcategorySelect.innerHTML = '<option value="">Выберите подкатегорию</option>';
-        if (type && category && categories[type][category]) {
-            categories[type][category].forEach(sub => {
-                if (sub) {
-                    const option = document.createElement('option');
-                    option.value = sub;
-                    option.textContent = sub;
-                    subcategorySelect.appendChild(option);
-                }
-            });
-        }
-    });
+    window.incomeCategories = {{ income_categories|tojson }};
+    window.expenseCategories = {{ expense_categories|tojson }};
 </script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/operations.js') }}"></script>
 {% endblock %}

@@ -27,9 +27,11 @@ def init_db():
         conn.execute('''
             CREATE TABLE IF NOT EXISTS regular_payments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
                 amount REAL NOT NULL,
-                day TEXT DEFAULT '2024-01-01'
+                day TEXT DEFAULT '2024-01-01',
+                category TEXT DEFAULT '',
+                subcategory TEXT DEFAULT '',
+                interval TEXT DEFAULT 'monthly'
             )
         ''')
 
@@ -81,15 +83,18 @@ def init_db():
         existing_payments = conn.execute('SELECT COUNT(*) FROM regular_payments').fetchone()[0]
         if existing_payments == 0:
             examples = [
-                ("Ипотека", 35000, "2024-01-05"),
-                ("Потребительский", 8000, "2024-01-15"),
-                ("Интернет", 900, "2024-01-20"),
-                ("VPN", 300, "2024-01-01"),
-                ("Связь", 600, "2024-01-10"),
-                ("Подписки", 500, "2024-01-25"),
+                (35000, "2024-01-05", "ЖКХ", "Квартплата", "monthly"),
+                (8000, "2024-01-15", "ЖКХ", "Электричество", "monthly"),
+                (900, "2024-01-20", "Связь", "Интернет", "monthly"),
+                (300, "2024-01-01", "Связь", "VPN", "monthly"),
+                (600, "2024-01-10", "Связь", "Мобильная связь", "monthly"),
+                (500, "2024-01-25", "Подписки", "", "monthly"),
             ]
-            for name, amount, day in examples:
-                conn.execute('INSERT INTO regular_payments (name, amount, day) VALUES (?, ?, ?)', (name, amount, day))
+            for amount, day, category, subcategory, interval in examples:
+                conn.execute('''
+                    INSERT INTO regular_payments (amount, day, category, subcategory, interval)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (amount, day, category, subcategory, interval))
 
 
 def get_current_money():

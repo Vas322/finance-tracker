@@ -24,24 +24,32 @@ def register_routes(app):
             flash('Операция добавлена', 'success')
             return redirect(url_for('index'))
 
-        # Получаем категории из БД для JavaScript
+        # Получаем категории из БД, разделённые по типу
         with get_db() as conn:
-            categories = {}
-            rows = conn.execute('SELECT * FROM categories ORDER BY type, name').fetchall()
+            income_cats = {}
+            expense_cats = {}
 
-            # Сначала добавляем основные категории
-            for row in rows:
-                if row['parent_id'] is None:
-                    categories[row['name']] = []
+            # Доходы
+            income_main = conn.execute('''
+                SELECT * FROM categories WHERE parent_id IS NULL AND type = 'Доход' ORDER BY name
+            ''').fetchall()
+            for cat in income_main:
+                subcats = conn.execute('''
+                    SELECT name FROM categories WHERE parent_id = ? ORDER BY name
+                ''', (cat['id'],)).fetchall()
+                income_cats[cat['name']] = [s['name'] for s in subcats]
 
-            # Затем добавляем подкатегории к соответствующим родителям
-            for row in rows:
-                if row['parent_id'] is not None:
-                    parent = conn.execute('SELECT name FROM categories WHERE id = ?', (row['parent_id'],)).fetchone()
-                    if parent and parent['name'] in categories:
-                        categories[parent['name']].append(row['name'])
+            # Расходы
+            expense_main = conn.execute('''
+                SELECT * FROM categories WHERE parent_id IS NULL AND type = 'Расход' ORDER BY name
+            ''').fetchall()
+            for cat in expense_main:
+                subcats = conn.execute('''
+                    SELECT name FROM categories WHERE parent_id = ? ORDER BY name
+                ''', (cat['id'],)).fetchall()
+                expense_cats[cat['name']] = [s['name'] for s in subcats]
 
-        return render_template('add.html', categories=categories)
+        return render_template('add.html', income_categories=income_cats, expense_categories=expense_cats)
 
     @app.route('/delete/<int:id>')
     def delete(id):
