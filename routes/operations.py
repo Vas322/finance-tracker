@@ -1,4 +1,4 @@
-from flask import request, redirect, url_for, flash, jsonify
+from flask import render_template, request, redirect, url_for, flash, jsonify
 from database import get_db
 from utils import get_period
 
@@ -6,7 +6,6 @@ from utils import get_period
 def register_routes(app):
     @app.route('/add', methods=['GET', 'POST'])
     def add():
-        from config import CATEGORIES
         if request.method == 'POST':
             date_str = request.form['date']
             op_type = request.form['type']
@@ -25,7 +24,24 @@ def register_routes(app):
             flash('Операция добавлена', 'success')
             return redirect(url_for('index'))
 
-        return render_template('add.html', categories=CATEGORIES)
+        # Получаем категории из БД для JavaScript
+        with get_db() as conn:
+            categories = {}
+            rows = conn.execute('SELECT * FROM categories ORDER BY type, name').fetchall()
+
+            # Сначала добавляем основные категории
+            for row in rows:
+                if row['parent_id'] is None:
+                    categories[row['name']] = []
+
+            # Затем добавляем подкатегории к соответствующим родителям
+            for row in rows:
+                if row['parent_id'] is not None:
+                    parent = conn.execute('SELECT name FROM categories WHERE id = ?', (row['parent_id'],)).fetchone()
+                    if parent and parent['name'] in categories:
+                        categories[parent['name']].append(row['name'])
+
+        return render_template('add.html', categories=categories)
 
     @app.route('/delete/<int:id>')
     def delete(id):

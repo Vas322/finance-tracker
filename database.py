@@ -41,10 +41,41 @@ def init_db():
             )
         ''')
 
+        # Таблица категорий
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type TEXT NOT NULL,
+                name TEXT NOT NULL,
+                parent_id INTEGER DEFAULT NULL,
+                UNIQUE(type, name, parent_id)
+            )
+        ''')
+
         # Начальный остаток (если нет)
         existing = conn.execute('SELECT COUNT(*) FROM settings WHERE key = "current_money"').fetchone()[0]
         if existing == 0:
             conn.execute('INSERT INTO settings (key, value) VALUES (?, ?)', ('current_money', '45000'))
+
+        # Заполняем категории, если таблица пустая
+        existing_cats = conn.execute('SELECT COUNT(*) FROM categories').fetchone()[0]
+        if existing_cats == 0:
+            from config import CATEGORIES
+            for cat_type, categories in CATEGORIES.items():
+                for cat_name, subcats in categories.items():
+                    # Добавляем основную категорию
+                    cursor = conn.execute(
+                        'INSERT INTO categories (type, name) VALUES (?, ?)',
+                        (cat_type, cat_name)
+                    )
+                    parent_id = cursor.lastrowid
+                    # Добавляем подкатегории
+                    for subcat in subcats:
+                        if subcat:
+                            conn.execute(
+                                'INSERT INTO categories (type, name, parent_id) VALUES (?, ?, ?)',
+                                (cat_type, subcat, parent_id)
+                            )
 
         # Примеры регулярных платежей (если таблица пустая)
         existing_payments = conn.execute('SELECT COUNT(*) FROM regular_payments').fetchone()[0]

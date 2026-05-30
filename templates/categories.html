@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h1>📁 Управление категориями</h1>
+
+    <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+        <h3>➕ Добавить категорию</h3>
+        <form method="POST" action="{{ url_for('add_category') }}" style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 120px;">
+                <label style="display: block; font-size: 12px; margin-bottom: 5px;">Тип</label>
+                <select name="type" required style="width: 100%; padding: 8px;">
+                    <option value="Расход">Расход</option>
+                    <option value="Доход">Доход</option>
+                </select>
+            </div>
+            <div style="flex: 2; min-width: 150px;">
+                <label style="display: block; font-size: 12px; margin-bottom: 5px;">Название</label>
+                <input type="text" name="name" required style="width: 100%; padding: 8px;">
+            </div>
+            <div style="flex: 2; min-width: 180px;">
+                <label style="display: block; font-size: 12px; margin-bottom: 5px;">Родительская категория</label>
+                <select name="parent_id" style="width: 100%; padding: 8px;">
+                    <option value="">(Основная категория)</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.type }} / {{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="btn" style="background: #27ae60; padding: 8px 20px;">➕ Добавить</button>
+            </div>
+        </form>
+    </div>
+
+    <h3>📋 Существующие категории</h3>
+    <table>
+        <thead>
+            <tr><th>Тип</th><th>Категория</th><th>Подкатегории</th><th>Действия</th></tr>
+        </thead>
+        <tbody>
+            {% for cat in categories %}
+            <tr id="row-{{ cat.id }}">
+                <td>{{ cat.type }}</td>
+                <td>
+                    <span id="name-{{ cat.id }}">{{ cat.name }}</span>
+                    <input type="text" id="edit-name-{{ cat.id }}" value="{{ cat.name }}" style="display: none; width: 120px;">
+                </td>
+                <td>
+                    {% for sub in cat.subcategories %}
+                        {{ sub.name }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                    <button class="edit-cat-btn" data-id="{{ cat.id }}" style="background: none; border: none; cursor: pointer; margin-left: 10px;">✏️</button>
+                </td>
+                <td>
+                    <button class="save-cat-btn" data-id="{{ cat.id }}" style="display: none; background: #27ae60; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">💾</button>
+                    <a href="{{ url_for('delete_category', id=cat.id) }}"
+                       onclick="return confirm('Удалить {{ cat.name }} и все подкатегории?')"
+                       style="color: #e74c3c; text-decoration: none; margin-left: 10px;">❌</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="text-align: center;">Нет категорий. Добавьте первую!</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    // Редактирование категорий
+    document.querySelectorAll('.edit-cat-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const nameSpan = document.getElementById(`name-${id}`);
+            const editInput = document.getElementById(`edit-name-${id}`);
+            const saveBtn = document.querySelector(`.save-cat-btn[data-id="${id}"]`);
+
+            nameSpan.style.display = 'none';
+            editInput.style.display = 'inline-block';
+            saveBtn.style.display = 'inline-block';
+            this.style.display = 'none';
+        });
+    });
+
+    document.querySelectorAll('.save-cat-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const newName = document.getElementById(`edit-name-${id}`).value;
+
+            fetch('/edit_category/' + id, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'name=' + encodeURIComponent(newName)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert('Ошибка при сохранении');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
