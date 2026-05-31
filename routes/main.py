@@ -1,20 +1,79 @@
-from flask import render_template
+from flask import render_template, request
 from database import get_db, get_current_money
-from utils import get_next_income_date, get_regular_payments_for_period, get_regular_total_for_month
-from config import SALARY_DAY, ADVANCE_DAY
+from utils import get_next_income_date, get_regular_payments_for_period, get_regular_total_for_month, \
+    apply_regular_payments
 from datetime import date
+
 
 def register_routes(app):
     @app.route('/')
     def index():
+        # Автоматически добавляем регулярные платежи
+        apply_regular_payments()
+
         today = date.today()
         current_money = get_current_money()
 
+        # Получаем параметры фильтров из URL
+        period_filter = request.args.get('period', '')
+        type_filter = request.args.get('type', '')
+        category_filter = request.args.get('category', '')
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+
+        # Базовый запрос
+        query = 'SELECT * FROM operations WHERE 1=1'
+        params = []
+
+        if period_filter:
+            query += ' AND period = ?'
+            params.append(period_filter)
+
+        if type_filter:
+            query += ' AND type = ?'
+            params.append(type_filter)
+
+        if category_filter:
+            query += ' AND category = ?'
+            params.append(category_filter)
+
+        if date_from:
+            query += ' AND date >= ?'
+            params.append(date_from)
+
+        if date_to:
+            query += ' AND date <= ?'
+            params.append(date_to)
+
+        query += ' ORDER BY date DESC LIMIT 100'
+
         with get_db() as conn:
-            operations = conn.execute('SELECT * FROM operations ORDER BY date DESC LIMIT 30').fetchall()
-            total_income = conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Доход"').fetchone()[0]
-            total_expense = conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
+            operations = conn.execute(query, params).fetchall()
+
+            # Все категории для выпадающего списка
+            all_categories = [row['name'] for row in conn.execute(
+                'SELECT DISTINCT name FROM categories WHERE parent_id IS NULL ORDER BY name').fetchall()]
+
+            # Доходы и расходы (без фильтра по периоду, для общей статистики)
+            total_income = \
+            conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Доход"').fetchone()[0]
+            total_expense = \
+            conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
             balance = total_income - total_expense
+
+            # Расходы по категориям для графика
+            expense_by_category_raw = conn.execute('''
+                            SELECT category, COALESCE(SUM(amount), 0) as total
+                            FROM operations
+                            WHERE type = 'Расход'
+                            GROUP BY category
+                            ORDER BY total DESC
+                            LIMIT 6
+                        ''').fetchall()
+
+            # Преобразуем Row в список словарей для JSON
+            expense_by_category = [{'category': row['category'], 'total': row['total']} for row in
+                                   expense_by_category_raw]
 
         # Определяем текущий период
         if 10 <= today.day <= 24:
@@ -22,15 +81,12 @@ def register_routes(app):
         else:
             period_start, period_end = 25, 9
 
-        # Регулярные платежи за текущий период (с учётом периодичности)
         regular_this_period = get_regular_payments_for_period(today, period_start, period_end)
         regular_total = get_regular_total_for_month()
 
-        # Две суммы свободных денег
         free_money_total = current_money + total_income - total_expense
         free_money_after_regular = free_money_total - regular_this_period
 
-        # Светофор (смотрим на free_money_after_regular)
         if free_money_after_regular < 0:
             traffic_light = "red"
             traffic_text = "⚠️ КАССОВЫЙ РАЗРЫВ!"
@@ -57,4 +113,6 @@ def register_routes(app):
                                traffic_text=traffic_text,
                                regular_total=regular_total,
                                regular_this_period=regular_this_period,
-                               current_money=current_money)
+                               current_money=current_money,
+                               all_categories=all_categories,
+                               expense_by_category=expense_by_category)

@@ -145,3 +145,57 @@ def get_regular_total_for_month():
     with get_db() as conn:
         result = conn.execute('SELECT SUM(amount) FROM regular_payments').fetchone()[0]
         return result or 0
+
+
+def apply_regular_payments():
+    """Автоматически добавляет операции по регулярным платежам за сегодня"""
+    from database import get_db
+    from datetime import date, datetime
+    import calendar
+
+    today = date.today()
+    today_day = today.day
+    today_str = today.strftime('%Y-%m-%d')
+
+    with get_db() as conn:
+        # Получаем все регулярные платежи
+        payments = conn.execute('SELECT * FROM regular_payments').fetchall()
+
+        for p in payments:
+            if not p['day']:
+                continue
+
+            payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
+
+            # Проверяем, нужно ли применять сегодня
+            should_apply = False
+
+            if p['interval'] == 'monthly':
+                if payment_day == today_day:
+                    should_apply = True
+            elif p['interval'] == 'weekly':
+                # Упрощённо: проверяем, совпадает ли день недели
+                payment_date = datetime.strptime(p['day'], '%Y-%m-%d')
+                if payment_date.weekday() == today.weekday():
+                    should_apply = True
+            elif p['interval'] == 'yearly':
+                payment_date = datetime.strptime(p['day'], '%Y-%m-%d')
+                if payment_date.month == today.month and payment_date.day == today_day:
+                    should_apply = True
+
+            if should_apply:
+                # Проверяем, не добавлена ли уже операция за сегодня
+                existing = conn.execute('''
+                    SELECT id FROM operations 
+                    WHERE date = ? AND category = ? AND subcategory = ? AND amount = ? AND type = 'Расход'
+                ''', (today_str, p['category'], p['subcategory'], p['amount'])).fetchone()
+
+                if not existing and p['category']:
+                    # Добавляем операцию
+                    period = "10-24" if 10 <= today_day <= 24 else "25-09"
+                    conn.execute('''
+                        INSERT INTO operations (date, type, category, subcategory, amount, comment, period)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ''', (today_str, 'Расход', p['category'], p['subcategory'], p['amount'],
+                          f'Авто: {p["interval"]}', period))
+                    print(f'Автоматически добавлен платёж: {p["category"]} - {p["subcategory"]} ({p["amount"]} ₽)')

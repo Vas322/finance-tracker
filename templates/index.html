@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+
 <div class="stats-grid">
     <div class="stat-card">
         <h3>💰 Доходы</h3>
@@ -65,7 +66,62 @@
 </div>
 
 <a href="{{ url_for('add') }}" class="btn">➕ Добавить операцию</a>
-
+<!-- ФИЛЬТРЫ -->
+<div class="card" style="margin-bottom: 20px;">
+    <h3>🔍 Фильтры</h3>
+    <form method="GET" action="{{ url_for('index') }}"
+          style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+        <div>
+            <label style="display: block; font-size: 12px;">Период</label>
+            <select name="period">
+                <option value="">Все</option>
+                <option value="10-24" {% if request.args.get(
+                'period') == '10-24' %}selected{% endif %}>10-24</option>
+                <option value="25-09" {% if request.args.get(
+                'period') == '25-09' %}selected{% endif %}>25-09</option>
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-size: 12px;">Тип</label>
+            <select name="type">
+                <option value="">Все</option>
+                <option value="Доход" {% if request.args.get(
+                'type') == 'Доход' %}selected{% endif %}>Доход</option>
+                <option value="Расход" {% if request.args.get(
+                'type') == 'Расход' %}selected{% endif %}>Расход</option>
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-size: 12px;">Категория</label>
+            <select name="category">
+                <option value="">Все</option>
+                {% for cat in all_categories %}
+                <option value="{{ cat }}" {% if request.args.get(
+                'category') == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="display: block; font-size: 12px;">Дата от</label>
+            <input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}">
+        </div>
+        <div>
+            <label style="display: block; font-size: 12px;">Дата до</label>
+            <input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}">
+        </div>
+        <div>
+            <button type="submit" class="btn">🔍 Применить</button>
+            <a href="{{ url_for('index') }}" class="btn" style="background: #95a5a6;">❌ Сбросить</a>
+        </div>
+    </form>
+    <!-- ГРАФИК РАСХОДОВ -->
+    <div class="card" style="margin-bottom: 20px;">
+        <h3>📊 Расходы по категориям</h3>
+        <div style="max-width: 400px; margin: 0 auto;">
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+</div>
 <table>
     <thead>
     <tr>
@@ -134,5 +190,8 @@
             alert('Редактирование операции будет доступно в следующей версии');
         });
     });
+</script>
+<script>
+    window.expenseData = {{ expense_by_category|tojson }};
 </script>
 {% endblock %}
