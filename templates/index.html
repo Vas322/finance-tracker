@@ -25,10 +25,18 @@
 
 <div class="stats-grid">
     <div class="stat-card">
-        <h3>💰 Свободные деньги</h3>
-        <div class="stat-value {{ 'income' if free_money >= 0 else 'expense' }}">{{ "{:,.0f}".format(free_money).replace(",", " ") }} ₽</div>
-        <small>До {{ next_income.strftime('%d.%m.%Y') }} ({{ days_to_income }} дней)</small>
-    </div>
+                <h3>💰 Свободные деньги</h3>
+                <div class="stat-value {{ 'income' if free_money_total >= 0 else 'expense' }}">
+                    {{ "{:,.0f}".format(free_money_total).replace(",", " ") }} ₽
+                </div>
+                <small>Всего (без учёта регулярных)</small>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                    <div class="stat-value {{ 'income' if free_money_after_regular >= 0 else 'expense' }}" style="font-size: 20px;">
+                        {{ "{:,.0f}".format(free_money_after_regular).replace(",", " ") }} ₽
+                    </div>
+                    <small>После регулярных платежей за период</small>
+                </div>
+            </div>
     <div class="stat-card">
         <h3>🚦 Прогноз</h3>
         <div class="stat-value">

@@ -4,7 +4,6 @@ from utils import get_next_income_date, get_regular_payments_for_period, get_reg
 from config import SALARY_DAY, ADVANCE_DAY
 from datetime import date
 
-
 def register_routes(app):
     @app.route('/')
     def index():
@@ -13,10 +12,8 @@ def register_routes(app):
 
         with get_db() as conn:
             operations = conn.execute('SELECT * FROM operations ORDER BY date DESC LIMIT 30').fetchall()
-            total_income = \
-            conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Доход"').fetchone()[0]
-            total_expense = \
-            conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
+            total_income = conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Доход"').fetchone()[0]
+            total_expense = conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
             balance = total_income - total_expense
 
         # Определяем текущий период
@@ -25,17 +22,19 @@ def register_routes(app):
         else:
             period_start, period_end = 25, 9
 
+        # Регулярные платежи за текущий период (с учётом периодичности)
         regular_this_period = get_regular_payments_for_period(today, period_start, period_end)
         regular_total = get_regular_total_for_month()
 
-        # Свободные деньги
-        free_money = current_money + total_income - total_expense - regular_this_period
+        # Две суммы свободных денег
+        free_money_total = current_money + total_income - total_expense
+        free_money_after_regular = free_money_total - regular_this_period
 
-        # Светофор
-        if free_money < 0:
+        # Светофор (смотрим на free_money_after_regular)
+        if free_money_after_regular < 0:
             traffic_light = "red"
             traffic_text = "⚠️ КАССОВЫЙ РАЗРЫВ!"
-        elif free_money < 5000:
+        elif free_money_after_regular < 5000:
             traffic_light = "yellow"
             traffic_text = "⚠️ Осторожно: остаток меньше 5000 ₽"
         else:
@@ -50,7 +49,8 @@ def register_routes(app):
                                total_income=total_income,
                                total_expense=total_expense,
                                balance=balance,
-                               free_money=free_money,
+                               free_money_total=free_money_total,
+                               free_money_after_regular=free_money_after_regular,
                                days_to_income=days_to_income,
                                next_income=next_income,
                                traffic_light=traffic_light,

@@ -3,51 +3,12 @@
 <div class="card">
     <h1>💰 Регулярные платежи (расходы)</h1>
 
-    <form method="POST">
-        <table style="width:100%; border-collapse:collapse;">
-            <thead>
-                <tr><th>Дата</th><th>Категория</th><th>Подкатегория</th><th>Сумма</th><th>Периодичность</th><th></th></tr>
-            </thead>
-            <tbody>
-                {% for p in payments %}
-                <tr>
-                    <td><input type="date" name="day_{{ p.id }}" value="{{ p.day }}"></td>
-                    <td>
-                        <select name="category_{{ p.id }}" class="category-select" data-id="{{ p.id }}">
-                            <option value="">-- Выберите --</option>
-                            {% for cat in expense_categories %}
-                                <option value="{{ cat }}" {% if p.category == cat %}selected{% endif %}>{{ cat }}</option>
-                            {% endfor %}
-                        </select>
-                    </td>
-                    <td>
-                        <select name="subcategory_{{ p.id }}" class="subcategory-select" data-id="{{ p.id }}">
-                            <option value="">-- Выберите --</option>
-                        </select>
-                    </td>
-                    <td><input type="number" name="amount_{{ p.id }}" value="{{ p.amount }}" step="0.01" style="width:100px;"></td>
-                    <td>
-                        <select name="interval_{{ p.id }}">
-                            <option value="weekly" {% if p.interval == 'weekly' %}selected{% endif %}>Еженедельно</option>
-                            <option value="monthly" {% if p.interval == 'monthly' %}selected{% endif %}>Ежемесячно</option>
-                            <option value="yearly" {% if p.interval == 'yearly' %}selected{% endif %}>Ежегодно</option>
-                        </select>
-                    </td>
-                    <td>
-                        <button type="submit" name="delete_id" value="{{ p.id }}" class="delete" onclick="return confirm('Удалить?')">❌</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <button type="submit" class="btn btn-success">💾 Сохранить изменения</button>
-    </form>
-
-    <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+    <!-- ФОРМА ДОБАВЛЕНИЯ -->
+    <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
         <h3>➕ Добавить регулярный платёж</h3>
         <form method="POST" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
             <div>
-                <label>Категория</label>
+                <label style="display: block; font-size: 12px;">Категория</label>
                 <select name="add_category" id="add_category" required style="width: 150px;">
                     <option value="">-- Выберите --</option>
                     {% for cat in expense_categories %}
@@ -56,21 +17,21 @@
                 </select>
             </div>
             <div>
-                <label>Подкатегория</label>
+                <label style="display: block; font-size: 12px;">Подкатегория</label>
                 <select name="add_subcategory" id="add_subcategory" style="width: 150px;">
                     <option value="">-- Выберите --</option>
                 </select>
             </div>
             <div>
-                <label>Сумма</label>
+                <label style="display: block; font-size: 12px;">Сумма</label>
                 <input type="number" name="add_amount" step="0.01" required style="width: 100px;">
             </div>
             <div>
-                <label>Дата</label>
+                <label style="display: block; font-size: 12px;">Дата списания</label>
                 <input type="date" name="add_day" required>
             </div>
             <div>
-                <label>Периодичность</label>
+                <label style="display: block; font-size: 12px;">Периодичность</label>
                 <select name="add_interval">
                     <option value="weekly">Еженедельно</option>
                     <option value="monthly" selected>Ежемесячно</option>
@@ -82,35 +43,72 @@
             </div>
         </form>
     </div>
+
+    <!-- ТАБЛИЦА -->
+    <form method="POST" id="mainForm">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr><th>Дата</th><th>Категория</th><th>Подкатегория</th><th>Сумма</th><th>Периодичность</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr id="row-{{ p.id }}" class="payment-row">
+                    <td style="padding:8px;" class="view-mode">
+                        <span class="date-view">{{ p.day }}</span>
+                        <input type="date" name="day_{{ p.id }}" value="{{ p.day }}" style="display:none;" class="edit-mode">
+                    </td>
+                    <td style="padding:8px;" class="view-mode">
+                        <span class="category-view">{{ p.category or '--' }}</span>
+                        <select name="category_{{ p.id }}" class="edit-mode category-select" data-id="{{ p.id }}" style="display:none;">
+                            <option value="">-- Выберите --</option>
+                            {% for cat in expense_categories %}
+                                <option value="{{ cat }}" {% if p.category == cat %}selected{% endif %}>{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td style="padding:8px;" class="view-mode">
+                        <span class="subcategory-view">{{ p.subcategory or '--' }}</span>
+                        <select name="subcategory_{{ p.id }}" class="edit-mode subcategory-select" data-id="{{ p.id }}" style="display:none;">
+                            <option value="">-- Выберите --</option>
+                        </select>
+                    </td>
+                    <td style="padding:8px;" class="view-mode">
+                        <span class="amount-view">{{ p.amount }}</span>
+                        <input type="number" name="amount_{{ p.id }}" value="{{ p.amount }}" step="0.01" style="display:none; width:100px;" class="edit-mode">
+                    </td>
+                    <td style="padding:8px;" class="view-mode">
+                        <span class="interval-view">
+                            {% if p.interval == 'weekly' %}Еженедельно
+                            {% elif p.interval == 'monthly' %}Ежемесячно
+                            {% elif p.interval == 'yearly' %}Ежегодно
+                            {% else %}{{ p.interval }}{% endif %}
+                        </span>
+                        <select name="interval_{{ p.id }}" class="edit-mode" style="display:none;">
+                            <option value="weekly" {% if p.interval == 'weekly' %}selected{% endif %}>Еженедельно</option>
+                            <option value="monthly" {% if p.interval == 'monthly' %}selected{% endif %}>Ежемесячно</option>
+                            <option value="yearly" {% if p.interval == 'yearly' %}selected{% endif %}>Ежегодно</option>
+                        </select>
+                    </td>
+                    <td style="padding:8px;">
+                        <button type="button" class="edit-row-btn" data-id="{{ p.id }}" style="background:none; border:none; cursor:pointer;">✏️</button>
+                        <button type="submit" name="delete_id" value="{{ p.id }}" class="delete" onclick="return confirm('Удалить?')" style="background:none; border:none; cursor:pointer; color:red;">❌</button>
+                        <button type="button" class="save-row-btn" data-id="{{ p.id }}" style="display:none; background:#27ae60; border:none; padding:2px 8px; border-radius:3px;">💾</button>
+                        <button type="button" class="cancel-row-btn" data-id="{{ p.id }}" style="display:none; background:#95a5a6; border:none; padding:2px 8px; border-radius:3px;">✖️</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-success" style="margin-top:20px;" id="saveAllBtn">💾 Сохранить все изменения</button>
+    </form>
 </div>
 
 <script>
-    const expenseCategories = {{ expense_categories|tojson }};
-
-    function updateSubcategorySelect(categorySelect, subcategorySelect, currentSub = '') {
-        const category = categorySelect.value;
-        subcategorySelect.innerHTML = '<option value="">-- Выберите --</option>';
-        if (category && expenseCategories[category]) {
-            expenseCategories[category].forEach(sub => {
-                const option = document.createElement('option');
-                option.value = sub;
-                option.textContent = sub;
-                if (sub === currentSub) option.selected = true;
-                subcategorySelect.appendChild(option);
-            });
-        }
-    }
-
-    document.querySelectorAll('.category-select').forEach(select => {
-        const id = select.dataset.id;
-        const subcategorySelect = document.querySelector(`.subcategory-select[data-id="${id}"]`);
-        const currentSub = subcategorySelect.getAttribute('data-current') || '';
-        updateSubcategorySelect(select, subcategorySelect, currentSub);
-        select.addEventListener('change', () => updateSubcategorySelect(select, subcategorySelect));
-    });
-
-    const addCategory = document.getElementById('add_category');
-    const addSubcategory = document.getElementById('add_subcategory');
-    addCategory.addEventListener('change', () => updateSubcategorySelect(addCategory, addSubcategory));
+    // Передаём данные в глобальную переменную для JS
+    window.expenseCategories = {{ expense_categories|tojson }};
 </script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/regular.js') }}"></script>
 {% endblock %}
