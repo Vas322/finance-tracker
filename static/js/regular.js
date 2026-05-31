@@ -3,6 +3,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     const expenseCategories = window.expenseCategories || {};
 
+    console.log('expenseCategories загружены:', expenseCategories);
+
     // Функция обновления подкатегорий
     function updateSubcategorySelect(categorySelect, subcategorySelect, currentSub = '') {
         const category = categorySelect.value;
@@ -18,13 +20,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Для каждой строки: настройка подкатегорий
+    // Для каждой строки таблицы: настройка подкатегорий при редактировании
     document.querySelectorAll('.category-select').forEach(select => {
         const id = select.dataset.id;
         const subcategorySelect = document.querySelector(`.subcategory-select[data-id="${id}"]`);
         const currentSub = subcategorySelect.getAttribute('data-current') || '';
+
+        // Инициализация подкатегорий для этой строки
         updateSubcategorySelect(select, subcategorySelect, currentSub);
-        select.addEventListener('change', () => updateSubcategorySelect(select, subcategorySelect));
+
+        // При изменении категории обновляем подкатегории
+        select.addEventListener('change', function() {
+            updateSubcategorySelect(select, subcategorySelect, '');
+        });
     });
 
     // Режим редактирования строки
@@ -33,10 +41,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const id = this.dataset.id;
             const row = document.getElementById(`row-${id}`);
 
+            // Скрываем режим просмотра, показываем режим редактирования
             row.querySelectorAll('.view-mode .edit-mode').forEach(el => el.style.display = 'none');
             row.querySelectorAll('.view-mode span').forEach(el => el.style.display = 'none');
             row.querySelectorAll('.edit-mode').forEach(el => el.style.display = 'inline-block');
 
+            // Меняем кнопки
             this.style.display = 'none';
             row.querySelector('.save-row-btn').style.display = 'inline-block';
             row.querySelector('.cancel-row-btn').style.display = 'inline-block';
@@ -50,19 +60,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Сохранение строки
+    // Сохранение строки (отправка формы)
     document.querySelectorAll('.save-row-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.getElementById('mainForm').submit();
         });
     });
 
-    // Для формы добавления
+    // Для формы добавления нового платежа
     const addCategory = document.getElementById('add_category');
     const addSubcategory = document.getElementById('add_subcategory');
 
     if (addCategory && addSubcategory) {
-        addCategory.addEventListener('change', () => {
+        addCategory.addEventListener('change', function() {
             const category = addCategory.value;
             addSubcategory.innerHTML = '<option value="">-- Выберите --</option>';
             if (category && expenseCategories[category]) {

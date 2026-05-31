@@ -11,7 +11,9 @@
     </div>
     <div class="stat-card">
         <h3>💳 Баланс</h3>
-        <div class="stat-value {{ 'income' if balance >= 0 else 'expense' }}">{{ "{:,.0f}".format(balance).replace(",", " ") }} ₽</div>
+        <div class="stat-value {{ 'income' if balance >= 0 else 'expense' }}">{{ "{:,.0f}".format(balance).replace(",",
+            " ") }} ₽
+        </div>
     </div>
     <div class="stat-card">
         <h3>💰 Начальный остаток</h3>
@@ -25,35 +27,37 @@
 
 <div class="stats-grid">
     <div class="stat-card">
-                <h3>💰 Свободные деньги</h3>
-                <div class="stat-value {{ 'income' if free_money_total >= 0 else 'expense' }}">
-                    {{ "{:,.0f}".format(free_money_total).replace(",", " ") }} ₽
-                </div>
-                <small>Всего (без учёта регулярных)</small>
-                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
-                    <div class="stat-value {{ 'income' if free_money_after_regular >= 0 else 'expense' }}" style="font-size: 20px;">
-                        {{ "{:,.0f}".format(free_money_after_regular).replace(",", " ") }} ₽
-                    </div>
-                    <small>После регулярных платежей за период</small>
-                </div>
-            </div>
-    <div class="stat-card">
-        <h3>🚦 Прогноз</h3>
-        <div class="stat-value">
-            <span class="{{ traffic_light }}">{{ "🟢" if traffic_light == 'green' else "🟡" if traffic_light == 'yellow' else "🔴" }}</span>
+        <h3>💰 Свободные деньги</h3>
+        <div class="stat-value {{ 'income' if free_money_total >= 0 else 'expense' }}">
+            {{ "{:,.0f}".format(free_money_total).replace(",", " ") }} ₽
         </div>
-        <small>{{ traffic_text }}</small>
+        <small>Всего (без учёта регулярных)</small>
+        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+            <div class="stat-value {{ 'income' if free_money_after_regular >= 0 else 'expense' }}"
+                 style="font-size: 20px;">
+                {{ "{:,.0f}".format(free_money_after_regular).replace(",", " ") }} ₽
+            </div>
+            <small>
+                <a href="{{ url_for('regular', filter='current') }}" style="color: #3498db; text-decoration: none;">
+                    После регулярных платежей за период →
+                </a>
+            </small>
+        </div>
     </div>
     <div class="stat-card">
         <h3>📋 Регулярные платежи</h3>
         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; padding-top: 15px; margin-top: 10px;">
             <div style="flex: 1; text-align: center; border-right: 1px solid #ddd;">
                 <div style="font-size: 14px; color: #666;">Текущий период</div>
-                <div class="stat-value expense" style="font-size: 24px;">{{ "{:,.0f}".format(regular_this_period).replace(",", " ") }} ₽</div>
+                <div class="stat-value expense" style="font-size: 24px;">{{
+                    "{:,.0f}".format(regular_this_period).replace(",", " ") }} ₽
+                </div>
             </div>
             <div style="flex: 1; text-align: center;">
                 <div style="font-size: 14px; color: #666;">Всего за месяц</div>
-                <div class="stat-value expense" style="font-size: 24px;">{{ "{:,.0f}".format(regular_total).replace(",", " ") }} ₽</div>
+                <div class="stat-value expense" style="font-size: 24px;">{{ "{:,.0f}".format(regular_total).replace(",",
+                    " ") }} ₽
+                </div>
             </div>
         </div>
         <small><a href="{{ url_for('regular') }}" style="color: #3498db;">✏️ Редактировать</a></small>
@@ -64,24 +68,40 @@
 
 <table>
     <thead>
-        <tr><th>Дата</th><th>Тип</th><th>Категория</th><th>Подкатегория</th><th>Сумма</th><th>Комментарий</th><th>Период</th><th></th><th></th></tr>
+    <tr>
+        <th>Дата</th>
+        <th>Тип</th>
+        <th>Категория</th>
+        <th>Подкатегория</th>
+        <th>Сумма</th>
+        <th>Комментарий</th>
+        <th>Период</th>
+        <th></th>
+        <th></th>
+    </tr>
     </thead>
     <tbody>
-        {% for op in operations %}
-        <tr>
-            <td>{{ op.date }}</td>
-            <td>{{ op.type }}</td>
-            <td>{{ op.category }}</td>
-            <td>{{ op.subcategory or '-' }}</td>
-            <td class="{{ 'income' if op.type == 'Доход' else 'expense' }}">{{ "{:,.0f}".format(op.amount).replace(",", " ") }} ₽</td>
-            <td>{{ op.comment or '-' }}</td>
-            <td>{{ op.period }}</td>
-            <td><button class="edit-btn" data-id="{{ op.id }}">✏️</button></td>
-            <td><a href="{{ url_for('delete', id=op.id) }}" class="delete" onclick="return confirm('Удалить?')">❌</a></td>
-        </tr>
-        {% else %}
-        <tr><td colspan="9" style="text-align: center;">Нет операций. Добавьте первую!</td></tr>
-        {% endfor %}
+    {% for op in operations %}
+    <tr>
+        <td>{{ op.date }}</td>
+        <td>{{ op.type }}</td>
+        <td>{{ op.category }}</td>
+        <td>{{ op.subcategory or '-' }}</td>
+        <td class="{{ 'income' if op.type == 'Доход' else 'expense' }}">{{ "{:,.0f}".format(op.amount).replace(",", " ")
+            }} ₽
+        </td>
+        <td>{{ op.comment or '-' }}</td>
+        <td>{{ op.period }}</td>
+        <td>
+            <button class="edit-btn" data-id="{{ op.id }}">✏️</button>
+        </td>
+        <td><a href="{{ url_for('delete', id=op.id) }}" class="delete" onclick="return confirm('Удалить?')">❌</a></td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="9" style="text-align: center;">Нет операций. Добавьте первую!</td>
+    </tr>
+    {% endfor %}
     </tbody>
 </table>
 
@@ -96,7 +116,8 @@
             </div>
             <div style="margin-top: 20px; display: flex; gap: 10px;">
                 <button type="submit" class="btn btn-success">Сохранить</button>
-                <button type="button" onclick="closeMoneyModal()" class="btn" style="background: #95a5a6;">Отмена</button>
+                <button type="button" onclick="closeMoneyModal()" class="btn" style="background: #95a5a6;">Отмена
+                </button>
             </div>
         </form>
     </div>
@@ -107,7 +128,7 @@
 <script>
     // Редактирование операций (пока оставим здесь, позже вынесем)
     document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             const row = this.closest('tr');
             // TODO: вынести в отдельный файл operations.js
             alert('Редактирование операции будет доступно в следующей версии');

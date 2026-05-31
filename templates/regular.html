@@ -3,6 +3,18 @@
 <div class="card">
     <h1>💰 Регулярные платежи (расходы)</h1>
 
+    <!-- КНОПКИ ФИЛЬТРА -->
+    <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+        <a href="{{ url_for('regular', filter='all') }}"
+           class="btn" style="{% if filter_type == 'all' %}background: #3498db;{% else %}background: #95a5a6;{% endif %} color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px;">
+            📋 Все платежи
+        </a>
+        <a href="{{ url_for('regular', filter='current') }}"
+           class="btn" style="{% if filter_type == 'current' %}background: #3498db;{% else %}background: #95a5a6;{% endif %} color: white; padding: 8px 16px; text-decoration: none; border-radius: 5px;">
+            📅 Текущий период ({% if 10 <= now.day <= 24 %}10-24{% else %}25-09{% endif %})
+        </a>
+    </div>
+
     <!-- ФОРМА ДОБАВЛЕНИЯ -->
     <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
         <h3>➕ Добавить регулярный платёж</h3>
@@ -48,7 +60,13 @@
     <form method="POST" id="mainForm">
         <table style="width:100%; border-collapse:collapse;">
             <thead>
-                <tr><th>Дата</th><th>Категория</th><th>Подкатегория</th><th>Сумма</th><th>Периодичность</th><th></th></tr>
+                <tr><th style="text-align:left; padding:8px;">Дата</th>
+                    <th style="text-align:left; padding:8px;">Категория</th>
+                    <th style="text-align:left; padding:8px;">Подкатегория</th>
+                    <th style="text-align:left; padding:8px;">Сумма</th>
+                    <th style="text-align:left; padding:8px;">Периодичность</th>
+                    <th style="text-align:left; padding:8px;"></th>
+                </tr>
             </thead>
             <tbody>
                 {% for p in payments %}
@@ -68,7 +86,7 @@
                     </td>
                     <td style="padding:8px;" class="view-mode">
                         <span class="subcategory-view">{{ p.subcategory or '--' }}</span>
-                        <select name="subcategory_{{ p.id }}" class="edit-mode subcategory-select" data-id="{{ p.id }}" style="display:none;">
+                        <select name="subcategory_{{ p.id }}" class="edit-mode subcategory-select" data-id="{{ p.id }}" data-current="{{ p.subcategory }}" style="display:none;">
                             <option value="">-- Выберите --</option>
                         </select>
                     </td>
@@ -104,7 +122,6 @@
 </div>
 
 <script>
-    // Передаём данные в глобальную переменную для JS
     window.expenseCategories = {{ expense_categories|tojson }};
 </script>
 {% endblock %}
