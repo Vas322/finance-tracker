@@ -45,6 +45,18 @@
             </small>
         </div>
     </div>
+
+    <div class="stat-card">
+        <h3>📅 Ожидаемый остаток зарплаты</h3>
+        <div class="stat-value income" style="font-size: 24px;">
+            {{ salary_remainder_text }}
+        </div>
+        <small>10-го числа</small>
+        <div style="margin-top: 5px; font-size: 12px; {% if 'не внесён' in salary_remainder_note %}color: #e74c3c; font-weight: bold;{% else %}color: #666;{% endif %}">
+            {{ salary_remainder_note }}
+        </div>
+    </div>
+
     <div class="stat-card">
         <h3>📋 Регулярные платежи</h3>
         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; padding-top: 15px; margin-top: 10px;">
@@ -66,6 +78,7 @@
 </div>
 
 <a href="{{ url_for('add') }}" class="btn">➕ Добавить операцию</a>
+
 <!-- ФИЛЬТРЫ -->
 <div class="card" style="margin-bottom: 20px;">
     <h3>🔍 Фильтры</h3>
@@ -114,14 +127,8 @@
             <a href="{{ url_for('index') }}" class="btn" style="background: #95a5a6;">❌ Сбросить</a>
         </div>
     </form>
-    <!-- ГРАФИК РАСХОДОВ -->
-    <div class="card" style="margin-bottom: 20px;">
-        <h3>📊 Расходы по категориям</h3>
-        <div style="max-width: 400px; margin: 0 auto;">
-            <canvas id="expenseChart"></canvas>
-        </div>
-    </div>
 </div>
+
 <table>
     <thead>
     <tr>
@@ -178,20 +185,27 @@
         </form>
     </div>
 </div>
+
+<script>
+    // Передаём данные для графика
+    window.expenseData = {
+    {
+        expense_by_category | tojson
+    }
+    }
+    ;
+</script>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Редактирование операций (пока оставим здесь, позже вынесем)
+    // Редактирование операций
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', function () {
             const row = this.closest('tr');
-            // TODO: вынести в отдельный файл operations.js
             alert('Редактирование операции будет доступно в следующей версии');
         });
     });
 </script>
-<script>
-    window.expenseData = {{ expense_by_category|tojson }};
-</script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 {% endblock %}

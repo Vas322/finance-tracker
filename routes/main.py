@@ -61,19 +61,31 @@ def register_routes(app):
             conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
             balance = total_income - total_expense
 
-            # Расходы по категориям для графика
-            expense_by_category_raw = conn.execute('''
-                            SELECT category, COALESCE(SUM(amount), 0) as total
-                            FROM operations
-                            WHERE type = 'Расход'
-                            GROUP BY category
-                            ORDER BY total DESC
-                            LIMIT 6
-                        ''').fetchall()
+            # Расчёт ожидаемого остатка зарплаты
+            planned_salary_row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
+            planned_salary = float(planned_salary_row['value']) if planned_salary_row else 185000
 
-            # Преобразуем Row в список словарей для JSON
-            expense_by_category = [{'category': row['category'], 'total': row['total']} for row in
-                                   expense_by_category_raw]
+            # Берём последний аванс по дате
+            advance_row = conn.execute('''
+                SELECT amount 
+                FROM operations 
+                WHERE type = 'Доход' 
+                AND category = 'Зарплата' 
+                AND subcategory = 'Аванс' 
+                ORDER BY date DESC 
+                LIMIT 1
+            ''').fetchone()
+
+            real_advance = advance_row['amount'] if advance_row else 0
+
+            if real_advance > 0:
+                expected_remainder = planned_salary - real_advance
+                salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
+                salary_remainder_note = f"(Аванс: {real_advance:,.0f} ₽)".replace(",", " ")
+            else:
+                expected_remainder = planned_salary
+                salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
+                salary_remainder_note = "⚠️ Аванс ещё не внесён"
 
         # Определяем текущий период
         if 10 <= today.day <= 24:
@@ -115,4 +127,26 @@ def register_routes(app):
                                regular_this_period=regular_this_period,
                                current_money=current_money,
                                all_categories=all_categories,
-                               expense_by_category=expense_by_category)
+                               salary_remainder_text=salary_remainder_text,
+                               salary_remainder_note=salary_remainder_note)
+
+    @app.route('/analytics')
+    def analytics():
+        with get_db() as conn:
+            expense_by_category_raw = conn.execute('''
+                SELECT category, COALESCE(SUM(amount), 0) as total
+                FROM operations
+                WHERE type = 'Расход'
+                GROUP BY category
+                ORDER BY total DESC
+            ''').fetchall()
+
+            expense_by_category = [{'category': row['category'], 'total': row['total']} for row in
+                                   expense_by_category_raw]
+
+            total_expense = \
+            conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
+
+        return render_template('analytics.html',
+                               expense_by_category=expense_by_category,
+                               total_expense=total_expense)

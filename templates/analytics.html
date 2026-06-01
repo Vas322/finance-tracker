@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h1>📊 Аналитика расходов</h1>
+
+    <div style="margin-bottom: 30px;">
+        <h3>Расходы по категориям</h3>
+        <div style="max-width: 400px; margin: 0 auto;">
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <h3>📋 Детализация по категориям</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr><th>Категория</th><th>Сумма (₽)</th><th>Доля</th></tr>
+            </thead>
+            <tbody>
+                {% for item in expense_by_category %}
+                <tr>
+                    <td>{{ item.category }}</td>
+                    <td>{{ "{:,.0f}".format(item.total).replace(",", " ") }}</td>
+                    <td>{{ "{:.1f}".format(item.total / total_expense * 100) if total_expense > 0 else 0 }}%</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3">Нет данных о расходах</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="margin-top: 15px;">
+            <strong>Всего расходов:</strong> {{ "{:,.0f}".format(total_expense).replace(",", " ") }} ₽
+        </div>
+    </div>
+</div>
+
+<script>
+    window.expenseData = {{ expense_by_category|tojson }};
+    window.totalExpense = {{ total_expense }};
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

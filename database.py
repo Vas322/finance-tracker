@@ -59,6 +59,11 @@ def init_db():
         if existing == 0:
             conn.execute('INSERT INTO settings (key, value) VALUES (?, ?)', ('current_money', '45000'))
 
+        # Настройки доходов (если нет)
+        existing_plan = conn.execute('SELECT COUNT(*) FROM settings WHERE key = "planned_salary"').fetchone()[0]
+        if existing_plan == 0:
+            conn.execute('INSERT INTO settings (key, value) VALUES (?, ?)', ('planned_salary', '185000'))
+
         # Заполняем категории, если таблица пустая
         existing_cats = conn.execute('SELECT COUNT(*) FROM categories').fetchone()[0]
         if existing_cats == 0:

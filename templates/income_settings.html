@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1 style="margin: 0;">⚙️ Настройки доходов</h1>
+        <a href="{{ url_for('index') }}" class="btn" style="background: #95a5a6; color: white;">← На главную</a>
+    </div>
+
+    <form method="POST" action="{{ url_for('save_income_settings') }}">
+        <div class="form-group">
+            <label>Плановая зарплата за месяц (₽)</label>
+            <input type="number" name="planned_salary" step="0.01" value="{{ planned_salary }}" required style="width: 100%; padding: 8px;">
+            <small style="color: #666;">Сумма, которая ожидается за полный месяц (аванс + зарплата).</small>
+        </div>
+
+        <button type="submit" class="btn btn-success" style="margin-top: 10px;">💾 Сохранить настройки</button>
+    </form>
+
+    <hr style="margin: 20px 0;">
+
+    <h3>ℹ️ Как это работает</h3>
+    <ul style="margin-left: 20px;">
+        <li><strong>Плановая зарплата</strong> — ваша ожидаемая сумма за полный месяц.</li>
+        <li><strong>Аванс</strong> — вносите как доход 25-го числа с категорией "Зарплата", подкатегорией "Аванс".</li>
+        <li><strong>Система автоматически</strong> рассчитает ожидаемый остаток зарплаты на 10-е число.</li>
+        <li><strong>Премии</strong> — вносите как доход с категорией "Премия".</li>
+    </ul>
+</div>
+{% endblock %}
