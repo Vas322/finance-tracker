@@ -21,7 +21,7 @@
         <form method="POST" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
             <div>
                 <label style="display: block; font-size: 12px;">Категория</label>
-                <select name="add_category" id="add_category" required style="width: 150px;">
+                <select name="add_category" id="add_category" required style="width: 150px; padding: 8px;">
                     <option value="">-- Выберите --</option>
                     {% for cat in expense_categories %}
                         <option value="{{ cat }}">{{ cat }}</option>
@@ -30,28 +30,32 @@
             </div>
             <div>
                 <label style="display: block; font-size: 12px;">Подкатегория</label>
-                <select name="add_subcategory" id="add_subcategory" style="width: 150px;">
+                <select name="add_subcategory" id="add_subcategory" style="width: 150px; padding: 8px;">
                     <option value="">-- Выберите --</option>
                 </select>
             </div>
             <div>
                 <label style="display: block; font-size: 12px;">Сумма</label>
-                <input type="number" name="add_amount" step="0.01" required style="width: 100px;">
+                <input type="number" name="add_amount" step="0.01" required style="width: 100px; padding: 8px;">
             </div>
             <div>
                 <label style="display: block; font-size: 12px;">Дата списания</label>
-                <input type="date" name="add_day" required>
+                <input type="date" name="add_day" required style="padding: 8px;">
             </div>
             <div>
                 <label style="display: block; font-size: 12px;">Периодичность</label>
-                <select name="add_interval">
+                <select name="add_interval" style="padding: 8px;">
                     <option value="weekly">Еженедельно</option>
                     <option value="monthly" selected>Ежемесячно</option>
                     <option value="yearly">Ежегодно</option>
                 </select>
             </div>
             <div>
-                <button type="submit" class="btn btn-success">➕ Добавить</button>
+                <label style="display: block; font-size: 12px;">Комментарий</label>
+                <input type="text" name="add_comment" placeholder="Описание" style="width: 150px; padding: 8px;">
+            </div>
+            <div>
+                <button type="submit" class="btn btn-success" style="padding: 8px 20px;">➕ Добавить</button>
             </div>
         </form>
     </div>
@@ -60,11 +64,13 @@
     <form method="POST" id="mainForm">
         <table style="width:100%; border-collapse:collapse;">
             <thead>
-                <tr><th style="text-align:left; padding:8px;">Дата</th>
+                <tr>
+                    <th style="text-align:left; padding:8px;">Дата</th>
                     <th style="text-align:left; padding:8px;">Категория</th>
                     <th style="text-align:left; padding:8px;">Подкатегория</th>
                     <th style="text-align:left; padding:8px;">Сумма</th>
                     <th style="text-align:left; padding:8px;">Периодичность</th>
+                    <th style="text-align:left; padding:8px;">Комментарий</th>
                     <th style="text-align:left; padding:8px;"></th>
                 </tr>
             </thead>
@@ -106,6 +112,10 @@
                             <option value="monthly" {% if p.interval == 'monthly' %}selected{% endif %}>Ежемесячно</option>
                             <option value="yearly" {% if p.interval == 'yearly' %}selected{% endif %}>Ежегодно</option>
                         </select>
+                    </td>
+                    <td style="padding:8px;" class="view-mode">
+                        <span class="comment-view">{{ p.comment or '—' }}</span>
+                        <input type="text" name="comment_{{ p.id }}" value="{{ p.comment or '' }}" style="display:none; width:150px;" class="edit-mode">
                     </td>
                     <td style="padding:8px;">
                         <button type="button" class="edit-row-btn" data-id="{{ p.id }}" style="background:none; border:none; cursor:pointer;">✏️</button>

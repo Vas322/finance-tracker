@@ -25,15 +25,16 @@ def init_db():
 
         # Таблица регулярных платежей
         conn.execute('''
-            CREATE TABLE IF NOT EXISTS regular_payments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                amount REAL NOT NULL,
-                day TEXT DEFAULT '2024-01-01',
-                category TEXT DEFAULT '',
-                subcategory TEXT DEFAULT '',
-                interval TEXT DEFAULT 'monthly'
-            )
-        ''')
+                    CREATE TABLE IF NOT EXISTS regular_payments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        amount REAL NOT NULL,
+                        day TEXT DEFAULT '2024-01-01',
+                        category TEXT DEFAULT '',
+                        subcategory TEXT DEFAULT '',
+                        interval TEXT DEFAULT 'monthly',
+                        comment TEXT DEFAULT ''
+                    )
+                ''')
 
         # Таблица настроек
         conn.execute('''

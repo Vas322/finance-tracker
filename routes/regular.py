@@ -61,12 +61,20 @@ def register_routes(app):
             print(
                 f"Добавление: category={category}, subcategory={subcategory}, amount={amount}, day={day}, interval={interval}")  # Отладка
 
-            with get_db() as conn:
-                conn.execute('''
-                    INSERT INTO regular_payments (amount, day, category, subcategory, interval)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (amount, day, category, subcategory, interval))
-            flash('Платёж добавлен', 'success')
+            if 'add_category' in request.form and 'add_amount' in request.form:
+                amount = float(request.form['add_amount'])
+                day = request.form['add_day']
+                category = request.form['add_category']
+                subcategory = request.form.get('add_subcategory', '')
+                interval = request.form.get('add_interval', 'monthly')
+                comment = request.form.get('add_comment', '')
+
+                with get_db() as conn:
+                    conn.execute('''
+                                   INSERT INTO regular_payments (amount, day, category, subcategory, interval, comment)
+                                   VALUES (?, ?, ?, ?, ?, ?)
+                               ''', (amount, day, category, subcategory, interval, comment))
+                flash('Платёж добавлен', 'success')
 
         # Удаление платежа
         elif 'delete_id' in request.form:
@@ -99,6 +107,10 @@ def register_routes(app):
                         pid = int(key.split('_')[1])
                         interval = value
                         conn.execute('UPDATE regular_payments SET interval = ? WHERE id = ?', (interval, pid))
+                    elif key.startswith('comment_'):
+                        pid = int(key.split('_')[1])
+                        comment = value
+                        conn.execute('UPDATE regular_payments SET comment = ? WHERE id = ?', (comment, pid))
             flash('Регулярные платежи обновлены', 'success')
 
         return redirect(url_for('regular'))
