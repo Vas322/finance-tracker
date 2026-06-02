@@ -106,11 +106,7 @@ table {
     border-collapse: collapse;
 }
 
-th, td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
+
 
 th {
     background: #34495e;
@@ -192,29 +188,6 @@ input, select {
 .error {
     background: #f8d7da;
     color: #721c24;
-}
-
-/* ==================== МОДАЛЬНОЕ ОКНО ==================== */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-}
-
-.modal-content {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    width: 300px;
 }
 
 /* ==================== РЕДАКТИРОВАНИЕ ==================== */
@@ -336,6 +309,7 @@ input, select {
     font-weight: 600;
     border-bottom: 2px solid #dee2e6;
 }
+
 /* Выравнивание карточек */
 .h-100 {
     height: 100%;
@@ -352,4 +326,19 @@ input, select {
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+/* Таблицы Bootstrap — не ломаем */
+.table th,
+.table td {
+    background: transparent !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    text-align: left !important;
+    vertical-align: middle !important;
+}
+
+.table thead th {
+    background-color: #f8f9fa !important;
+    color: #1f2d3d !important;
+    font-weight: 600 !important;
 }

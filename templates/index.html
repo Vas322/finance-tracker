@@ -94,21 +94,25 @@
         <h5 class="mb-0">🔍 Фильтры</h5>
     </div>
     <div class="card-body">
-        <div class="row g-2">
+        <form method="GET" action="{{ url_for('index') }}" class="row g-2">
             <div class="col-md-2">
                 <label class="form-label small fw-bold">Период</label>
                 <select name="period" class="form-select form-select-sm">
                     <option value="">Все</option>
-                    <option value="10-24" {% if request.args.get('period') == '10-24' %}selected{% endif %}>10-24</option>
-                    <option value="25-09" {% if request.args.get('period') == '25-09' %}selected{% endif %}>25-09</option>
+                    <option value="10-24" {% if request.args.get(
+                    'period') == '10-24' %}selected{% endif %}>10-24</option>
+                    <option value="25-09" {% if request.args.get(
+                    'period') == '25-09' %}selected{% endif %}>25-09</option>
                 </select>
             </div>
             <div class="col-md-2">
                 <label class="form-label small fw-bold">Тип</label>
                 <select name="type" class="form-select form-select-sm">
                     <option value="">Все</option>
-                    <option value="Доход" {% if request.args.get('type') == 'Доход' %}selected{% endif %}>Доход</option>
-                    <option value="Расход" {% if request.args.get('type') == 'Расход' %}selected{% endif %}>Расход</option>
+                    <option value="Доход" {% if request.args.get(
+                    'type') == 'Доход' %}selected{% endif %}>Доход</option>
+                    <option value="Расход" {% if request.args.get(
+                    'type') == 'Расход' %}selected{% endif %}>Расход</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -116,23 +120,26 @@
                 <select name="category" class="form-select form-select-sm">
                     <option value="">Все</option>
                     {% for cat in all_categories %}
-                    <option value="{{ cat }}" {% if request.args.get('category') == cat %}selected{% endif %}>{{ cat }}</option>
+                    <option value="{{ cat }}" {% if request.args.get(
+                    'category') == cat %}selected{% endif %}>{{ cat }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-2">
                 <label class="form-label small fw-bold">Дата от</label>
-                <input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}" class="form-control form-control-sm">
+                <input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}"
+                       class="form-control form-control-sm">
             </div>
             <div class="col-md-2">
                 <label class="form-label small fw-bold">Дата до</label>
-                <input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}" class="form-control form-control-sm">
+                <input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}"
+                       class="form-control form-control-sm">
             </div>
             <div class="col-md-2 d-flex align-items-end gap-1">
                 <button type="submit" class="btn btn-primary btn-sm">Применить</button>
                 <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">Сбросить</a>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -144,45 +151,95 @@
     <div class="table-responsive">
         <table class="table table-sm table-hover">
             <thead class="table-light">
-                <tr>
-                    <th>Дата</th>
-                    <th>Тип</th>
-                    <th>Категория</th>
-                    <th>Сумма</th>
-                    <th>Период</th>
-                    <th style="width: 80px;"></th>
-                </tr>
+            <tr>
+                <th>Дата</th>
+                <th>Тип</th>
+                <th>Категория</th>
+                <th>Сумма</th>
+                <th>Период</th>
+                <th style="width: 80px;">Действия</th>
+            </tr>
             </thead>
             <tbody>
-                {% for op in operations %}
-                <tr>
-                    <td>{{ op.date }}</td>
-                    <td>{{ op.type }}</td>
-                    <td>{{ op.category }}{% if op.subcategory %} / {{ op.subcategory }}{% endif %}</td>
-                    <td class="fw-bold {{ 'text-success' if op.type == 'Доход' else 'text-danger' }}">
-                        {{ "{:,.0f}".format(op.amount).replace(",", " ") }} ₽
-                    </td
-                    <td>{{ op.period }}</td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary edit-btn" data-id="{{ op.id }}" title="Редактировать">✏️</button>
-                            <a href="{{ url_for('delete', id=op.id) }}" class="btn btn-outline-danger" title="Удалить" onclick="return confirm('Удалить операцию?')">🗑️</a>
-                        </div>
-                    </td
-                </tr>
-                {% else %}
-                <tr><td colspan="6" class="text-center">Нет операций. Добавьте первую!</td
-                {% endfor %}
+            {% for op in operations %}
+            <tr>
+                <td>{{ op.date }}</td>          <!-- 1. Дата -->
+                <td>{{ op.type }}</td>         <!-- 2. Тип -->
+                <td>{{ op.category }}{% if op.subcategory %} / {{ op.subcategory }}{% endif %}</td>
+                <!-- 3. Категория -->
+                <td class="fw-bold {{ 'text-success' if op.type == 'Доход' else 'text-danger' }}">
+                    {{ "{:,.0f}".format(op.amount).replace(",", " ") }} ₽
+                </td                     <!-- 4. Сумма -->
+                <td>{{ op.period }}</td>         <!-- 5. Период -->
+                <td>                         <!-- 6. Действия -->
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary edit-btn" data-id="{{ op.id }}">✏️</button>
+                        <a href="{{ url_for('delete', id=op.id) }}" class="btn btn-outline-danger"
+                           onclick="return confirm('Удалить операцию?')">🗑️</a>
+                    </div>
+                </td
+            </tr>
+            {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
-<script>
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const id = this.dataset.id;
-            alert('Редактирование операции ' + id + ' будет доступно в следующей версии');
-        });
-    });
-</script>
+
+<!-- Модальное окно редактирования операции -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">✏️ Редактировать операцию</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editForm">
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id">
+                    <div class="mb-2">
+                        <label class="form-label small">Дата</label>
+                        <input type="date" id="edit_date" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Тип</label>
+                        <select id="edit_type" class="form-select form-select-sm" required>
+                            <option value="Расход">Расход</option>
+                            <option value="Доход">Доход</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Категория</label>
+                        <select id="edit_category" class="form-select form-select-sm" required>
+                            <option value="">-- Выберите --</option>
+                            {% for cat in all_categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Подкатегория</label>
+                        <input type="text" id="edit_subcategory" class="form-control form-control-sm"
+                               placeholder="Подкатегория">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Сумма</label>
+                        <input type="number" id="edit_amount" step="0.01" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Комментарий</label>
+                        <input type="text" id="edit_comment" class="form-control form-control-sm">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary btn-sm">💾 Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/operations.js') }}"></script>
 {% endblock %}
