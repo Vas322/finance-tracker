@@ -1,211 +1,188 @@
 {% extends "base.html" %}
+
+{% block title %}Дашборд{% endblock %}
+
 {% block content %}
-
-<div class="stats-grid">
-    <div class="stat-card">
-        <h3>💰 Доходы</h3>
-        <div class="stat-value income">{{ "{:,.0f}".format(total_income).replace(",", " ") }} ₽</div>
-    </div>
-    <div class="stat-card">
-        <h3>💸 Расходы</h3>
-        <div class="stat-value expense">{{ "{:,.0f}".format(total_expense).replace(",", " ") }} ₽</div>
-    </div>
-    <div class="stat-card">
-        <h3>💳 Баланс</h3>
-        <div class="stat-value {{ 'income' if balance >= 0 else 'expense' }}">{{ "{:,.0f}".format(balance).replace(",",
-            " ") }} ₽
+<!-- Карточки со статистикой -->
+<div class="row">
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-success h-100">
+            <div class="card-body">
+                <h5 class="card-title">Доходы</h5>
+                <h3>{{ "{:,.0f}".format(total_income).replace(",", " ") }} ₽</h3>
+            </div>
         </div>
     </div>
-    <div class="stat-card">
-        <h3>💰 Начальный остаток</h3>
-        <div class="stat-value income" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-            {{ "{:,.0f}".format(current_money).replace(",", " ") }} ₽
-            <button onclick="showMoneyModal()" class="edit-btn">✏️</button>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-danger h-100">
+            <div class="card-body">
+                <h5 class="card-title">Расходы</h5>
+                <h3>{{ "{:,.0f}".format(total_expense).replace(",", " ") }} ₽</h3>
+            </div>
         </div>
-        <small>Сумма, с которой начинаешь учёт</small>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-info h-100">
+            <div class="card-body">
+                <h5 class="card-title">Баланс</h5>
+                <h3>{{ "{:,.0f}".format(balance).replace(",", " ") }} ₽</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-secondary h-100">
+            <div class="card-body">
+                <h5 class="card-title">Начальный остаток</h5>
+                <h3>{{ "{:,.0f}".format(current_money).replace(",", " ") }} ₽</h3>
+                <small>Сумма, с которой начинаешь учёт</small>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <h3>💰 Свободные деньги</h3>
-        <div class="stat-value {{ 'income' if free_money_total >= 0 else 'expense' }}">
-            {{ "{:,.0f}".format(free_money_total).replace(",", " ") }} ₽
-        </div>
-        <small>Всего (без учёта регулярных)</small>
-        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
-            <div class="stat-value {{ 'income' if free_money_after_regular >= 0 else 'expense' }}"
-                 style="font-size: 20px;">
-                {{ "{:,.0f}".format(free_money_after_regular).replace(",", " ") }} ₽
+<!-- Вторая строка карточек -->
+<div class="row">
+    <div class="col-xl-4 col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Свободные деньги</h5>
+                <h3 class="text-success">{{ "{:,.0f}".format(free_money_total).replace(",", " ") }} ₽</h3>
+                <small>Всего (без учёта регулярных)</small>
+                <hr>
+                <h4 class="text-primary">{{ "{:,.0f}".format(free_money_after_regular).replace(",", " ") }} ₽</h4>
+                <small>После регулярных платежей</small>
             </div>
-            <small>
-                <a href="{{ url_for('regular', filter='current') }}" style="color: #3498db; text-decoration: none;">
-                    После регулярных платежей за период →
-                </a>
-            </small>
         </div>
     </div>
 
-    <div class="stat-card">
-        <h3>📅 Ожидаемый остаток зарплаты</h3>
-        <div class="stat-value income" style="font-size: 24px;">
-            {{ salary_remainder_text }}
-        </div>
-        <small>10-го числа</small>
-        <div style="margin-top: 5px; font-size: 12px; {% if 'не внесён' in salary_remainder_note %}color: #e74c3c; font-weight: bold;{% else %}color: #666;{% endif %}">
-            {{ salary_remainder_note }}
+    <div class="col-xl-4 col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Ожидаемый остаток зарплаты</h5>
+                <h3 class="text-success">{{ salary_remainder_text }}</h3>
+                <small>10-го числа</small>
+                <p class="small text-muted mt-2 mb-0">{{ salary_remainder_note }}</p>
+            </div>
         </div>
     </div>
 
-    <div class="stat-card">
-        <h3>📋 Регулярные платежи</h3>
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; padding-top: 15px; margin-top: 10px;">
-            <div style="flex: 1; text-align: center; border-right: 1px solid #ddd;">
-                <div style="font-size: 14px; color: #666;">Текущий период</div>
-                <div class="stat-value expense" style="font-size: 24px;">{{
-                    "{:,.0f}".format(regular_this_period).replace(",", " ") }} ₽
+    <div class="col-xl-4 col-md-12 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Регулярные платежи</h5>
+                <div class="row">
+                    <div class="col-6">
+                        <h4 class="text-danger">{{ "{:,.0f}".format(regular_this_period).replace(",", " ") }} ₽</h4>
+                        <small>Текущий период</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-danger">{{ "{:,.0f}".format(regular_total).replace(",", " ") }} ₽</h4>
+                        <small>Всего за месяц</small>
+                    </div>
                 </div>
-            </div>
-            <div style="flex: 1; text-align: center;">
-                <div style="font-size: 14px; color: #666;">Всего за месяц</div>
-                <div class="stat-value expense" style="font-size: 24px;">{{ "{:,.0f}".format(regular_total).replace(",",
-                    " ") }} ₽
+                <div class="mt-2">
+                    <a href="{{ url_for('regular') }}" class="btn btn-sm btn-outline-primary">Редактировать</a>
                 </div>
             </div>
         </div>
-        <small><a href="{{ url_for('regular') }}" style="color: #3498db;">✏️ Редактировать</a></small>
     </div>
 </div>
 
-<a href="{{ url_for('add') }}" class="btn">➕ Добавить операцию</a>
+<!-- Фильтры -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">🔍 Фильтры</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Период</label>
+                <select name="period" class="form-select form-select-sm">
+                    <option value="">Все</option>
+                    <option value="10-24" {% if request.args.get('period') == '10-24' %}selected{% endif %}>10-24</option>
+                    <option value="25-09" {% if request.args.get('period') == '25-09' %}selected{% endif %}>25-09</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Тип</label>
+                <select name="type" class="form-select form-select-sm">
+                    <option value="">Все</option>
+                    <option value="Доход" {% if request.args.get('type') == 'Доход' %}selected{% endif %}>Доход</option>
+                    <option value="Расход" {% if request.args.get('type') == 'Расход' %}selected{% endif %}>Расход</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Категория</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">Все</option>
+                    {% for cat in all_categories %}
+                    <option value="{{ cat }}" {% if request.args.get('category') == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Дата от</label>
+                <input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Дата до</label>
+                <input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-1">
+                <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">Сбросить</a>
+            </div>
+        </div>
+    </div>
+</div>
 
-<!-- ФИЛЬТРЫ -->
-<div class="card" style="margin-bottom: 20px;">
-    <h3>🔍 Фильтры</h3>
-    <form method="GET" action="{{ url_for('index') }}"
-          style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
-        <div>
-            <label style="display: block; font-size: 12px;">Период</label>
-            <select name="period">
-                <option value="">Все</option>
-                <option value="10-24" {% if request.args.get(
-                'period') == '10-24' %}selected{% endif %}>10-24</option>
-                <option value="25-09" {% if request.args.get(
-                'period') == '25-09' %}selected{% endif %}>25-09</option>
-            </select>
-        </div>
-        <div>
-            <label style="display: block; font-size: 12px;">Тип</label>
-            <select name="type">
-                <option value="">Все</option>
-                <option value="Доход" {% if request.args.get(
-                'type') == 'Доход' %}selected{% endif %}>Доход</option>
-                <option value="Расход" {% if request.args.get(
-                'type') == 'Расход' %}selected{% endif %}>Расход</option>
-            </select>
-        </div>
-        <div>
-            <label style="display: block; font-size: 12px;">Категория</label>
-            <select name="category">
-                <option value="">Все</option>
-                {% for cat in all_categories %}
-                <option value="{{ cat }}" {% if request.args.get(
-                'category') == cat %}selected{% endif %}>{{ cat }}</option>
+<!-- Таблица операций -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">📋 Последние операции</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Дата</th>
+                    <th>Тип</th>
+                    <th>Категория</th>
+                    <th>Сумма</th>
+                    <th>Период</th>
+                    <th style="width: 80px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for op in operations %}
+                <tr>
+                    <td>{{ op.date }}</td>
+                    <td>{{ op.type }}</td>
+                    <td>{{ op.category }}{% if op.subcategory %} / {{ op.subcategory }}{% endif %}</td>
+                    <td class="fw-bold {{ 'text-success' if op.type == 'Доход' else 'text-danger' }}">
+                        {{ "{:,.0f}".format(op.amount).replace(",", " ") }} ₽
+                    </td
+                    <td>{{ op.period }}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary edit-btn" data-id="{{ op.id }}" title="Редактировать">✏️</button>
+                            <a href="{{ url_for('delete', id=op.id) }}" class="btn btn-outline-danger" title="Удалить" onclick="return confirm('Удалить операцию?')">🗑️</a>
+                        </div>
+                    </td
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center">Нет операций. Добавьте первую!</td
                 {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label style="display: block; font-size: 12px;">Дата от</label>
-            <input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}">
-        </div>
-        <div>
-            <label style="display: block; font-size: 12px;">Дата до</label>
-            <input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}">
-        </div>
-        <div>
-            <button type="submit" class="btn">🔍 Применить</button>
-            <a href="{{ url_for('index') }}" class="btn" style="background: #95a5a6;">❌ Сбросить</a>
-        </div>
-    </form>
-</div>
-
-<table>
-    <thead>
-    <tr>
-        <th>Дата</th>
-        <th>Тип</th>
-        <th>Категория</th>
-        <th>Подкатегория</th>
-        <th>Сумма</th>
-        <th>Комментарий</th>
-        <th>Период</th>
-        <th></th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for op in operations %}
-    <tr>
-        <td>{{ op.date }}</td>
-        <td>{{ op.type }}</td>
-        <td>{{ op.category }}</td>
-        <td>{{ op.subcategory or '-' }}</td>
-        <td class="{{ 'income' if op.type == 'Доход' else 'expense' }}">{{ "{:,.0f}".format(op.amount).replace(",", " ")
-            }} ₽
-        </td>
-        <td>{{ op.comment or '-' }}</td>
-        <td>{{ op.period }}</td>
-        <td>
-            <button class="edit-btn" data-id="{{ op.id }}">✏️</button>
-        </td>
-        <td><a href="{{ url_for('delete', id=op.id) }}" class="delete" onclick="return confirm('Удалить?')">❌</a></td>
-    </tr>
-    {% else %}
-    <tr>
-        <td colspan="9" style="text-align: center;">Нет операций. Добавьте первую!</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
-
-<!-- Модальное окно -->
-<div id="moneyModal" class="modal">
-    <div class="modal-content">
-        <h3>Редактировать начальный остаток</h3>
-        <form method="POST" action="{{ url_for('update_money') }}">
-            <div class="form-group" style="margin-top: 20px;">
-                <label>Сумма (₽)</label>
-                <input type="number" name="current_money" step="0.01" value="{{ current_money }}" required>
-            </div>
-            <div style="margin-top: 20px; display: flex; gap: 10px;">
-                <button type="submit" class="btn btn-success">Сохранить</button>
-                <button type="button" onclick="closeMoneyModal()" class="btn" style="background: #95a5a6;">Отмена
-                </button>
-            </div>
-        </form>
+            </tbody>
+        </table>
     </div>
 </div>
-
 <script>
-    // Передаём данные для графика
-    window.expenseData = {
-    {
-        expense_by_category | tojson
-    }
-    }
-    ;
-</script>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Редактирование операций
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', function () {
-            const row = this.closest('tr');
-            alert('Редактирование операции будет доступно в следующей версии');
+            const id = this.dataset.id;
+            alert('Редактирование операции ' + id + ' будет доступно в следующей версии');
         });
     });
 </script>
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 {% endblock %}
