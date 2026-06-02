@@ -56,9 +56,9 @@ def register_routes(app):
 
             # Доходы и расходы (без фильтра по периоду, для общей статистики)
             total_income = \
-            conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Доход"').fetchone()[0]
+                conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Доход"').fetchone()[0]
             total_expense = \
-            conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
+                conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
             balance = total_income - total_expense
 
             # Расчёт ожидаемого остатка зарплаты
@@ -112,6 +112,25 @@ def register_routes(app):
         next_income = get_next_income_date(today)
         days_to_income = (next_income - today).days
 
+        # Категории для модального окна добавления
+        with get_db() as conn:
+            income_cats = {}
+            expense_cats = {}
+
+            income_main = conn.execute(
+                'SELECT * FROM categories WHERE parent_id IS NULL AND type = "Доход" ORDER BY name').fetchall()
+            for cat in income_main:
+                subcats = conn.execute('SELECT name FROM categories WHERE parent_id = ? ORDER BY name',
+                                       (cat['id'],)).fetchall()
+                income_cats[cat['name']] = [s['name'] for s in subcats]
+
+            expense_main = conn.execute(
+                'SELECT * FROM categories WHERE parent_id IS NULL AND type = "Расход" ORDER BY name').fetchall()
+            for cat in expense_main:
+                subcats = conn.execute('SELECT name FROM categories WHERE parent_id = ? ORDER BY name',
+                                       (cat['id'],)).fetchall()
+                expense_cats[cat['name']] = [s['name'] for s in subcats]
+
         return render_template('index.html',
                                operations=operations,
                                total_income=total_income,
@@ -128,6 +147,8 @@ def register_routes(app):
                                current_money=current_money,
                                all_categories=all_categories,
                                salary_remainder_text=salary_remainder_text,
+                               income_categories=income_cats,
+                               expense_categories=expense_cats,
                                salary_remainder_note=salary_remainder_note)
 
     @app.route('/analytics')
@@ -145,7 +166,7 @@ def register_routes(app):
                                    expense_by_category_raw]
 
             total_expense = \
-            conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
+                conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
 
         return render_template('analytics.html',
                                expense_by_category=expense_by_category,
