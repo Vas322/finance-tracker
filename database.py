@@ -66,10 +66,10 @@ def init_db():
             )
         ''')
 
-        # Начальный остаток (если нет)
-        existing = conn.execute('SELECT COUNT(*) FROM settings WHERE key = "current_money"').fetchone()[0]
-        if existing == 0:
-            conn.execute('INSERT INTO settings (key, value) VALUES (?, ?)', ('current_money', '45000'))
+        # Плановая зарплата (если нет)
+        existing_plan = conn.execute('SELECT COUNT(*) FROM settings WHERE key = "planned_salary"').fetchone()[0]
+        if existing_plan == 0:
+            conn.execute('INSERT INTO settings (key, value) VALUES (?, ?)', ('planned_salary', '185000'))
 
         # Заполняем категории, если таблица пустая
         existing_cats = conn.execute('SELECT COUNT(*) FROM categories').fetchone()[0]
@@ -105,17 +105,6 @@ def init_db():
                     INSERT INTO regular_payments (amount, day, category, subcategory, interval, comment)
                     VALUES (?, ?, ?, ?, ?, ?)
                 ''', (amount, day, category, subcategory, interval, comment))
-
-
-def get_current_money():
-    with get_db() as conn:
-        result = conn.execute('SELECT value FROM settings WHERE key = "current_money"').fetchone()
-        return float(result['value']) if result else 45000
-
-
-def set_current_money(amount):
-    with get_db() as conn:
-        conn.execute('UPDATE settings SET value = ? WHERE key = "current_money"', (str(amount),))
 
 
 def get_period_balance(period, start_date):

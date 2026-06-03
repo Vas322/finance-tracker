@@ -1,9 +1,10 @@
-from flask import render_template, request
-from database import get_db, get_current_money
+from flask import render_template, request, redirect, url_for, flash
+from database import get_db, set_period_balance
 from utils import get_next_income_date, get_regular_payments_for_period, get_regular_total_for_month, \
     apply_regular_payments, get_unpaid_regular_payments, get_regular_payments_until_date, \
     get_regular_payments_after_date, get_regular_payments_for_month, get_paid_regular_payments_this_month, \
-    get_planning_data, get_expenses_for_period, update_period_balance, get_period_dates, get_period
+    get_planning_data, get_expenses_for_period, update_period_balance, get_period_dates, get_period, \
+    update_current_period_balance
 from datetime import date
 
 
@@ -14,7 +15,6 @@ def register_routes(app):
         apply_regular_payments()
 
         today = date.today()
-        current_money = get_current_money()
 
         # Получаем параметры фильтров из URL
         period_filter = request.args.get('period', '')
@@ -126,7 +126,6 @@ def register_routes(app):
         expenses_this_period = get_expenses_for_period(period_start_date, period_end_date)
 
         # Новая логика расчёта «Можно потратить сегодня»
-        # = (Аванс - Отложено_из_аванса) + Начальный_остаток_периода - Расходы_за_период
         regular_total_month = get_regular_payments_for_month()
         paid_regular = get_paid_regular_payments_this_month()
         planning = get_planning_data(planned_salary, real_advance, regular_total_month, paid_regular)
@@ -136,7 +135,6 @@ def register_routes(app):
             advance_for_period = real_advance
             saved_from_advance = planning['need_to_save_from_advance']
         else:
-            # Если аванс ещё не получен, используем плановые значения
             advance_for_period = planning['advance']
             saved_from_advance = planning['need_to_save_from_advance']
 
@@ -147,7 +145,6 @@ def register_routes(app):
         regular_total = get_regular_total_for_month()
 
         unpaid_regular = get_unpaid_regular_payments(today, period_start, period_end)
-        free_money_now = current_money + total_income - total_expense - unpaid_regular
 
         if real_advance > 0:
             expected_income = planned_salary - real_advance
@@ -163,6 +160,8 @@ def register_routes(app):
             spend_warning = ""
 
         # Светофор (смотрим на свободные деньги сейчас)
+        free_money_now = period_balance + total_income - total_expense - unpaid_regular
+
         if free_money_now < 0:
             traffic_light = "red"
             traffic_text = "⚠️ КАССОВЫЙ РАЗРЫВ!"
@@ -190,7 +189,7 @@ def register_routes(app):
                                traffic_text=traffic_text,
                                regular_total=regular_total,
                                regular_this_period=regular_this_period,
-                               current_money=current_money,
+                               period_balance=period_balance,
                                all_categories=all_categories,
                                salary_remainder_text=salary_remainder_text,
                                salary_remainder_note=salary_remainder_note,
@@ -198,6 +197,14 @@ def register_routes(app):
                                expense_categories=expense_cats,
                                planning=planning,
                                regular_total_month=regular_total_month)
+
+    @app.route('/update_money', methods=['POST'])
+    def update_money():
+        new_amount = float(request.form['current_money'])
+        today = date.today()
+        update_current_period_balance(today, new_amount)
+        flash(f'Начальный остаток: {new_amount:,.0f} ₽', 'success')
+        return redirect(url_for('index'))
 
     @app.route('/analytics')
     def analytics():

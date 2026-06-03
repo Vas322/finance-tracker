@@ -351,7 +351,6 @@ def update_period_balance(today):
     existing = get_period_balance(period_name, period_start.strftime('%Y-%m-%d'))
     if existing is None:
         # Рассчитываем остаток на начало периода
-        # Получаем все операции до начала периода
         with get_db() as conn:
             result = conn.execute('''
                 SELECT COALESCE(SUM(CASE WHEN type = 'Доход' THEN amount ELSE -amount END), 0) as balance
@@ -362,3 +361,11 @@ def update_period_balance(today):
         set_period_balance(period_name, period_start.strftime('%Y-%m-%d'), balance)
         return balance
     return existing
+
+
+def update_current_period_balance(today, new_balance):
+    """Обновляет остаток на начало текущего периода (ручное редактирование)"""
+    from database import get_period_balance, set_period_balance
+    period_start, period_end = get_period_dates(today)
+    period_name = get_period(today.strftime('%Y-%m-%d'))
+    set_period_balance(period_name, period_start.strftime('%Y-%m-%d'), new_balance)

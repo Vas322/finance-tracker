@@ -1,15 +1,8 @@
 from flask import request, redirect, url_for, flash, render_template
-from database import set_current_money, get_db
+from database import get_db
 
 
 def register_routes(app):
-    @app.route('/update_money', methods=['POST'])
-    def update_money():
-        new_amount = float(request.form['current_money'])
-        set_current_money(new_amount)
-        flash(f'Начальный остаток: {new_amount:,.0f} ₽', 'success')
-        return redirect(url_for('index'))
-
     @app.route('/income_settings', methods=['GET'])
     def income_settings():
         with get_db() as conn:
