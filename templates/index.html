@@ -3,56 +3,109 @@
 {% block title %}Дашборд{% endblock %}
 
 {% block content %}
-<!-- Карточки со статистикой -->
+<!-- Карточки со статистикой (первые 4) -->
 <div class="row">
     <div class="col-md-3 mb-3">
-        <div class="card text-white bg-success h-100">
-            <div class="card-body">
-                <h5 class="card-title">Доходы</h5>
-                <h3>{{ "{:,.0f}".format(total_income).replace(",", " ") }} ₽</h3>
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">💰 Доходы</h5>
+                <h3 class="text-success">{{ "{:,.0f}".format(total_income).replace(",", " ") }} ₽</h3>
             </div>
         </div>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="card text-white bg-danger h-100">
-            <div class="card-body">
-                <h5 class="card-title">Расходы</h5>
-                <h3>{{ "{:,.0f}".format(total_expense).replace(",", " ") }} ₽</h3>
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">💸 Расходы</h5>
+                <h3 class="text-danger">{{ "{:,.0f}".format(total_expense).replace(",", " ") }} ₽</h3>
             </div>
         </div>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="card text-white bg-info h-100">
-            <div class="card-body">
-                <h5 class="card-title">Баланс</h5>
-                <h3>{{ "{:,.0f}".format(balance).replace(",", " ") }} ₽</h3>
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">⚖️ Баланс</h5>
+                <h3 class="text-info">{{ "{:,.0f}".format(balance).replace(",", " ") }} ₽</h3>
             </div>
         </div>
     </div>
     <div class="col-md-3 mb-3">
-        <div class="card text-white bg-secondary h-100">
-            <div class="card-body">
-                <h5 class="card-title">Начальный остаток</h5>
-                <h3>{{ "{:,.0f}".format(current_money).replace(",", " ") }} ₽</h3>
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">🏦 Начальный остаток</h5>
+                <h3 class="text-secondary">{{ "{:,.0f}".format(current_money).replace(",", " ") }} ₽</h3>
                 <small>Сумма, с которой начинаешь учёт</small>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Четыре блока в один ряд -->
-<div class="row">
-    <div class="col-md-3 mb-3">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <h5 class="card-title">💰 Свободные деньги сейчас</h5>
-                <h3 class="text-success">{{ "{:,.0f}".format(free_money_now).replace(",", " ") }} ₽</h3>
-                <small>Реальные деньги на сегодня</small>
+<!-- Блок Планирование бюджета -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">📊 Планирование бюджета</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>📅 Поступление аванса (25 число)</h6>
+                <table class="table table-sm table-bordered">
+                    <tr>
+                        <td>Сумма аванса</td>
+                        <td class="fw-bold">{{ "{:,.0f}".format(planning.advance).replace(",", " ") }} ₽</td>
+                    </tr>
+                    <tr>
+                        <td>% от плановой зарплаты</td>
+                        <td>{{ "{:.1f}".format(planning.advance_percent * 100) }}%</td>
+                    </tr>
+                    <tr>
+                        <td>Нужно отложить на регулярные платежи</td>
+                        <td class="text-warning fw-bold">{{ "{:,.0f}".format(planning.need_to_save_from_advance).replace(",", " ") }} ₽</td>
+                    </tr>
+                    <tr>
+                        <td>Остаётся на жизнь после аванса</td>
+                        <td class="text-success fw-bold">{{ "{:,.0f}".format(planning.left_from_advance).replace(",", " ") }} ₽</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>📅 Поступление зарплаты (10 число)</h6>
+                <table class="table table-sm table-bordered">
+                    <tr>
+                        <td>Остаток зарплаты</td>
+                        <td class="fw-bold">{{ "{:,.0f}".format(planning.remaining_salary).replace(",", " ") }} ₽</td>
+                    </tr>
+                    <tr>
+                        <td>% от плановой зарплаты</td>
+                        <td>{{ "{:.1f}".format((1 - planning.advance_percent) * 100) }}%</td>
+                    </tr>
+                    <tr>
+                        <td>Нужно отложить на регулярные платежи</td>
+                        <td class="text-warning fw-bold">{{ "{:,.0f}".format(planning.need_to_save_from_remaining).replace(",", " ") }} ₽</td>
+                    </tr>
+                    <tr>
+                        <td>Остаётся на жизнь после зарплаты</td>
+                        <td class="text-success fw-bold">{{ "{:,.0f}".format(planning.left_from_remaining).replace(",", " ") }} ₽</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <strong>📌 Итого:</strong> Регулярных платежей за месяц: {{ "{:,.0f}".format(planning.regular_to_save).replace(",", " ") }} ₽
+                    {% if planning.regular_to_save < regular_total_month %}
+                    <span class="text-success">(уже оплачено: {{ "{:,.0f}".format(regular_total_month - planning.regular_to_save).replace(",", " ") }} ₽)</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="col-md-3 mb-3">
+<!-- Ожидаемое поступление и прогноз -->
+<div class="row">
+    <div class="col-md-4 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">📅 Ожидаемое поступление</h5>
@@ -62,8 +115,7 @@
             </div>
         </div>
     </div>
-
-    <div class="col-md-3 mb-3">
+    <div class="col-md-4 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">💸 Можно потратить сегодня</h5>
@@ -77,13 +129,13 @@
             </div>
         </div>
     </div>
-
-<div class="col-md-3 mb-3">
-    <div class="card h-100">
-        <div class="card-body text-center">
-            <h5 class="card-title">📋 Предстоящие платежи</h5>
-            <h3 class="text-danger">{{ "{:,.0f}".format(regular_after_income).replace(",", " ") }} ₽</h3>
-            <small>После получения зарплаты</small>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">📋 Предстоящие платежи</h5>
+                <h3 class="text-danger">{{ "{:,.0f}".format(regular_after_income).replace(",", " ") }} ₽</h3>
+                <small>После получения зарплаты</small>
+            </div>
         </div>
     </div>
 </div>

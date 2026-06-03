@@ -36,7 +36,6 @@ def get_regular_payments_for_period(today, period_start_day, period_end_day):
 
         payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
 
-        # Проверяем попадает ли день в период
         in_period = False
         if period_start_day <= period_end_day:
             if period_start_day <= payment_day <= period_end_day:
@@ -71,7 +70,6 @@ def apply_regular_payments():
     """Автоматически добавляет операции по регулярным платежам за сегодня"""
     from database import get_db
     from datetime import date, datetime
-    import calendar
 
     today = date.today()
     today_day = today.day
@@ -232,3 +230,85 @@ def get_regular_payments_after_date(today, target_date):
                 total += amount
 
     return total
+
+
+def get_regular_payments_for_month():
+    """Возвращает общую сумму регулярных платежей за месяц (без учёта оплаченных)"""
+    from database import get_db
+
+    with get_db() as conn:
+        payments = conn.execute('SELECT * FROM regular_payments').fetchall()
+
+    total = 0
+    for p in payments:
+        interval = p['interval'] if p['interval'] else 'monthly'
+        amount = p['amount']
+        if interval == 'monthly':
+            total += amount
+        elif interval == 'weekly':
+            total += amount * 4  # приблизительно 4 недели в месяце
+        elif interval == 'yearly':
+            total += amount / 12
+        else:
+            total += amount
+
+    return total
+
+
+def get_paid_regular_payments_this_month():
+    """Возвращает сумму уже оплаченных регулярных платежей в текущем месяце"""
+    from database import get_db
+    from datetime import date
+
+    today = date.today()
+    start_of_month = date(today.year, today.month, 1)
+
+    with get_db() as conn:
+        # Получаем все расходы за текущий месяц
+        operations = conn.execute('''
+            SELECT category, subcategory, amount FROM operations 
+            WHERE date >= ? AND type = 'Расход'
+        ''', (start_of_month,)).fetchall()
+
+        # Получаем все регулярные платежи
+        payments = conn.execute('SELECT * FROM regular_payments').fetchall()
+
+    # Создаём множество оплаченных
+    paid_amounts = set()
+    for op in operations:
+        for p in payments:
+            if p['category'] == op['category'] and p['subcategory'] == op['subcategory'] and p['amount'] == op[
+                'amount']:
+                paid_amounts.add(p['amount'])
+
+    return sum(paid_amounts)
+
+
+def get_planning_data(planned_salary, real_advance, regular_total, paid_regular=0):
+    """Возвращает данные для планирования бюджета"""
+    if real_advance > 0:
+        advance = real_advance
+        remaining_salary = planned_salary - advance
+        advance_percent = advance / planned_salary if planned_salary > 0 else 0
+    else:
+        # Аванс не внесён, используем плановый процент 50%
+        advance_percent = 0.5
+        advance = planned_salary * advance_percent
+        remaining_salary = planned_salary - advance
+
+    # Регулярные платежи, которые ещё не оплачены
+    regular_to_save = max(0, regular_total - paid_regular)
+
+    need_to_save_from_advance = regular_to_save * advance_percent
+    need_to_save_from_remaining = regular_to_save * (1 - advance_percent)
+
+    return {
+        'advance': advance,
+        'remaining_salary': remaining_salary,
+        'advance_percent': advance_percent,
+        'regular_to_save': regular_to_save,
+        'need_to_save_from_advance': need_to_save_from_advance,
+        'need_to_save_from_remaining': need_to_save_from_remaining,
+        'left_from_advance': advance - need_to_save_from_advance,
+        'left_from_remaining': remaining_salary - need_to_save_from_remaining
+    }

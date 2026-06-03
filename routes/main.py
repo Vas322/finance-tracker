@@ -2,7 +2,8 @@ from flask import render_template, request
 from database import get_db, get_current_money
 from utils import get_next_income_date, get_regular_payments_for_period, get_regular_total_for_month, \
     apply_regular_payments, get_unpaid_regular_payments, get_regular_payments_until_date, \
-    get_regular_payments_after_date
+    get_regular_payments_after_date, get_regular_payments_for_month, get_paid_regular_payments_this_month, \
+    get_planning_data
 from datetime import date
 
 
@@ -140,6 +141,11 @@ def register_routes(app):
         # 6. Регулярные платежи после получения зарплаты
         regular_after_income = get_regular_payments_after_date(today, next_income)
 
+        # 7. Данные для планирования бюджета
+        regular_total_month = get_regular_payments_for_month()
+        paid_regular = get_paid_regular_payments_this_month()
+        planning = get_planning_data(planned_salary, real_advance, regular_total_month, paid_regular)
+
         if can_spend_today < 0:
             spend_warning = "⚠️ Внимание! Денег не хватит на регулярные платежи!"
         else:
@@ -178,7 +184,9 @@ def register_routes(app):
                                salary_remainder_text=salary_remainder_text,
                                salary_remainder_note=salary_remainder_note,
                                income_categories=income_cats,
-                               expense_categories=expense_cats)
+                               expense_categories=expense_cats,
+                               planning=planning,
+                               regular_total_month=regular_total_month)
 
     @app.route('/analytics')
     def analytics():
