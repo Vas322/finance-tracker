@@ -1,29 +1,41 @@
 {% extends "base.html" %}
+
+{% block title %}Настройки доходов{% endblock %}
+
 {% block content %}
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h1 style="margin: 0;">⚙️ Настройки доходов</h1>
-        <a href="{{ url_for('index') }}" class="btn" style="background: #95a5a6; color: white;">← На главную</a>
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">⚙️ Настройки доходов</h4>
     </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('save_income_settings') }}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Плановая зарплата за месяц (₽)</label>
+                        <input type="number" name="planned_salary" step="0.01" value="{{ planned_salary }}" class="form-control" required>
+                        <div class="form-text text-muted">Сумма, которая ожидается за полный месяц (аванс + зарплата).</div>
+                    </div>
+                </div>
+            </div>
 
-    <form method="POST" action="{{ url_for('save_income_settings') }}">
-        <div class="form-group">
-            <label>Плановая зарплата за месяц (₽)</label>
-            <input type="number" name="planned_salary" step="0.01" value="{{ planned_salary }}" required style="width: 100%; padding: 8px;">
-            <small style="color: #666;">Сумма, которая ожидается за полный месяц (аванс + зарплата).</small>
+            <div class="mt-3 d-flex justify-content-between">
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">← На главную</a>
+                <button type="submit" class="btn btn-primary">💾 Сохранить настройки</button>
+            </div>
+        </form>
+
+        <hr class="my-4">
+
+        <div class="alert alert-info">
+            <h5 class="alert-heading">ℹ️ Как это работает</h5>
+            <ul class="mb-0">
+                <li><strong>Плановая зарплата</strong> — ваша ожидаемая сумма за полный месяц.</li>
+                <li><strong>Аванс</strong> — вносите как доход 25-го числа с категорией "Зарплата", подкатегорией "Аванс".</li>
+                <li><strong>Система автоматически</strong> рассчитает ожидаемый остаток зарплаты на 10-е число.</li>
+                <li><strong>Премии</strong> — вносите как доход с категорией "Премия".</li>
+            </ul>
         </div>
-
-        <button type="submit" class="btn btn-success" style="margin-top: 10px;">💾 Сохранить настройки</button>
-    </form>
-
-    <hr style="margin: 20px 0;">
-
-    <h3>ℹ️ Как это работает</h3>
-    <ul style="margin-left: 20px;">
-        <li><strong>Плановая зарплата</strong> — ваша ожидаемая сумма за полный месяц.</li>
-        <li><strong>Аванс</strong> — вносите как доход 25-го числа с категорией "Зарплата", подкатегорией "Аванс".</li>
-        <li><strong>Система автоматически</strong> рассчитает ожидаемый остаток зарплаты на 10-е число.</li>
-        <li><strong>Премии</strong> — вносите как доход с категорией "Премия".</li>
-    </ul>
+    </div>
 </div>
 {% endblock %}
