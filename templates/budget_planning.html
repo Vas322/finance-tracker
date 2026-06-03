@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Планирование бюджета{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">📊 Планирование бюджета на {{ month_name }}</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">📅 Поступление аванса (25 число)</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td><strong>Сумма аванса:</strong></td>
+                                <td class="fw-bold">{{ "{:,.0f}".format(planning.advance).replace(",", " ") }} ₽</td>
+                            </tr>
+                            <tr>
+                                <td><strong>% от плановой зарплаты:</strong></td>
+                                <td>{{ "{:.1f}".format(planning.advance_percent * 100) }}%</td>
+                            </tr>
+                            <tr class="table-warning">
+                                <td><strong>💰 Нужно отложить на регулярные платежи:</strong></td>
+                                <td class="fw-bold">{{ "{:,.0f}".format(planning.need_to_save_from_advance).replace(",", " ") }} ₽</td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>✅ Остаётся на жизнь после аванса:</strong></td>
+                                <td class="fw-bold">{{ "{:,.0f}".format(planning.left_from_advance).replace(",", " ") }} ₽</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">📅 Поступление зарплаты (10 число)</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td><strong>Остаток зарплаты:</strong></td>
+                                <td class="fw-bold">{{ "{:,.0f}".format(planning.remaining_salary).replace(",", " ") }} ₽</td>
+                            </tr>
+                            <tr>
+                                <td><strong>% от плановой зарплаты:</strong></td>
+                                <td>{{ "{:.1f}".format((1 - planning.advance_percent) * 100) }}%</td>
+                            </tr>
+                            <tr class="table-warning">
+                                <td><strong>💰 Нужно отложить на регулярные платежи:</strong></td>
+                                <td class="fw-bold">{{ "{:,.0f}".format(planning.need_to_save_from_remaining).replace(",", " ") }} ₽</td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>✅ Остаётся на жизнь после зарплаты:</strong></td>
+                                <td class="fw-bold">{{ "{:,.0f}".format(planning.left_from_remaining).replace(",", " ") }} ₽</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <strong>📌 Итого:</strong>
+                    Регулярных платежей за месяц: <strong>{{ "{:,.0f}".format(planning.regular_to_save).replace(",", " ") }} ₽</strong>
+                    {% if planning.regular_to_save < regular_total_month %}
+                    <span class="text-success">(уже оплачено: {{ "{:,.0f}".format(regular_total_month - planning.regular_to_save).replace(",", " ") }} ₽)</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">💡 Как это работает</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Система автоматически распределяет ваши регулярные платежи пропорционально между авансом и зарплатой:</p>
+                        <ul>
+                            <li><strong>Из аванса откладывается</strong> процент, равный доле аванса в плановой зарплате</li>
+                            <li><strong>Из зарплаты откладывается</strong> оставшаяся часть</li>
+                            <li>Если какой-то регулярный платёж уже оплачен в этом месяце, он <strong>не учитывается</strong> в сумме "нужно отложить"</li>
+                            <li>После откладывания вы видите, сколько денег остаётся на жизнь</li>
+                        </ul>
+                        <p class="mb-0 text-muted small">Плановый процент при отсутствии аванса: 50% / 50%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

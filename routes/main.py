@@ -3,7 +3,7 @@ from database import get_db, get_current_money
 from utils import get_next_income_date, get_regular_payments_for_period, get_regular_total_for_month, \
     apply_regular_payments, get_unpaid_regular_payments, get_regular_payments_until_date, \
     get_regular_payments_after_date, get_regular_payments_for_month, get_paid_regular_payments_this_month, \
-    get_planning_data
+    get_planning_data, get_expenses_for_period, update_period_balance, get_period_dates, get_period
 from datetime import date
 
 
@@ -116,35 +116,46 @@ def register_routes(app):
         next_income = get_next_income_date(today)
         days_to_income = (next_income - today).days
 
-        # Новая логика расчёта свободных денег
+        # Получаем даты начала и конца текущего периода
+        period_start_date, period_end_date = get_period_dates(today)
+
+        # Обновляем остаток на начало периода (если не установлен)
+        period_balance = update_period_balance(today)
+
+        # Расходы за текущий период
+        expenses_this_period = get_expenses_for_period(period_start_date, period_end_date)
+
+        # Новая логика расчёта «Можно потратить сегодня»
+        # = (Аванс - Отложено_из_аванса) + Начальный_остаток_периода - Расходы_за_период
+        regular_total_month = get_regular_payments_for_month()
+        paid_regular = get_paid_regular_payments_this_month()
+        planning = get_planning_data(planned_salary, real_advance, regular_total_month, paid_regular)
+
+        # Аванс для текущего периода (если аванс уже получен)
+        if real_advance > 0 and 25 <= today.day <= 31:
+            advance_for_period = real_advance
+            saved_from_advance = planning['need_to_save_from_advance']
+        else:
+            # Если аванс ещё не получен, используем плановые значения
+            advance_for_period = planning['advance']
+            saved_from_advance = planning['need_to_save_from_advance']
+
+        can_spend_today = (advance_for_period - saved_from_advance) + period_balance - expenses_this_period
+
+        # Старые расчёты для других показателей
         regular_this_period = get_regular_payments_for_period(today, period_start, period_end)
         regular_total = get_regular_total_for_month()
 
-        # 1. Неоплаченные регулярные платежи (которые уже прошли по дате)
         unpaid_regular = get_unpaid_regular_payments(today, period_start, period_end)
-
-        # 2. Свободные деньги сейчас (реальные)
         free_money_now = current_money + total_income - total_expense - unpaid_regular
 
-        # 3. Ожидаемое поступление (зарплата после вычета аванса)
         if real_advance > 0:
             expected_income = planned_salary - real_advance
         else:
             expected_income = planned_salary
 
-        # 4. Будущие регулярные платежи до следующего поступления
         future_regular = get_regular_payments_until_date(today, next_income)
-
-        # 5. Сколько можно потратить сегодня с учётом будущих регулярных платежей
-        can_spend_today = free_money_now - future_regular
-
-        # 6. Регулярные платежи после получения зарплаты
         regular_after_income = get_regular_payments_after_date(today, next_income)
-
-        # 7. Данные для планирования бюджета
-        regular_total_month = get_regular_payments_for_month()
-        paid_regular = get_paid_regular_payments_this_month()
-        planning = get_planning_data(planned_salary, real_advance, regular_total_month, paid_regular)
 
         if can_spend_today < 0:
             spend_warning = "⚠️ Внимание! Денег не хватит на регулярные платежи!"
@@ -208,3 +219,42 @@ def register_routes(app):
         return render_template('analytics.html',
                                expense_by_category=expense_by_category,
                                total_expense=total_expense)
+
+    @app.route('/budget_planning')
+    def budget_planning():
+        from database import get_db
+        from utils import get_regular_payments_for_month, get_paid_regular_payments_this_month, get_planning_data
+        from datetime import date
+        import calendar
+
+        today = date.today()
+        months_ru = {
+            1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель',
+            5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
+            9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'
+        }
+        month_name = months_ru[today.month]
+
+        with get_db() as conn:
+            planned_salary_row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
+            planned_salary = float(planned_salary_row['value']) if planned_salary_row else 185000
+
+            advance_row = conn.execute('''
+                SELECT amount 
+                FROM operations 
+                WHERE type = 'Доход' 
+                AND category = 'Зарплата' 
+                AND subcategory = 'Аванс' 
+                ORDER BY date DESC 
+                LIMIT 1
+            ''').fetchone()
+            real_advance = advance_row['amount'] if advance_row else 0
+
+        regular_total_month = get_regular_payments_for_month()
+        paid_regular = get_paid_regular_payments_this_month()
+        planning = get_planning_data(planned_salary, real_advance, regular_total_month, paid_regular)
+
+        return render_template('budget_planning.html',
+                               planning=planning,
+                               regular_total_month=regular_total_month,
+                               month_name=month_name)

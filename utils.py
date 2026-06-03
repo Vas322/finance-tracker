@@ -22,6 +22,24 @@ def get_next_income_date(today):
         return date(year, next_month, SALARY_DAY)
 
 
+def get_period_dates(today):
+    """Возвращает даты начала и конца текущего периода"""
+    if 10 <= today.day <= 24:
+        period_start = date(today.year, today.month, 10)
+        period_end = date(today.year, today.month, 24)
+    else:
+        if today.day >= 25:
+            period_start = date(today.year, today.month, 25)
+            if today.month == 12:
+                period_end = date(today.year + 1, 1, 9)
+            else:
+                period_end = date(today.year, today.month + 1, 9)
+        else:
+            period_start = date(today.year, today.month - 1, 25) if today.month > 1 else date(today.year - 1, 12, 25)
+            period_end = date(today.year, today.month, 9)
+    return period_start, period_end
+
+
 def get_regular_payments_for_period(today, period_start_day, period_end_day):
     """Возвращает сумму НЕОПЛАЧЕННЫХ регулярных платежей за период с учётом периодичности"""
     from database import get_db
@@ -246,7 +264,7 @@ def get_regular_payments_for_month():
         if interval == 'monthly':
             total += amount
         elif interval == 'weekly':
-            total += amount * 4  # приблизительно 4 недели в месяце
+            total += amount * 4
         elif interval == 'yearly':
             total += amount / 12
         else:
@@ -264,16 +282,13 @@ def get_paid_regular_payments_this_month():
     start_of_month = date(today.year, today.month, 1)
 
     with get_db() as conn:
-        # Получаем все расходы за текущий месяц
         operations = conn.execute('''
             SELECT category, subcategory, amount FROM operations 
             WHERE date >= ? AND type = 'Расход'
         ''', (start_of_month,)).fetchall()
 
-        # Получаем все регулярные платежи
         payments = conn.execute('SELECT * FROM regular_payments').fetchall()
 
-    # Создаём множество оплаченных
     paid_amounts = set()
     for op in operations:
         for p in payments:
@@ -291,12 +306,10 @@ def get_planning_data(planned_salary, real_advance, regular_total, paid_regular=
         remaining_salary = planned_salary - advance
         advance_percent = advance / planned_salary if planned_salary > 0 else 0
     else:
-        # Аванс не внесён, используем плановый процент 50%
         advance_percent = 0.5
         advance = planned_salary * advance_percent
         remaining_salary = planned_salary - advance
 
-    # Регулярные платежи, которые ещё не оплачены
     regular_to_save = max(0, regular_total - paid_regular)
 
     need_to_save_from_advance = regular_to_save * advance_percent
@@ -312,3 +325,40 @@ def get_planning_data(planned_salary, real_advance, regular_total, paid_regular=
         'left_from_advance': advance - need_to_save_from_advance,
         'left_from_remaining': remaining_salary - need_to_save_from_remaining
     }
+
+
+def get_expenses_for_period(start_date, end_date):
+    """Возвращает сумму расходов за период"""
+    from database import get_db
+
+    with get_db() as conn:
+        result = conn.execute('''
+            SELECT COALESCE(SUM(amount), 0) as total
+            FROM operations
+            WHERE type = 'Расход' AND date >= ? AND date <= ?
+        ''', (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))).fetchone()
+    return result['total']
+
+
+def update_period_balance(today):
+    """Обновляет остаток на начало текущего периода, если он ещё не установлен"""
+    from database import get_db, get_period_balance, set_period_balance
+    from datetime import date
+
+    period_start, period_end = get_period_dates(today)
+    period_name = get_period(today.strftime('%Y-%m-%d'))
+
+    existing = get_period_balance(period_name, period_start.strftime('%Y-%m-%d'))
+    if existing is None:
+        # Рассчитываем остаток на начало периода
+        # Получаем все операции до начала периода
+        with get_db() as conn:
+            result = conn.execute('''
+                SELECT COALESCE(SUM(CASE WHEN type = 'Доход' THEN amount ELSE -amount END), 0) as balance
+                FROM operations
+                WHERE date < ?
+            ''', (period_start.strftime('%Y-%m-%d'),)).fetchone()
+            balance = result['balance']
+        set_period_balance(period_name, period_start.strftime('%Y-%m-%d'), balance)
+        return balance
+    return existing

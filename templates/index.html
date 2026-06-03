@@ -40,68 +40,6 @@
     </div>
 </div>
 
-<!-- Блок Планирование бюджета -->
-<div class="card mb-4">
-    <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">📊 Планирование бюджета</h5>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <h6>📅 Поступление аванса (25 число)</h6>
-                <table class="table table-sm table-bordered">
-                    <tr>
-                        <td>Сумма аванса</td>
-                        <td class="fw-bold">{{ "{:,.0f}".format(planning.advance).replace(",", " ") }} ₽</td>
-                    </tr>
-                    <tr>
-                        <td>% от плановой зарплаты</td>
-                        <td>{{ "{:.1f}".format(planning.advance_percent * 100) }}%</td>
-                    </tr>
-                    <tr>
-                        <td>Нужно отложить на регулярные платежи</td>
-                        <td class="text-warning fw-bold">{{ "{:,.0f}".format(planning.need_to_save_from_advance).replace(",", " ") }} ₽</td>
-                    </tr>
-                    <tr>
-                        <td>Остаётся на жизнь после аванса</td>
-                        <td class="text-success fw-bold">{{ "{:,.0f}".format(planning.left_from_advance).replace(",", " ") }} ₽</td>
-                    </tr>
-                </table>
-            </div>
-            <div class="col-md-6">
-                <h6>📅 Поступление зарплаты (10 число)</h6>
-                <table class="table table-sm table-bordered">
-                    <tr>
-                        <td>Остаток зарплаты</td>
-                        <td class="fw-bold">{{ "{:,.0f}".format(planning.remaining_salary).replace(",", " ") }} ₽</td>
-                    </tr>
-                    <tr>
-                        <td>% от плановой зарплаты</td>
-                        <td>{{ "{:.1f}".format((1 - planning.advance_percent) * 100) }}%</td>
-                    </tr>
-                    <tr>
-                        <td>Нужно отложить на регулярные платежи</td>
-                        <td class="text-warning fw-bold">{{ "{:,.0f}".format(planning.need_to_save_from_remaining).replace(",", " ") }} ₽</td>
-                    </tr>
-                    <tr>
-                        <td>Остаётся на жизнь после зарплаты</td>
-                        <td class="text-success fw-bold">{{ "{:,.0f}".format(planning.left_from_remaining).replace(",", " ") }} ₽</td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-        <div class="row mt-3">
-            <div class="col-md-12">
-                <div class="alert alert-info">
-                    <strong>📌 Итого:</strong> Регулярных платежей за месяц: {{ "{:,.0f}".format(planning.regular_to_save).replace(",", " ") }} ₽
-                    {% if planning.regular_to_save < regular_total_month %}
-                    <span class="text-success">(уже оплачено: {{ "{:,.0f}".format(regular_total_month - planning.regular_to_save).replace(",", " ") }} ₽)</span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Ожидаемое поступление и прогноз -->
 <div class="row">
@@ -122,7 +60,7 @@
                 <h3 class="text-{{ 'danger' if can_spend_today < 0 else 'info' }}">
                     {{ "{:,.0f}".format(can_spend_today).replace(",", " ") }} ₽
                 </h3>
-                <small>С учётом будущих регулярных платежей</small>
+                <small>(На регулярные платежи уже отложили)</small>
                 {% if spend_warning %}
                 <div class="alert alert-danger mt-2 small">{{ spend_warning }}</div>
                 {% endif %}
@@ -202,36 +140,40 @@
     <div class="table-responsive">
         <table class="table table-sm table-hover">
             <thead class="table-light">
-                <tr>
-                    <th>Дата</th>
-                    <th>Тип</th>
-                    <th>Категория</th>
-                    <th>Сумма</th>
-                    <th>Период</th>
-                    <th>Комментарий</th>
-                    <th style="width: 80px;">Действия</th>
-                </tr>
+            <tr>
+                <th>Дата</th>
+                <th>Тип</th>
+                <th>Категория</th>
+                <th>Сумма</th>
+                <th>Период</th>
+                <th>Комментарий</th>
+                <th style="width: 80px;">Действия</th>
+            </tr>
             </thead>
             <tbody>
-                {% for op in operations %}
-                <tr>
-                    <td>{{ op.date }}</td>
-                    <td>{{ op.type }}</td>
-                    <td>{{ op.category }}{% if op.subcategory %} / {{ op.subcategory }}{% endif %}</td>
-                    <td class="fw-bold {{ 'text-success' if op.type == 'Доход' else 'text-danger' }}">
-                        {{ "{:,.0f}".format(op.amount).replace(",", " ") }} ₽
-                    </td>
-                    <td>{{ op.period }}</td>
-                    <td>{{ op.comment or '-' }}</td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary edit-btn" data-id="{{ op.id }}" title="Редактировать">✏️</button>
-                            <a href="{{ url_for('delete', id=op.id) }}" class="btn btn-outline-danger" title="Удалить" onclick="return confirm('Удалить операцию?')">🗑️</a>
-                        </div>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="7" class="text-center">Нет операций. Добавьте первую!</td>
+            {% for op in operations %}
+            <tr>
+                <td>{{ op.date }}</td>
+                <td>{{ op.type }}</td>
+                <td>{{ op.category }}{% if op.subcategory %} / {{ op.subcategory }}{% endif %}</td>
+                <td class="fw-bold {{ 'text-success' if op.type == 'Доход' else 'text-danger' }}">
+                    {{ "{:,.0f}".format(op.amount).replace(",", " ") }} ₽
+                </td>
+                <td>{{ op.period }}</td>
+                <td>{{ op.comment or '-' }}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary edit-btn" data-id="{{ op.id }}" title="Редактировать">
+                            ✏️
+                        </button>
+                        <a href="{{ url_for('delete', id=op.id) }}" class="btn btn-outline-danger" title="Удалить"
+                           onclick="return confirm('Удалить операцию?')">🗑️</a>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="text-center">Нет операций. Добавьте первую!</td>
                 {% endfor %}
             </tbody>
         </table>
@@ -271,7 +213,8 @@
                     </div>
                     <div class="mb-2">
                         <label class="form-label small">Подкатегория</label>
-                        <input type="text" id="edit_subcategory" class="form-control form-control-sm" placeholder="Подкатегория">
+                        <input type="text" id="edit_subcategory" class="form-control form-control-sm"
+                               placeholder="Подкатегория">
                     </div>
                     <div class="mb-2">
                         <label class="form-label small">Сумма</label>
@@ -346,8 +289,18 @@
 
 {% block scripts %}
 <script>
-    window.incomeCategories = {{ income_categories|tojson }};
-    window.expenseCategories = {{ expense_categories|tojson }};
+    window.incomeCategories = {
+    {
+        income_categories | tojson
+    }
+    }
+    ;
+    window.expenseCategories = {
+    {
+        expense_categories | tojson
+    }
+    }
+    ;
 </script>
 <script src="{{ url_for('static', filename='js/operations.js') }}"></script>
 {% endblock %}
