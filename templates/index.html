@@ -40,50 +40,50 @@
     </div>
 </div>
 
-<!-- Вторая строка карточек -->
+<!-- Четыре блока в один ряд -->
 <div class="row">
-    <div class="col-xl-4 col-md-6 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">
-                <h5 class="card-title">Свободные деньги</h5>
-                <h3 class="text-success">{{ "{:,.0f}".format(free_money_total).replace(",", " ") }} ₽</h3>
-                <small>Всего (без учёта регулярных)</small>
-                <hr>
-                <h4 class="text-primary">{{ "{:,.0f}".format(free_money_after_regular).replace(",", " ") }} ₽</h4>
-                <small>После регулярных платежей</small>
+                <h5 class="card-title">💰 Свободные деньги сейчас</h5>
+                <h3 class="text-success">{{ "{:,.0f}".format(free_money_now).replace(",", " ") }} ₽</h3>
+                <small>Реальные деньги на сегодня</small>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-4 col-md-6 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">
-                <h5 class="card-title">Ожидаемый остаток зарплаты</h5>
-                <h3 class="text-success">{{ salary_remainder_text }}</h3>
-                <small>10-го числа</small>
-                <p class="small text-muted mt-2 mb-0">{{ salary_remainder_note }}</p>
+                <h5 class="card-title">📅 Ожидаемое поступление</h5>
+                <h3 class="text-primary">{{ "{:,.0f}".format(expected_income).replace(",", " ") }} ₽</h3>
+                <small>До {{ next_income.strftime('%d.%m.%Y') }} ({{ days_to_income }} дней)</small>
+                <small class="d-block text-muted">{{ salary_remainder_note }}</small>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-4 col-md-12 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">
-                <h5 class="card-title">Регулярные платежи</h5>
-                <div class="row">
-                    <div class="col-6">
-                        <h4 class="text-danger">{{ "{:,.0f}".format(regular_this_period).replace(",", " ") }} ₽</h4>
-                        <small>Текущий период</small>
-                    </div>
-                    <div class="col-6">
-                        <h4 class="text-danger">{{ "{:,.0f}".format(regular_total).replace(",", " ") }} ₽</h4>
-                        <small>Всего за месяц</small>
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <a href="{{ url_for('regular') }}" class="btn btn-sm btn-outline-primary">Редактировать</a>
-                </div>
+                <h5 class="card-title">💸 Можно потратить сегодня</h5>
+                <h3 class="text-{{ 'danger' if can_spend_today < 0 else 'info' }}">
+                    {{ "{:,.0f}".format(can_spend_today).replace(",", " ") }} ₽
+                </h3>
+                <small>С учётом будущих регулярных платежей</small>
+                {% if spend_warning %}
+                <div class="alert alert-danger mt-2 small">{{ spend_warning }}</div>
+                {% endif %}
             </div>
+        </div>
+    </div>
+
+<div class="col-md-3 mb-3">
+    <div class="card h-100">
+        <div class="card-body text-center">
+            <h5 class="card-title">📋 Предстоящие платежи</h5>
+            <h3 class="text-danger">{{ "{:,.0f}".format(regular_after_income).replace(",", " ") }} ₽</h3>
+            <small>После получения зарплаты</small>
         </div>
     </div>
 </div>

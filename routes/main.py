@@ -1,7 +1,8 @@
 from flask import render_template, request
 from database import get_db, get_current_money
 from utils import get_next_income_date, get_regular_payments_for_period, get_regular_total_for_month, \
-    apply_regular_payments
+    apply_regular_payments, get_unpaid_regular_payments, get_regular_payments_until_date, \
+    get_regular_payments_after_date
 from datetime import date
 
 
@@ -56,9 +57,9 @@ def register_routes(app):
 
             # Доходы и расходы (без фильтра по периоду, для общей статистики)
             total_income = \
-                conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Доход"').fetchone()[0]
+            conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Доход"').fetchone()[0]
             total_expense = \
-                conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
+            conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
             balance = total_income - total_expense
 
             # Расчёт ожидаемого остатка зарплаты
@@ -87,33 +88,7 @@ def register_routes(app):
                 salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
                 salary_remainder_note = "⚠️ Аванс ещё не внесён"
 
-        # Определяем текущий период
-        if 10 <= today.day <= 24:
-            period_start, period_end = 10, 24
-        else:
-            period_start, period_end = 25, 9
-
-        regular_this_period = get_regular_payments_for_period(today, period_start, period_end)
-        regular_total = get_regular_total_for_month()
-
-        free_money_total = current_money + total_income - total_expense
-        free_money_after_regular = free_money_total - regular_this_period
-
-        if free_money_after_regular < 0:
-            traffic_light = "red"
-            traffic_text = "⚠️ КАССОВЫЙ РАЗРЫВ!"
-        elif free_money_after_regular < 5000:
-            traffic_light = "yellow"
-            traffic_text = "⚠️ Осторожно: остаток меньше 5000 ₽"
-        else:
-            traffic_light = "green"
-            traffic_text = "✅ Всё хорошо"
-
-        next_income = get_next_income_date(today)
-        days_to_income = (next_income - today).days
-
-        # Категории для модального окна добавления
-        with get_db() as conn:
+            # Категории для модального окна добавления
             income_cats = {}
             expense_cats = {}
 
@@ -131,13 +106,67 @@ def register_routes(app):
                                        (cat['id'],)).fetchall()
                 expense_cats[cat['name']] = [s['name'] for s in subcats]
 
+        # Определяем текущий период
+        if 10 <= today.day <= 24:
+            period_start, period_end = 10, 24
+        else:
+            period_start, period_end = 25, 9
+
+        next_income = get_next_income_date(today)
+        days_to_income = (next_income - today).days
+
+        # Новая логика расчёта свободных денег
+        regular_this_period = get_regular_payments_for_period(today, period_start, period_end)
+        regular_total = get_regular_total_for_month()
+
+        # 1. Неоплаченные регулярные платежи (которые уже прошли по дате)
+        unpaid_regular = get_unpaid_regular_payments(today, period_start, period_end)
+
+        # 2. Свободные деньги сейчас (реальные)
+        free_money_now = current_money + total_income - total_expense - unpaid_regular
+
+        # 3. Ожидаемое поступление (зарплата после вычета аванса)
+        if real_advance > 0:
+            expected_income = planned_salary - real_advance
+        else:
+            expected_income = planned_salary
+
+        # 4. Будущие регулярные платежи до следующего поступления
+        future_regular = get_regular_payments_until_date(today, next_income)
+
+        # 5. Сколько можно потратить сегодня с учётом будущих регулярных платежей
+        can_spend_today = free_money_now - future_regular
+
+        # 6. Регулярные платежи после получения зарплаты
+        regular_after_income = get_regular_payments_after_date(today, next_income)
+
+        if can_spend_today < 0:
+            spend_warning = "⚠️ Внимание! Денег не хватит на регулярные платежи!"
+        else:
+            spend_warning = ""
+
+        # Светофор (смотрим на свободные деньги сейчас)
+        if free_money_now < 0:
+            traffic_light = "red"
+            traffic_text = "⚠️ КАССОВЫЙ РАЗРЫВ!"
+        elif free_money_now < 5000:
+            traffic_light = "yellow"
+            traffic_text = "⚠️ Осторожно: остаток меньше 5000 ₽"
+        else:
+            traffic_light = "green"
+            traffic_text = "✅ Всё хорошо"
+
         return render_template('index.html',
                                operations=operations,
                                total_income=total_income,
                                total_expense=total_expense,
                                balance=balance,
-                               free_money_total=free_money_total,
-                               free_money_after_regular=free_money_after_regular,
+                               free_money_now=free_money_now,
+                               expected_income=expected_income,
+                               future_regular=future_regular,
+                               regular_after_income=regular_after_income,
+                               can_spend_today=can_spend_today,
+                               spend_warning=spend_warning,
                                days_to_income=days_to_income,
                                next_income=next_income,
                                traffic_light=traffic_light,
@@ -147,9 +176,9 @@ def register_routes(app):
                                current_money=current_money,
                                all_categories=all_categories,
                                salary_remainder_text=salary_remainder_text,
+                               salary_remainder_note=salary_remainder_note,
                                income_categories=income_cats,
-                               expense_categories=expense_cats,
-                               salary_remainder_note=salary_remainder_note)
+                               expense_categories=expense_cats)
 
     @app.route('/analytics')
     def analytics():
@@ -166,7 +195,7 @@ def register_routes(app):
                                    expense_by_category_raw]
 
             total_expense = \
-                conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
+            conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
 
         return render_template('analytics.html',
                                expense_by_category=expense_by_category,
