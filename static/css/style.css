@@ -7,7 +7,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f5f5f5;
+    background: #f8f9fc;
 }
 
 .container {
@@ -46,13 +46,25 @@ body {
     background: #34495e;
 }
 
-/* ==================== КАРТОЧКИ ==================== */
+/* ==================== КАРТОЧКИ (ADMINLTE STYLE) ==================== */
 .card {
     background: white;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    padding: 0;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 1rem 1.25rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 1.25rem;
 }
 
 .stats-grid {
@@ -64,10 +76,16 @@ body {
 
 .stat-card {
     background: white;
-    border-radius: 10px;
-    padding: 20px;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
     text-align: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .stat-value {
@@ -78,123 +96,216 @@ body {
 
 /* ==================== ЦВЕТА ==================== */
 .income {
-    color: #27ae60;
+    color: #28a745;
 }
 
 .expense {
-    color: #e74c3c;
+    color: #dc3545;
 }
 
 .green {
-    color: #27ae60;
+    color: #28a745;
     font-size: 40px;
 }
 
 .yellow {
-    color: #f39c12;
+    color: #ffc107;
     font-size: 40px;
 }
 
 .red {
-    color: #e74c3c;
+    color: #dc3545;
     font-size: 40px;
 }
 
-/* ==================== ТАБЛИЦЫ ==================== */
+/* ==================== ТАБЛИЦЫ (ADMINLTE STYLE) ==================== */
 table {
     width: 100%;
     border-collapse: collapse;
 }
 
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
 
+.table thead th {
+    border-bottom: 2px solid #dee2e6;
+    background-color: #f8f9fa;
+    color: #1f2d3d;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.75rem;
+}
+
+.table td, .table th {
+    vertical-align: middle;
+    padding: 1rem 0.75rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
 
 th {
-    background: #34495e;
-    color: white;
+    background: #f8f9fa;
+    color: #1f2d3d;
 }
 
 tr:hover {
-    background: #f5f5f5;
+    background: #f8f9fc;
 }
 
-/* ==================== КНОПКИ ==================== */
+/* ==================== КНОПКИ (ADMINLTE STYLE) ==================== */
 .btn {
     display: inline-block;
-    background: #3498db;
-    color: white;
-    padding: 10px 20px;
-    text-decoration: none;
-    border-radius: 5px;
-    border: none;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    border: 1px solid transparent;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border-radius: 0.375rem;
+    transition: all 0.15s ease-in-out;
     cursor: pointer;
-    transition: background 0.3s;
+    text-decoration: none;
 }
 
-.btn:hover {
-    background: #2980b9;
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
 }
 
 .btn-danger {
-    background: #e74c3c;
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
 }
 
 .btn-danger:hover {
-    background: #c0392b;
+    background-color: #c82333;
+    border-color: #bd2130;
 }
 
 .btn-success {
-    background: #27ae60;
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
 }
 
 .btn-success:hover {
-    background: #219a52;
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+.btn-outline-primary {
+    background-color: transparent;
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.btn-outline-primary:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-outline-danger {
+    background-color: transparent;
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.2rem;
 }
 
 .delete {
-    color: #e74c3c;
+    color: #dc3545;
     text-decoration: none;
 }
 
-/* ==================== ФОРМЫ ==================== */
+/* ==================== ФОРМЫ (ADMINLTE STYLE) ==================== */
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 1rem;
 }
 
 label {
     display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #1f2d3d;
 }
 
-input, select {
+input, select, .form-control {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+input:focus, select:focus, .form-control:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
 /* ==================== УВЕДОМЛЕНИЯ ==================== */
 .flash {
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 20px;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
 }
 
 .success {
     background: #d4edda;
     color: #155724;
+    border: 1px solid #c3e6cb;
 }
 
 .error {
     background: #f8d7da;
     color: #721c24;
+    border: 1px solid #f5c6cb;
 }
 
 /* ==================== РЕДАКТИРОВАНИЕ ==================== */
 .editing input, .editing select {
     width: 100%;
     padding: 5px;
-    border: 1px solid #3498db;
+    border: 1px solid #007bff;
     border-radius: 5px;
 }
 
@@ -203,47 +314,31 @@ input, select {
     border: none;
     cursor: pointer;
     font-size: 18px;
+    color: #007bff;
 }
 
-/* Card Stats (Argon style) */
-.card-stats .card-body {
-    padding: 1rem 1.5rem;
+/* ==================== МОДАЛЬНЫЕ ОКНА ==================== */
+.modal-content {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
-.icon-shape {
-    width: 48px;
-    height: 48px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 0.5rem 0.5rem 0 0;
 }
 
-.bg-gradient-green {
-    background: linear-gradient(87deg, #2dce89 0%, #2dcecc 100%) !important;
-}
-
-.bg-gradient-red {
-    background: linear-gradient(87deg, #f5365c 0%, #f56036 100%) !important;
-}
-
-.bg-gradient-info {
-    background: linear-gradient(87deg, #11cdef 0%, #1171ef 100%) !important;
-}
-
-.bg-gradient-warning {
-    background: linear-gradient(87deg, #fb6340 0%, #fbb140 100%) !important;
-}
-
-/* Sidebar styles */
+/* ==================== SIDEBAR (ADMINLTE STYLE) ==================== */
 .sidebar {
     position: fixed;
     top: 0;
     left: 0;
     height: 100vh;
     width: 250px;
-    background: white;
-    box-shadow: 0 0 2rem 0 rgba(0, 0, 0, .1);
+    background: #1f2d3d;
+    box-shadow: none;
     z-index: 1000;
 }
 
@@ -252,11 +347,11 @@ input, select {
     text-align: center;
     font-weight: 700;
     font-size: 1.1rem;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-brand a {
-    color: #5e72e4;
+    color: white;
     text-decoration: none;
 }
 
@@ -266,15 +361,15 @@ input, select {
 
 .sidebar-nav .nav-link {
     padding: 0.75rem 1.5rem;
-    color: #525f7f;
+    color: #c2c7d0;
     transition: all 0.2s;
     display: block;
     text-decoration: none;
 }
 
 .sidebar-nav .nav-link:hover {
-    background: rgba(94, 114, 228, 0.1);
-    color: #5e72e4;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
 }
 
 .sidebar-nav .nav-link i {
@@ -283,7 +378,7 @@ input, select {
 }
 
 .sidebar-nav .nav-link.active {
-    background: #5e72e4;
+    background: #007bff;
     color: white;
 }
 
@@ -297,20 +392,12 @@ input, select {
         transform: translateX(-100%);
         transition: transform 0.3s;
     }
-
     .main-content {
         margin-left: 0;
     }
 }
 
-.table thead th {
-    background-color: #f8f9fa;
-    color: #1f2d3d;
-    font-weight: 600;
-    border-bottom: 2px solid #dee2e6;
-}
-
-/* Выравнивание карточек */
+/* ==================== ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ==================== */
 .h-100 {
     height: 100%;
 }
@@ -328,17 +415,28 @@ input, select {
     justify-content: center;
 }
 
-/* Таблицы Bootstrap — не ломаем */
-.table th,
-.table td {
-    background: transparent !important;
-    border-bottom: 1px solid #dee2e6 !important;
-    text-align: left !important;
-    vertical-align: middle !important;
+/* Иконки в карточках */
+.icon-shape {
+    width: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
 }
 
-.table thead th {
-    background-color: #f8f9fa !important;
-    color: #1f2d3d !important;
-    font-weight: 600 !important;
+.bg-gradient-green {
+    background: linear-gradient(87deg, #28a745 0%, #20c997 100%) !important;
+}
+
+.bg-gradient-red {
+    background: linear-gradient(87deg, #dc3545 0%, #fd7e14 100%) !important;
+}
+
+.bg-gradient-info {
+    background: linear-gradient(87deg, #17a2b8 0%, #007bff 100%) !important;
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(87deg, #ffc107 0%, #fd7e14 100%) !important;
 }

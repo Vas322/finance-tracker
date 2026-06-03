@@ -21,25 +21,21 @@
     {% block styles %}{% endblock %}
 </head>
 <body>
-<!-- Sidebar -->
+< <!-- Sidebar (AdminLTE style) -->
 <div class="sidebar">
     <div class="sidebar-brand">
         <a href="{{ url_for('index') }}">💰 Финансовый трекер</a>
     </div>
     <div class="sidebar-nav">
         <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
-            <i class="fas fa-tachometer-alt"></i> Дашборд</a>
-        <a class="nav-link {% if request.endpoint == 'budget_planning' %}active{% endif %}"
-           href="{{ url_for('budget_planning') }}"><i class="fas fa-chart-line"></i> Бюджет</a>
+            <i class="fas fa-tachometer-alt"></i> Дашборд
+        </a>
         <a class="nav-link {% if request.endpoint == 'regular' %}active{% endif %}" href="{{ url_for('regular') }}">
             <i class="fas fa-calendar-alt"></i> Регулярные платежи
         </a>
         <a class="nav-link {% if request.endpoint == 'categories' %}active{% endif %}"
            href="{{ url_for('categories') }}">
             <i class="fas fa-folder"></i> Категории
-        </a>
-        <a class="nav-link {% if request.endpoint == 'add' %}active{% endif %}" href="{{ url_for('add') }}">
-            <i class="fas fa-plus-circle"></i> Добавить операцию
         </a>
         <a class="nav-link {% if request.endpoint == 'income_settings' %}active{% endif %}"
            href="{{ url_for('income_settings') }}">
