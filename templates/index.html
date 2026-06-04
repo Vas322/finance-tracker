@@ -316,18 +316,8 @@
 
 {% block scripts %}
 <script>
-    window.incomeCategories = {
-    {
-        income_categories | tojson
-    }
-    }
-    ;
-    window.expenseCategories = {
-    {
-        expense_categories | tojson
-    }
-    }
-    ;
+    window.incomeCategories = {{ income_categories|tojson }};
+    window.expenseCategories = {{ expense_categories|tojson }};
 </script>
 <script src="{{ url_for('static', filename='js/operations.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>

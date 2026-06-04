@@ -105,6 +105,13 @@ h5 {
 .small-box .inner p {
     font-size: 1rem;
 }
+.category-row .edit-mode {
+    display: none;
+}
+
+.category-row .view-mode {
+    display: table-cell;
+}
 
 /* ==================== НАВИГАЦИЯ ==================== */
 .navbar {

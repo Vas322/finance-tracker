@@ -89,3 +89,28 @@ def register_routes(app):
                             (parent['type'], sub_name, cat_id)
                         )
         return jsonify({'success': True})
+
+    @app.route('/edit_full_category/<int:id>', methods=['POST'])
+    def edit_full_category(id):
+        import json
+        data = request.json
+        new_name = data.get('name', '')
+        new_subcats = data.get('subcategories', [])
+
+        with get_db() as conn:
+            # Обновляем название категории
+            conn.execute('UPDATE categories SET name = ? WHERE id = ?', (new_name, id))
+
+            # Удаляем старые подкатегории
+            conn.execute('DELETE FROM categories WHERE parent_id = ?', (id,))
+
+            # Добавляем новые подкатегории
+            for subcat in new_subcats:
+                if subcat and subcat.strip():
+                    # Получаем тип родительской категории
+                    parent = conn.execute('SELECT type FROM categories WHERE id = ?', (id,)).fetchone()
+                    if parent:
+                        conn.execute('INSERT INTO categories (type, name, parent_id) VALUES (?, ?, ?)',
+                                     (parent['type'], subcat.strip(), id))
+
+        return jsonify({'success': True})

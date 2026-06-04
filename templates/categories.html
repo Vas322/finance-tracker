@@ -22,52 +22,18 @@
                             <option value="Доход">Доход</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-5">
                         <label class="form-label small">Название категории</label>
                         <input type="text" name="name" class="form-control form-control-sm" placeholder="Например: Транспорт" required>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end">
+                    <div class="col-md-2">
                         <button type="submit" class="btn btn-success btn-sm w-100">➕ Добавить</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Форма добавления подкатегории -->
-        <div class="card mb-4">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">📎 Добавить подкатегорию</h5>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('add_category') }}" class="row g-2">
-                    <div class="col-md-3">
-                        <label class="form-label small">Тип</label>
-                        <select name="type" class="form-select form-select-sm" required>
-                            <option value="Расход">Расход</option>
-                            <option value="Доход">Доход</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label small">Родительская категория</label>
-                        <select name="parent_id" class="form-select form-select-sm">
-                            <option value="">-- Выберите категорию --</option>
-                            {% for cat in categories %}
-                            <option value="{{ cat.id }}">{{ cat.type }} / {{ cat.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small">Название подкатегории</label>
-                        <input type="text" name="name" class="form-control form-control-sm" placeholder="Например: Такси" required>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-info btn-sm w-100">📎 Добавить</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Таблица категорий -->
+        <!-- Таблица категорий с inline-редактированием -->
         <div class="table-responsive">
             <table class="table table-sm table-hover">
                 <thead class="table-light">
@@ -75,34 +41,41 @@
                         <th>Тип</th>
                         <th>Категория</th>
                         <th>Подкатегории</th>
-                        <th style="width: 80px;">Действия</th>
+                        <th style="width: 100px;">Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for cat in categories %}
-                    <tr>
+                    <tr id="row-{{ cat.id }}" class="category-row">
+                        <!-- Тип (не редактируемый) -->
                         <td>{{ cat.type }}</td>
-                        <td>
-                            {{ cat.name }}
-                            <button class="btn btn-sm btn-link edit-cat-btn p-0 ms-2" data-id="{{ cat.id }}" data-name="{{ cat.name }}" title="Редактировать">
-                                <i class="fas fa-edit text-primary"></i>
-                            </button>
-                        </td>
-                        <td>
+
+                        <!-- Категория (с режимом редактирования) -->
+                        <td class="view-mode">{{ cat.name }}</td>
+                        <td class="edit-mode" style="display:none;">
+                            <input type="text" class="form-control form-control-sm cat-name-input" value="{{ cat.name }}">
+                         </td>
+
+                        <!-- Подкатегории (с режимом редактирования) -->
+                        <td class="view-mode">
                             {% for sub in cat.subcategories %}
-                                <span class="badge bg-secondary me-1">{{ sub.name }}</span>
+                                {{ sub.name }}{% if not loop.last %}, {% endif %}
                             {% endfor %}
                         </td>
+                        <td class="edit-mode" style="display:none;">
+                            <input type="text" class="form-control form-control-sm subcats-input" value="{% for sub in cat.subcategories %}{{ sub.name }}{% if not loop.last %}, {% endif %}{% endfor %}">
+                         </td>
+
+                        <!-- Действия -->
                         <td>
-                            <a href="{{ url_for('delete_category', id=cat.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить категорию и все подкатегории?')" title="Удалить">
-                                <i class="fas fa-trash"></i>
-                            </a>
-                        </td>
+                            <button class="btn btn-sm btn-outline-primary edit-row-btn" data-id="{{ cat.id }}" title="Редактировать">✏️</button>
+                            <button class="btn btn-sm btn-success save-row-btn" data-id="{{ cat.id }}" style="display:none;">💾</button>
+                            <button class="btn btn-sm btn-secondary cancel-row-btn" data-id="{{ cat.id }}" style="display:none;">✖️</button>
+                            <a href="{{ url_for('delete_category', id=cat.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить категорию и все подкатегории?')">🗑️</a>
+                         </td>
                     </tr>
                     {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center">Нет категорий. Добавьте первую!</td>
-                    </tr>
+                    <tr><td colspan="4" class="text-center">Нет категорий. Добавьте первую!</td>
                     {% endfor %}
                 </tbody>
             </table>
@@ -110,57 +83,56 @@
     </div>
 </div>
 
-<!-- Модальное окно редактирования категории -->
-<div class="modal fade" id="editCatModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">✏️ Редактировать категорию</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="editCatForm">
-                <div class="modal-body">
-                    <input type="hidden" id="edit_cat_id">
-                    <label class="form-label">Название</label>
-                    <input type="text" id="edit_cat_name" class="form-control" required>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 <script>
-    // Редактирование категории
-    const editCatModal = new bootstrap.Modal(document.getElementById('editCatModal'));
+    document.addEventListener('DOMContentLoaded', function() {
+        // Режим редактирования строки
+        document.querySelectorAll('.edit-row-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const row = document.getElementById(`row-${id}`);
 
-    document.querySelectorAll('.edit-cat-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.getElementById('edit_cat_id').value = this.dataset.id;
-            document.getElementById('edit_cat_name').value = this.dataset.name;
-            editCatModal.show();
-        });
-    });
+                // Скрываем режим просмотра
+                row.querySelectorAll('.view-mode').forEach(el => el.style.display = 'none');
+                // Показываем режим редактирования
+                row.querySelectorAll('.edit-mode').forEach(el => el.style.display = 'table-cell');
 
-    document.getElementById('editCatForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const id = document.getElementById('edit_cat_id').value;
-        const name = document.getElementById('edit_cat_name').value;
-
-        const response = await fetch('/edit_category/' + id, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'name=' + encodeURIComponent(name)
+                this.style.display = 'none';
+                row.querySelector('.save-row-btn').style.display = 'inline-block';
+                row.querySelector('.cancel-row-btn').style.display = 'inline-block';
+            });
         });
 
-        if (response.ok) {
-            location.reload();
-        } else {
-            alert('Ошибка при сохранении');
-        }
+        // Отмена редактирования
+        document.querySelectorAll('.cancel-row-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                location.reload();
+            });
+        });
+
+        // Сохранение строки
+        document.querySelectorAll('.save-row-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const id = this.dataset.id;
+                const row = document.getElementById(`row-${id}`);
+                const newName = row.querySelector('.cat-name-input').value;
+                const newSubcats = row.querySelector('.subcats-input').value;
+
+                const response = await fetch('/edit_full_category/' + id, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: newName,
+                        subcategories: newSubcats.split(',').map(s => s.trim()).filter(s => s)
+                    })
+                });
+
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Ошибка при сохранении');
+                }
+            });
+        });
     });
 </script>
 {% endblock %}
