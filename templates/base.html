@@ -46,6 +46,9 @@
            href="{{ url_for('settings.income_settings') }}">
             <i class="fas fa-coins"></i> Доходы
         </a>
+        <a class="nav-link {% if request.endpoint == 'budgets.budgets' %}active{% endif %}" href="{{ url_for('budgets.budgets') }}">
+            <i class="fas fa-wallet"></i> Бюджеты
+        </a>
         <a class="nav-link {% if request.endpoint == 'main.analytics' %}active{% endif %}" href="{{ url_for('main.analytics') }}">
             <i class="fas fa-chart-line"></i> Аналитика
         </a>

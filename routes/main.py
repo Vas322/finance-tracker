@@ -274,6 +274,16 @@ def analytics():
             'expense': r['expense']
         } for r in monthly_raw]
 
+        from datetime import date
+        curr_month = date.today().strftime('%Y-%m')
+        budgets_raw = conn.execute(
+            'SELECT category, amount FROM budgets WHERE month = ?', (curr_month,)
+        ).fetchall()
+        budgets_map = {r['category']: r['amount'] for r in budgets_raw}
+
+        for item in expense_by_category:
+            item['budget'] = budgets_map.get(item['category'], 0)
+
     return render_template('analytics.html',
                            expense_by_category=expense_by_category,
                            total_expense=total_expense,

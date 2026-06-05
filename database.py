@@ -66,6 +66,17 @@ def init_db():
             )
         ''')
 
+        # Таблица бюджетов по категориям
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS budgets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                month TEXT NOT NULL,
+                amount REAL NOT NULL,
+                UNIQUE(category, month)
+            )
+        ''')
+
         # Плановая зарплата (если нет)
         existing_plan = conn.execute('SELECT COUNT(*) FROM settings WHERE key = "planned_salary"').fetchone()[0]
         if existing_plan == 0:

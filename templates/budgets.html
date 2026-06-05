@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Бюджеты{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-warning text-white">
+        <h4 class="mb-0">💰 Бюджеты по категориям</h4>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-2 mb-4">
+            <div class="col-auto">
+                <input type="month" name="month" class="form-control" value="{{ month }}" onchange="this.form.submit()">
+            </div>
+        </form>
+
+        <form method="post">
+            <input type="hidden" name="month" value="{{ month }}">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Категория</th>
+                            <th>Бюджет (₽)</th>
+                            <th>Потрачено (₽)</th>
+                            <th>Остаток (₽)</th>
+                            <th>Прогресс</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat in expense_categories %}
+                        {% set budget = budgets_map.get(cat, 0) %}
+                        {% set spent = spent_map.get(cat, 0) %}
+                        {% set pct = (spent / budget * 100) if budget > 0 else 0 %}
+                        <tr>
+                            <td>{{ cat }}</td>
+                            <td>
+                                <input type="number" step="0.01" min="0" class="form-control form-control-sm" style="width:140px"
+                                       name="budget_{{ cat }}" value="{{ '%.2f'|format(budget) if budget > 0 else '' }}">
+                            </td>
+                            <td>{{ '{:,.0f}'.format(spent).replace(',', ' ') }} ₽</td>
+                            <td class="{{ 'text-danger' if budget > 0 and spent > budget else 'text-success' }}">
+                                {% if budget > 0 %}
+                                    {{ '{:,.0f}'.format(budget - spent).replace(',', ' ') }} ₽
+                                {% endif %}
+                            </td>
+                            <td style="min-width:150px;">
+                                {% if budget > 0 %}
+                                <div class="progress" style="height:20px;">
+                                    <div class="progress-bar {{ 'bg-danger' if pct > 100 else 'bg-success' }}"
+                                         role="progressbar" style="width: {{ pct if pct <= 100 else 100 }}%;"
+                                         aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ '%.0f'|format(pct) }}%
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">Нет категорий расходов</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <button type="submit" class="btn btn-warning mt-2">Сохранить бюджеты</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

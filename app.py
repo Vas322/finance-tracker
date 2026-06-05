@@ -4,6 +4,7 @@ from routes.operations import bp as operations_bp
 from routes.regular import bp as regular_bp
 from routes.settings import bp as settings_bp
 from routes.categories import bp as categories_bp
+from routes.budgets import bp as budgets_bp
 from routes.auth import bp as auth_bp
 import os
 
@@ -16,6 +17,7 @@ app.register_blueprint(operations_bp)
 app.register_blueprint(regular_bp)
 app.register_blueprint(settings_bp)
 app.register_blueprint(categories_bp)
+app.register_blueprint(budgets_bp)
 app.register_blueprint(auth_bp)
 
 

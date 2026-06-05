@@ -41,18 +41,39 @@
                                         <th>Категория</th>
                                         <th>Сумма (₽)</th>
                                         <th>Доля</th>
+                                        <th>Бюджет / Остаток</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for item in expense_by_category %}
+                                    {% set budget = item.get('budget', 0) %}
                                     <tr>
                                         <td>{{ item.category }}</td>
                                         <td>{{ "{:,.0f}".format(item.total).replace(",", " ") }} ₽</td>
                                         <td>{{ "{:.1f}".format(item.total / total_expense * 100) if total_expense > 0 else 0 }}%</td>
+                                        <td>
+                                            {% if budget > 0 %}
+                                            {% set pct = (item.total / budget * 100) %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="small">{{ '{:,.0f}'.format(budget).replace(',', ' ') }} ₽</span>
+                                                <div class="progress flex-grow-1" style="height:16px;min-width:80px;">
+                                                    <div class="progress-bar {{ 'bg-danger' if pct > 100 else 'bg-success' }}"
+                                                         role="progressbar" style="width: {{ pct if pct <= 100 else 100 }}%;">
+                                                        {{ '%.0f'|format(pct) }}%
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <small class="{{ 'text-danger' if item.total > budget else 'text-success' }}">
+                                                {{ '{:,.0f}'.format(budget - item.total).replace(',', ' ') }} ₽
+                                            </small>
+                                            {% else %}
+                                            <span class="text-muted small">—</span>
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                     {% else %}
                                     <tr>
-                                        <td colspan="3" class="text-center">Нет данных о расходах</td>
+                                        <td colspan="4" class="text-center">Нет данных о расходах</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
