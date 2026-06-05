@@ -41,32 +41,39 @@
                         <th>Тип</th>
                         <th>Категория</th>
                         <th>Подкатегории</th>
-                        <th style="width: 100px;">Действия</th>
+                        <th style="width: 130px;">Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for cat in categories %}
                     <tr id="row-{{ cat.id }}" class="category-row">
-                        <!-- Тип (не редактируемый) -->
                         <td>{{ cat.type }}</td>
 
-                        <!-- Категория (с режимом редактирования) -->
                         <td class="view-mode">{{ cat.name }}</td>
                         <td class="edit-mode" style="display:none;">
                             <input type="text" class="form-control form-control-sm cat-name-input" value="{{ cat.name }}">
                          </td>
 
-                        <!-- Подкатегории (с режимом редактирования) -->
                         <td class="view-mode">
                             {% for sub in cat.subcategories %}
-                                {{ sub.name }}{% if not loop.last %}, {% endif %}
+                                <span class="badge bg-secondary me-1">{{ sub.name }}</span>
                             {% endfor %}
                         </td>
                         <td class="edit-mode" style="display:none;">
-                            <input type="text" class="form-control form-control-sm subcats-input" value="{% for sub in cat.subcategories %}{{ sub.name }}{% if not loop.last %}, {% endif %}{% endfor %}">
+                            <div class="subcats-list mb-1">
+                                {% for sub in cat.subcategories %}
+                                <div class="subcat-chip input-group input-group-sm mb-1">
+                                    <span class="input-group-text">{{ sub.name }}</span>
+                                    <button class="btn btn-outline-danger remove-subcat-btn" type="button">&times;</button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control form-control-sm new-subcat-input" placeholder="Новая подкатегория">
+                                <button class="btn btn-outline-success add-subcat-btn" type="button">+</button>
+                            </div>
                          </td>
 
-                        <!-- Действия -->
                         <td>
                             <button class="btn btn-sm btn-outline-primary edit-row-btn" data-id="{{ cat.id }}" title="Редактировать">✏️</button>
                             <button class="btn btn-sm btn-success save-row-btn" data-id="{{ cat.id }}" style="display:none;">💾</button>
@@ -83,6 +90,21 @@
     </div>
 </div>
 
+<style>
+.subcat-chip .input-group-text {
+    background: #e9ecef;
+    font-size: 0.85rem;
+}
+.subcat-chip .btn {
+    border: 1px solid #ced4da;
+    font-size: 0.85rem;
+}
+.subcats-list {
+    max-height: 120px;
+    overflow-y: auto;
+}
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Режим редактирования строки
@@ -91,9 +113,7 @@
                 const id = this.dataset.id;
                 const row = document.getElementById(`row-${id}`);
 
-                // Скрываем режим просмотра
                 row.querySelectorAll('.view-mode').forEach(el => el.style.display = 'none');
-                // Показываем режим редактирования
                 row.querySelectorAll('.edit-mode').forEach(el => el.style.display = 'table-cell');
 
                 this.style.display = 'none';
@@ -109,27 +129,59 @@
             });
         });
 
+        // Добавление новой подкатегории (до сохранения)
+        document.querySelectorAll('.add-subcat-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const input = this.closest('.input-group').querySelector('.new-subcat-input');
+                const name = input.value.trim();
+                if (!name) return;
+
+                const list = this.closest('.edit-mode').querySelector('.subcats-list');
+                const chip = document.createElement('div');
+                chip.className = 'subcat-chip input-group input-group-sm mb-1';
+                chip.innerHTML = `<span class="input-group-text">${name}</span><button class="btn btn-outline-danger remove-subcat-btn" type="button">&times;</button>`;
+                list.appendChild(chip);
+                input.value = '';
+            });
+        });
+
+        // Удаление подкатегории
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-subcat-btn')) {
+                e.target.closest('.subcat-chip').remove();
+            }
+        });
+
         // Сохранение строки
         document.querySelectorAll('.save-row-btn').forEach(btn => {
             btn.addEventListener('click', async function() {
                 const id = this.dataset.id;
                 const row = document.getElementById(`row-${id}`);
                 const newName = row.querySelector('.cat-name-input').value;
-                const newSubcats = row.querySelector('.subcats-input').value;
+
+                const subcats = [];
+                row.querySelectorAll('.subcat-chip .input-group-text').forEach(el => {
+                    subcats.push(el.textContent.trim());
+                });
+
+                console.log('Saving:', {name: newName, subcategories: subcats});
 
                 const response = await fetch('/edit_full_category/' + id, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         name: newName,
-                        subcategories: newSubcats.split(',').map(s => s.trim()).filter(s => s)
+                        subcategories: subcats
                     })
                 });
+
+                const result = await response.json();
+                console.log('Response:', result);
 
                 if (response.ok) {
                     location.reload();
                 } else {
-                    alert('Ошибка при сохранении');
+                    alert('Ошибка при сохранении: ' + JSON.stringify(result));
                 }
             });
         });
