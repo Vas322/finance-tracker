@@ -212,6 +212,25 @@
             </tbody>
         </table>
     </div>
+    {% if total_pages > 1 %}
+    <div class="card-footer d-flex justify-content-center">
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item {{ 'disabled' if page <= 1 }}">
+                    <a class="page-link" href="{{ url_for('main.index', page=page-1, period=request.args.get('period', ''), type=request.args.get('type', ''), category=request.args.get('category', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}">«</a>
+                </li>
+                {% for p in range(1, total_pages + 1) %}
+                <li class="page-item {{ 'active' if p == page }}">
+                    <a class="page-link" href="{{ url_for('main.index', page=p, period=request.args.get('period', ''), type=request.args.get('type', ''), category=request.args.get('category', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {{ 'disabled' if page >= total_pages }}">
+                    <a class="page-link" href="{{ url_for('main.index', page=page+1, period=request.args.get('period', ''), type=request.args.get('type', ''), category=request.args.get('category', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}">»</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Модальное окно редактирования операции -->

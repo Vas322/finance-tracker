@@ -20,33 +20,45 @@ def index():
     date_from = request.args.get('date_from', '')
     date_to = request.args.get('date_to', '')
 
-    query = 'SELECT * FROM operations WHERE 1=1'
-    params = []
+    page = int(request.args.get('page', 1))
+    per_page = 50
+
+    where_clause = ''
+    where_params = []
 
     if period_filter:
-        query += ' AND period = ?'
-        params.append(period_filter)
+        where_clause += ' AND period = ?'
+        where_params.append(period_filter)
 
     if type_filter:
-        query += ' AND type = ?'
-        params.append(type_filter)
+        where_clause += ' AND type = ?'
+        where_params.append(type_filter)
 
     if category_filter:
-        query += ' AND category = ?'
-        params.append(category_filter)
+        where_clause += ' AND category = ?'
+        where_params.append(category_filter)
 
     if date_from:
-        query += ' AND date >= ?'
-        params.append(date_from)
+        where_clause += ' AND date >= ?'
+        where_params.append(date_from)
 
     if date_to:
-        query += ' AND date <= ?'
-        params.append(date_to)
-
-    query += ' ORDER BY date DESC LIMIT 100'
+        where_clause += ' AND date <= ?'
+        where_params.append(date_to)
 
     with get_db() as conn:
-        operations = conn.execute(query, params).fetchall()
+        total_count = conn.execute(
+            'SELECT COUNT(*) FROM operations WHERE 1=1' + where_clause, where_params
+        ).fetchone()[0]
+
+        total_pages = max(1, (total_count + per_page - 1) // per_page)
+        page = min(page, total_pages)
+        offset = (page - 1) * per_page
+
+        operations = conn.execute(
+            'SELECT * FROM operations WHERE 1=1' + where_clause + ' ORDER BY date DESC LIMIT ? OFFSET ?',
+            where_params + [per_page, offset]
+        ).fetchall()
 
         all_categories = [row['name'] for row in conn.execute(
             'SELECT DISTINCT name FROM categories WHERE parent_id IS NULL ORDER BY name').fetchall()]
@@ -180,7 +192,8 @@ def index():
                            expense_categories=expense_cats,
                            planning=planning,
                            regular_total_month=regular_total_month,
-                           due_payments=due_payments)
+                           due_payments=due_payments,
+                           page=page, total_pages=total_pages)
 
 
 @bp.route('/apply_regular', methods=['POST'])
