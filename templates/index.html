@@ -146,6 +146,11 @@
                 <button type="submit" class="btn btn-primary btn-sm">Применить</button>
                 <a href="{{ url_for('main.index') }}" class="btn btn-secondary btn-sm">Сбросить</a>
             </div>
+            <div class="col-12 mt-2">
+                <a href="{{ url_for('operations.export_csv', date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}" class="btn btn-outline-success btn-sm">
+                    <i class="fas fa-download"></i> Выгрузить CSV
+                </a>
+            </div>
         </form>
     </div>
 </div>
