@@ -17,12 +17,8 @@ def login_required(f):
 def login():
     if request.method == 'POST':
         password = request.form.get('password', '')
-        app_password = request.args.get('app_password') or ''
-
-        # Fallback: config might not be accessible from blueprint directly,
-        # so read from Flask's current_app
         from flask import current_app
-        correct = current_app.config.get('APP_PASSWORD', 'admin123')
+        correct = current_app.config.get('APP_PASSWORD', '12345')
 
         if password == correct:
             session['logged_in'] = True

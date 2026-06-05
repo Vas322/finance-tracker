@@ -90,7 +90,7 @@
                                 <input type="date" name="day_{{ p.id }}" value="{{ p.day }}" class="form-control form-control-sm edit-mode" style="display:none;">
                              </td>
                             <td class="view-mode">
-                                <span class="category-view">{{ p.category or '--' }}</span>
+                                <span class="category-view">{{ p.category if p.category else '—' }}</span>
                                 <select name="category_{{ p.id }}" class="form-select form-select-sm category-select edit-mode" data-id="{{ p.id }}" style="display:none;">
                                     <option value="">-- Выберите --</option>
                                     {% for cat in expense_categories %}

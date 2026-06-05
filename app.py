@@ -10,7 +10,7 @@ import os
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
-app.config['APP_PASSWORD'] = os.environ.get('APP_PASSWORD', 'admin123')
+app.config['APP_PASSWORD'] = os.environ.get('APP_PASSWORD', '12345')
 
 app.register_blueprint(main_bp)
 app.register_blueprint(operations_bp)

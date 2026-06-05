@@ -33,15 +33,22 @@
                         {% set spent = spent_map.get(cat, 0) %}
                         {% set pct = (spent / budget * 100) if budget > 0 else 0 %}
                         <tr>
-                            <td>{{ cat }}</td>
+                            <td><strong>{{ cat }}</strong></td>
                             <td>
                                 <input type="number" step="0.01" min="0" class="form-control form-control-sm" style="width:140px"
-                                       name="budget_{{ cat }}" value="{{ '%.2f'|format(budget) if budget > 0 else '' }}">
+                                       name="budget_{{ cat }}" value="{{ '%.2f'|format(budget) }}">
                             </td>
-                            <td>{{ '{:,.0f}'.format(spent).replace(',', ' ') }} ₽</td>
-                            <td class="{{ 'text-danger' if budget > 0 and spent > budget else 'text-success' }}">
+                            <td class="fw-bold">{{ '{:,.0f}'.format(spent).replace(',', ' ') }} ₽</td>
+                            <td class="fw-bold {{ 'text-danger' if budget > 0 and spent > budget else 'text-success' }}">
                                 {% if budget > 0 %}
-                                    {{ '{:,.0f}'.format(budget - spent).replace(',', ' ') }} ₽
+                                    {% set rem = budget - spent %}
+                                    {% if rem < 0 %}
+                                        <span class="text-danger">{{ '{:,.0f}'.format(rem).replace(',', ' ') }} ₽</span>
+                                    {% else %}
+                                        {{ '{:,.0f}'.format(rem).replace(',', ' ') }} ₽
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
                             <td style="min-width:150px;">
@@ -53,6 +60,8 @@
                                         {{ '%.0f'|format(pct) }}%
                                     </div>
                                 </div>
+                                {% else %}
+                                    <span class="text-muted small">бюджет не установлен</span>
                                 {% endif %}
                             </td>
                         </tr>
