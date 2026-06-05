@@ -258,9 +258,26 @@ def analytics():
         total_expense = \
         conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
 
+        monthly_raw = conn.execute('''
+            SELECT strftime('%Y-%m', date) as month,
+                   COALESCE(SUM(CASE WHEN type='Доход' THEN amount ELSE 0 END), 0) as income,
+                   COALESCE(SUM(CASE WHEN type='Расход' THEN amount ELSE 0 END), 0) as expense
+            FROM operations
+            WHERE date >= date('now', '-11 months', 'start of month')
+            GROUP BY month
+            ORDER BY month
+        ''').fetchall()
+
+        monthly_data = [{
+            'month': r['month'],
+            'income': r['income'],
+            'expense': r['expense']
+        } for r in monthly_raw]
+
     return render_template('analytics.html',
                            expense_by_category=expense_by_category,
-                           total_expense=total_expense)
+                           total_expense=total_expense,
+                           monthly_data=monthly_data)
 
 
 @bp.route('/budget_planning')
