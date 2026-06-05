@@ -71,6 +71,15 @@ def init_db():
             )
         ''')
 
+        # Таблица пользователей
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL
+            )
+        ''')
+
         # Таблица бюджетов по категориям
         conn.execute('''
             CREATE TABLE IF NOT EXISTS budgets (
@@ -81,6 +90,16 @@ def init_db():
                 UNIQUE(category, month)
             )
         ''')
+
+        # Создаём admin пользователя, если таблица пустая
+        existing_users = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+        if existing_users == 0:
+            from werkzeug.security import generate_password_hash
+            default_password = os.environ.get('APP_PASSWORD', '12345')
+            conn.execute(
+                'INSERT INTO users (username, password_hash) VALUES (?, ?)',
+                ('admin', generate_password_hash(default_password))
+            )
 
         # Плановая зарплата (если нет)
         existing_plan = conn.execute('SELECT COUNT(*) FROM settings WHERE key = "planned_salary"').fetchone()[0]
@@ -138,3 +157,21 @@ def set_period_balance(period, start_date, balance):
             INSERT OR REPLACE INTO period_balance (period, start_date, balance)
             VALUES (?, ?, ?)
         ''', (period, start_date, balance))
+
+
+def get_user(username):
+    with get_db() as conn:
+        return conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+
+
+def create_user(username, password):
+    from werkzeug.security import generate_password_hash
+    with get_db() as conn:
+        try:
+            conn.execute(
+                'INSERT INTO users (username, password_hash) VALUES (?, ?)',
+                (username, generate_password_hash(password))
+            )
+            return True
+        except Exception:
+            return False
