@@ -3,9 +3,9 @@
 {% block title %}Настройки доходов{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header bg-primary text-white">
-        <h4 class="mb-0">⚙️ Настройки доходов</h4>
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h4 class="card-title mb-0">⚙️ Настройки доходов</h4>
     </div>
     <div class="card-body">
         <form method="POST" action="{{ url_for('settings.save_income_settings') }}">
