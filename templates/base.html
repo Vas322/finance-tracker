@@ -43,6 +43,9 @@
         <a class="nav-link {% if request.endpoint == 'main.analytics' %}active{% endif %}" href="{{ url_for('main.analytics') }}">
             <i class="fas fa-chart-line"></i> Аналитика
         </a>
+        <a class="nav-link {% if request.endpoint == 'main.budget_planning' %}active{% endif %}" href="{{ url_for('main.budget_planning') }}">
+            <i class="fas fa-calculator"></i> Планирование
+        </a>
     </div>
 </div>
 
