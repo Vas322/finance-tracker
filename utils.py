@@ -186,6 +186,55 @@ def get_paid_regular_payments_this_month():
     return sum(paid_amounts)
 
 
+def get_due_regular_payments(today):
+    from database import get_db
+    from datetime import datetime, date
+
+    today_day = today.day
+    today_str = today.strftime('%Y-%m-%d')
+
+    due = []
+    with get_db() as conn:
+        payments = conn.execute('SELECT * FROM regular_payments').fetchall()
+
+        for p in payments:
+            if not p['day'] or not p['category']:
+                continue
+
+            payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
+
+            should_apply = False
+            if p['interval'] == 'monthly' and payment_day == today_day:
+                should_apply = True
+            elif p['interval'] == 'weekly':
+                pd = datetime.strptime(p['day'], '%Y-%m-%d')
+                if pd.weekday() == today.weekday():
+                    should_apply = True
+            elif p['interval'] == 'yearly':
+                pd = datetime.strptime(p['day'], '%Y-%m-%d')
+                if pd.month == today.month and pd.day == today_day:
+                    should_apply = True
+
+            if not should_apply:
+                continue
+
+            existing = conn.execute(
+                'SELECT id FROM operations WHERE date = ? AND category = ? AND subcategory = ? AND amount = ? AND type = \'Расход\'',
+                (today_str, p['category'], p['subcategory'], p['amount'])
+            ).fetchone()
+
+            if not existing:
+                due.append({
+                    'id': p['id'],
+                    'category': p['category'],
+                    'subcategory': p['subcategory'] or '',
+                    'amount': p['amount'],
+                    'interval': p['interval']
+                })
+
+    return due
+
+
 def apply_regular_payments():
     from database import get_db
     from datetime import date, datetime

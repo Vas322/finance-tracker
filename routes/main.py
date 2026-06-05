@@ -3,7 +3,8 @@ from database import get_db
 from utils import get_next_income_date, get_regular_total, apply_regular_payments, \
     get_unpaid_regular_payments, get_regular_payments_until_date, get_regular_payments_after_date, \
     get_regular_payments_for_period, get_paid_regular_payments_this_month, get_planning_data, \
-    get_expenses_for_period, update_period_balance, get_period_dates, get_period, update_current_period_balance
+    get_expenses_for_period, update_period_balance, get_period_dates, get_period, update_current_period_balance, \
+    get_due_regular_payments
 from datetime import date
 
 bp = Blueprint('main', __name__)
@@ -143,6 +144,8 @@ def index():
 
     free_money_now = period_balance + total_income - total_expense - unpaid_regular
 
+    due_payments = get_due_regular_payments(today)
+
     if free_money_now < 0:
         traffic_light = "red"
         traffic_text = "⚠️ КАССОВЫЙ РАЗРЫВ!"
@@ -176,7 +179,8 @@ def index():
                            income_categories=income_cats,
                            expense_categories=expense_cats,
                            planning=planning,
-                           regular_total_month=regular_total_month)
+                           regular_total_month=regular_total_month,
+                           due_payments=due_payments)
 
 
 @bp.route('/apply_regular', methods=['POST'])
