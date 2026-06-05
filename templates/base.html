@@ -52,6 +52,10 @@
         <a class="nav-link {% if request.endpoint == 'main.budget_planning' %}active{% endif %}" href="{{ url_for('main.budget_planning') }}">
             <i class="fas fa-calculator"></i> Планирование
         </a>
+        <hr class="my-2" style="border-color:rgba(255,255,255,0.1)">
+        <a class="nav-link" href="{{ url_for('auth.logout') }}">
+            <i class="fas fa-sign-out-alt"></i> Выйти
+        </a>
     </div>
 </div>
 
