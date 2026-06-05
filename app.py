@@ -30,7 +30,8 @@ def check_auth():
         return redirect(url_for('auth.login', next=request.path))
 
 
-from database import init_db
+from database import init_db, backup_db
+backup_db()
 init_db()
 
 if __name__ == '__main__':

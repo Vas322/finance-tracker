@@ -142,6 +142,25 @@ def init_db():
                 ''', (amount, day, category, subcategory, interval, comment))
 
 
+def backup_db():
+    import shutil, os, glob
+    backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backups')
+    os.makedirs(backup_dir, exist_ok=True)
+
+    from datetime import datetime
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H%M%S')
+    src = DB_PATH if os.path.isabs(DB_PATH) else os.path.join(os.path.dirname(os.path.abspath(__file__)), DB_PATH)
+
+    if os.path.exists(src):
+        dst = os.path.join(backup_dir, f'finance_{timestamp}.db')
+        shutil.copy2(src, dst)
+
+    # Храним максимум 30 бэкапов
+    backups = sorted(glob.glob(os.path.join(backup_dir, 'finance_*.db')))
+    while len(backups) > 30:
+        os.remove(backups.pop(0))
+
+
 def get_period_balance(period, start_date):
     """Получить остаток на начало периода"""
     with get_db() as conn:
