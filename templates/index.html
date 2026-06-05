@@ -4,18 +4,21 @@
 
 {% block content %}
 {% if due_payments %}
-<div class="alert alert-warning alert-dismissible fade show d-flex align-items-center" role="alert">
-    <div>
-        <strong>📅 Сегодня ожидаются регулярные платежи:</strong>
-        <ul class="mb-0 mt-1">
-            {% for p in due_payments %}
-            <li>{{ p.category }}{% if p.subcategory %} / {{ p.subcategory }}{% endif %} — {{ "{:,.0f}".format(p.amount).replace(",", " ") }} ₽</li>
-            {% endfor %}
-        </ul>
-        <form method="POST" action="{{ url_for('main.apply_regular') }}" class="mt-2">
-            <button type="submit" class="btn btn-warning btn-sm">✅ Применить все</button>
-        </form>
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong>📅 Сегодня ожидаются регулярные платежи:</strong>
+    <div class="mt-2">
+        {% for p in due_payments %}
+        <div class="d-flex align-items-center justify-content-between mb-1 p-1 border-bottom border-warning border-opacity-25">
+            <span>{{ p.category }}{% if p.subcategory %} / {{ p.subcategory }}{% endif %} — <strong>{{ "{:,.0f}".format(p.amount).replace(",", " ") }} ₽</strong></span>
+            <form method="POST" action="{{ url_for('main.apply_single_regular', payment_id=p.id) }}" style="display:inline">
+                <button type="submit" class="btn btn-success btn-sm py-0">✅ Применить</button>
+            </form>
+        </div>
+        {% endfor %}
     </div>
+    <form method="POST" action="{{ url_for('main.apply_regular') }}" class="mt-2">
+        <button type="submit" class="btn btn-warning btn-sm">✅ Применить все</button>
+    </form>
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 {% endif %}

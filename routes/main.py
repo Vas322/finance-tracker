@@ -190,6 +190,35 @@ def apply_regular():
     return redirect(url_for('main.index'))
 
 
+@bp.route('/apply_regular/<int:payment_id>', methods=['POST'])
+def apply_single_regular(payment_id):
+    from database import get_db
+    from datetime import date, datetime
+    today = date.today()
+    today_str = today.strftime('%Y-%m-%d')
+    today_day = today.day
+
+    with get_db() as conn:
+        p = conn.execute('SELECT * FROM regular_payments WHERE id = ?', (payment_id,)).fetchone()
+        if p and p['category']:
+            existing = conn.execute(
+                'SELECT id FROM operations WHERE date = ? AND category = ? AND subcategory = ? AND amount = ? AND type = \'Расход\'',
+                (today_str, p['category'], p['subcategory'], p['amount'])
+            ).fetchone()
+            if not existing:
+                period = "10-24" if 10 <= today_day <= 24 else "25-09"
+                conn.execute(
+                    'INSERT INTO operations (date, type, category, subcategory, amount, comment, period) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    (today_str, 'Расход', p['category'], p['subcategory'], p['amount'],
+                     f'Авто: {p["interval"]}', period)
+                )
+                flash(f'Платёж "{p["category"]}" применён', 'success')
+            else:
+                flash(f'Платёж "{p["category"]}" уже был применён', 'info')
+
+    return redirect(url_for('main.index'))
+
+
 @bp.route('/update_money', methods=['POST'])
 def update_money():
     new_amount = float(request.form['current_money'])
