@@ -40,52 +40,153 @@ def get_period_dates(today):
     return period_start, period_end
 
 
-def get_regular_payments_for_period(today, period_start_day, period_end_day):
-    """Возвращает сумму НЕОПЛАЧЕННЫХ регулярных платежей за период с учётом периодичности"""
+def _get_all_payments():
     from database import get_db
-
     with get_db() as conn:
-        payments = conn.execute('SELECT * FROM regular_payments').fetchall()
+        return conn.execute('SELECT * FROM regular_payments').fetchall()
+
+
+def _payment_mult(interval, period_type):
+    if interval == 'weekly':
+        return 2 if period_type == 'period' else 4
+    if interval == 'yearly':
+        return 1/24 if period_type == 'period' else 1/12
+    return 1
+
+
+def _day_in_range(day, start, end):
+    if start <= end:
+        return start <= day <= end
+    return day >= start or day <= end
+
+
+def _get_paid_set():
+    from database import get_db
+    from datetime import date
+    today = date.today()
+    with get_db() as conn:
+        ops = conn.execute(
+            'SELECT category, subcategory, amount FROM operations WHERE date >= ? AND type = \'Расход\'',
+            (date(today.year, today.month, 1),)
+        ).fetchall()
+    return {(op['category'], op['subcategory'], op['amount']) for op in ops}
+
+
+def get_regular_total(period_type='month'):
+    total = 0
+    for p in _get_all_payments():
+        mult = _payment_mult(p['interval'], period_type)
+        total += p['amount'] * mult
+    return total
+
+
+def get_regular_payments_filtered(start_day=None, end_day=None, max_day=None, exclude_paid=False, period_type='period'):
+    payments = _get_all_payments()
+    paid = None
+    today = None
 
     total = 0
     for p in payments:
         if not p['day']:
             continue
-
         payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
 
-        in_period = False
-        if period_start_day <= period_end_day:
-            if period_start_day <= payment_day <= period_end_day:
-                in_period = True
-        else:
-            if payment_day >= period_start_day or payment_day <= period_end_day:
-                in_period = True
+        if start_day is not None and end_day is not None:
+            if not _day_in_range(payment_day, start_day, end_day):
+                continue
+        if max_day is not None:
+            from datetime import date
+            today = date.today()
+            if today.day < payment_day:
+                continue
 
-        if in_period:
-            interval = p['interval'] if p['interval'] else 'monthly'
-            amount = p['amount']
-            if interval == 'monthly':
-                total += amount
-            elif interval == 'weekly':
-                total += amount * 2
-            elif interval == 'yearly':
-                total += amount / 24
-            else:
-                total += amount
+        if exclude_paid:
+            if paid is None:
+                paid = _get_paid_set()
+            if (p['category'], p['subcategory'], p['amount']) in paid:
+                continue
+
+        mult = _payment_mult(p['interval'], period_type)
+        total += p['amount'] * mult
 
     return total
 
 
+# Backward-compatible aliases
+def get_regular_payments_for_period(today, start, end):
+    return get_regular_payments_filtered(start_day=start, end_day=end, period_type='period')
+
+
 def get_regular_total_for_month():
-    from database import get_db
-    with get_db() as conn:
-        result = conn.execute('SELECT SUM(amount) FROM regular_payments').fetchone()[0]
-        return result or 0
+    return get_regular_total(period_type='month')
+
+
+def get_unpaid_regular_payments(today, start, end):
+    payments = _get_all_payments()
+    paid = _get_paid_set()
+    total = 0
+    today_day = today.day
+    for p in payments:
+        if not p['day']:
+            continue
+        payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
+        if not _day_in_range(payment_day, start, end):
+            continue
+        if today_day < payment_day:
+            continue
+        if (p['category'], p['subcategory'], p['amount']) in paid:
+            continue
+        mult = _payment_mult(p['interval'], 'period')
+        total += p['amount'] * mult
+    return total
+
+
+def get_regular_payments_until_date(today, target_date):
+    payments = _get_all_payments()
+    total = 0
+    today_day, target_day = today.day, target_date.day
+    for p in payments:
+        if not p['day']:
+            continue
+        payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
+        if today_day <= target_day:
+            is_between = today_day <= payment_day <= target_day
+        else:
+            is_between = payment_day >= today_day or payment_day <= target_day
+        if is_between:
+            mult = _payment_mult(p['interval'], 'period')
+            total += p['amount'] * mult
+    return total
+
+
+def get_regular_payments_after_date(today, target_date):
+    payments = _get_all_payments()
+    total = 0
+    target_day = target_date.day
+    for p in payments:
+        if not p['day']:
+            continue
+        if datetime.strptime(p['day'], '%Y-%m-%d').day > target_day:
+            mult = _payment_mult(p['interval'], 'period')
+            total += p['amount'] * mult
+    return total
+
+
+def get_regular_payments_for_month():
+    return get_regular_total(period_type='month')
+
+
+def get_paid_regular_payments_this_month():
+    paid = _get_paid_set()
+    payments = _get_all_payments()
+    paid_amounts = set()
+    for p in payments:
+        if (p['category'], p['subcategory'], p['amount']) in paid:
+            paid_amounts.add(p['amount'])
+    return sum(paid_amounts)
 
 
 def apply_regular_payments():
-    """Автоматически добавляет операции по регулярным платежам за сегодня"""
     from database import get_db
     from datetime import date, datetime
 
@@ -129,174 +230,6 @@ def apply_regular_payments():
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                     ''', (today_str, 'Расход', p['category'], p['subcategory'], p['amount'],
                           f'Авто: {p["interval"]}', period))
-
-
-def get_unpaid_regular_payments(today, period_start_day, period_end_day):
-    """Возвращает сумму НЕОПЛАЧЕННЫХ регулярных платежей за период (дата списания уже прошла)"""
-    from database import get_db
-    from datetime import datetime, date
-
-    with get_db() as conn:
-        payments = conn.execute('SELECT * FROM regular_payments').fetchall()
-        start_of_month = date(today.year, today.month, 1)
-        operations = conn.execute('''
-            SELECT category, subcategory, amount FROM operations 
-            WHERE date >= ? AND type = 'Расход'
-        ''', (start_of_month,)).fetchall()
-
-    paid = {(op['category'], op['subcategory'], op['amount']) for op in operations}
-
-    total = 0
-    today_day = today.day
-
-    for p in payments:
-        if not p['day']:
-            continue
-
-        payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
-
-        in_period = False
-        if period_start_day <= period_end_day:
-            if period_start_day <= payment_day <= period_end_day:
-                in_period = True
-        else:
-            if payment_day >= period_start_day or payment_day <= period_end_day:
-                in_period = True
-
-        is_passed = today_day >= payment_day
-
-        if in_period and is_passed and (p['category'], p['subcategory'], p['amount']) not in paid:
-            interval = p['interval'] if p['interval'] else 'monthly'
-            amount = p['amount']
-            if interval == 'monthly':
-                total += amount
-            elif interval == 'weekly':
-                total += amount * 2
-            elif interval == 'yearly':
-                total += amount / 24
-            else:
-                total += amount
-
-    return total
-
-
-def get_regular_payments_until_date(today, target_date):
-    """Возвращает сумму регулярных платежей, которые произойдут между today и target_date (включительно)"""
-    from database import get_db
-    from datetime import datetime
-
-    with get_db() as conn:
-        payments = conn.execute('SELECT * FROM regular_payments').fetchall()
-
-    total = 0
-    today_day = today.day
-    target_day = target_date.day
-
-    for p in payments:
-        if not p['day']:
-            continue
-
-        payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
-
-        if today_day <= target_day:
-            is_between = today_day <= payment_day <= target_day
-        else:
-            is_between = payment_day >= today_day or payment_day <= target_day
-
-        if is_between:
-            interval = p['interval'] if p['interval'] else 'monthly'
-            amount = p['amount']
-            if interval == 'monthly':
-                total += amount
-            elif interval == 'weekly':
-                total += amount * 2
-            elif interval == 'yearly':
-                total += amount / 24
-            else:
-                total += amount
-
-    return total
-
-
-def get_regular_payments_after_date(today, target_date):
-    """Возвращает сумму регулярных платежей, которые произойдут ПОСЛЕ target_date (в текущем месяце)"""
-    from database import get_db
-    from datetime import datetime
-
-    with get_db() as conn:
-        payments = conn.execute('SELECT * FROM regular_payments').fetchall()
-
-    total = 0
-    target_day = target_date.day
-
-    for p in payments:
-        if not p['day']:
-            continue
-
-        payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
-
-        if payment_day > target_day:
-            interval = p['interval'] if p['interval'] else 'monthly'
-            amount = p['amount']
-            if interval == 'monthly':
-                total += amount
-            elif interval == 'weekly':
-                total += amount * 2
-            elif interval == 'yearly':
-                total += amount / 24
-            else:
-                total += amount
-
-    return total
-
-
-def get_regular_payments_for_month():
-    """Возвращает общую сумму регулярных платежей за месяц (без учёта оплаченных)"""
-    from database import get_db
-
-    with get_db() as conn:
-        payments = conn.execute('SELECT * FROM regular_payments').fetchall()
-
-    total = 0
-    for p in payments:
-        interval = p['interval'] if p['interval'] else 'monthly'
-        amount = p['amount']
-        if interval == 'monthly':
-            total += amount
-        elif interval == 'weekly':
-            total += amount * 4
-        elif interval == 'yearly':
-            total += amount / 12
-        else:
-            total += amount
-
-    return total
-
-
-def get_paid_regular_payments_this_month():
-    """Возвращает сумму уже оплаченных регулярных платежей в текущем месяце"""
-    from database import get_db
-    from datetime import date
-
-    today = date.today()
-    start_of_month = date(today.year, today.month, 1)
-
-    with get_db() as conn:
-        operations = conn.execute('''
-            SELECT category, subcategory, amount FROM operations 
-            WHERE date >= ? AND type = 'Расход'
-        ''', (start_of_month,)).fetchall()
-
-        payments = conn.execute('SELECT * FROM regular_payments').fetchall()
-
-    paid_amounts = set()
-    for op in operations:
-        for p in payments:
-            if p['category'] == op['category'] and p['subcategory'] == op['subcategory'] and p['amount'] == op[
-                'amount']:
-                paid_amounts.add(p['amount'])
-
-    return sum(paid_amounts)
 
 
 def get_planning_data(planned_salary, real_advance, regular_total, paid_regular=0):

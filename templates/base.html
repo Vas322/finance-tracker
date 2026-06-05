@@ -24,24 +24,24 @@
 < <!-- Sidebar (AdminLTE style) -->
 <div class="sidebar">
     <div class="sidebar-brand">
-        <a href="{{ url_for('index') }}">💰 Финансовый трекер</a>
+        <a href="{{ url_for('main.index') }}">💰 Финансовый трекер</a>
     </div>
     <div class="sidebar-nav">
-        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
+        <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}" href="{{ url_for('main.index') }}">
             <i class="fas fa-tachometer-alt"></i> Дашборд
         </a>
-        <a class="nav-link {% if request.endpoint == 'regular' %}active{% endif %}" href="{{ url_for('regular') }}">
+        <a class="nav-link {% if request.endpoint == 'regular.regular' %}active{% endif %}" href="{{ url_for('regular.regular') }}">
             <i class="fas fa-calendar-alt"></i> Регулярные платежи
         </a>
-        <a class="nav-link {% if request.endpoint == 'categories' %}active{% endif %}"
-           href="{{ url_for('categories') }}">
+        <a class="nav-link {% if request.endpoint == 'categories.categories' %}active{% endif %}"
+           href="{{ url_for('categories.categories') }}">
             <i class="fas fa-folder"></i> Категории
         </a>
-        <a class="nav-link {% if request.endpoint == 'income_settings' %}active{% endif %}"
-           href="{{ url_for('income_settings') }}">
+        <a class="nav-link {% if request.endpoint == 'settings.income_settings' %}active{% endif %}"
+           href="{{ url_for('settings.income_settings') }}">
             <i class="fas fa-coins"></i> Доходы
         </a>
-        <a class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}" href="{{ url_for('analytics') }}">
+        <a class="nav-link {% if request.endpoint == 'main.analytics' %}active{% endif %}" href="{{ url_for('main.analytics') }}">
             <i class="fas fa-chart-line"></i> Аналитика
         </a>
     </div>

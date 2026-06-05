@@ -10,10 +10,10 @@
     <div class="card-body">
         <!-- Кнопки фильтра -->
         <div class="mb-3 d-flex gap-2">
-            <a href="{{ url_for('regular', filter='all') }}" class="btn btn-sm {% if filter_type == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            <a href="{{ url_for('regular.regular', filter='all') }}" class="btn btn-sm {% if filter_type == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                 📋 Все платежи
             </a>
-            <a href="{{ url_for('regular', filter='current') }}" class="btn btn-sm {% if filter_type == 'current' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            <a href="{{ url_for('regular.regular', filter='current') }}" class="btn btn-sm {% if filter_type == 'current' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                 📅 Текущий период ({% if 10 <= now.day <= 24 %}10-24{% else %}25-09{% endif %})
             </a>
         </div>

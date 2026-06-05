@@ -14,7 +14,7 @@
                 <h5 class="mb-0">➕ Добавить основную категорию</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('add_category') }}" class="row g-2">
+                <form method="POST" action="{{ url_for('categories.add_category') }}" class="row g-2">
                     <div class="col-md-3">
                         <label class="form-label small">Тип</label>
                         <select name="type" class="form-select form-select-sm" required>
@@ -71,7 +71,7 @@
                             <button class="btn btn-sm btn-outline-primary edit-row-btn" data-id="{{ cat.id }}" title="Редактировать">✏️</button>
                             <button class="btn btn-sm btn-success save-row-btn" data-id="{{ cat.id }}" style="display:none;">💾</button>
                             <button class="btn btn-sm btn-secondary cancel-row-btn" data-id="{{ cat.id }}" style="display:none;">✖️</button>
-                            <a href="{{ url_for('delete_category', id=cat.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить категорию и все подкатегории?')">🗑️</a>
+                            <a href="{{ url_for('categories.delete_category', id=cat.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить категорию и все подкатегории?')">🗑️</a>
                          </td>
                     </tr>
                     {% else %}

@@ -1,64 +1,76 @@
-// ==================== ДОБАВЛЕНИЕ ОПЕРАЦИИ (ЗАВИСИМЫЕ СПИСКИ) ====================
+function populateCategorySelect(categorySelect, type) {
+    categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
+    let categories = {};
+    if (type === 'Доход') {
+        categories = window.incomeCategories || {};
+    } else if (type === 'Расход') {
+        categories = window.expenseCategories || {};
+    }
+    for (let cat in categories) {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        categorySelect.appendChild(option);
+    }
+}
 
-document.addEventListener('DOMContentLoaded', function() {
-    const typeSelect = document.getElementById('type');
-    const categorySelect = document.getElementById('category');
-    const subcategorySelect = document.getElementById('subcategory');
-
-    if (typeSelect) {
-        typeSelect.addEventListener('change', function() {
-            const type = this.value;
-            categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
-            subcategorySelect.innerHTML = '<option value="">Выберите подкатегорию</option>';
-
-            let categories = {};
-            if (type === 'Доход') {
-                categories = window.incomeCategories || {};
-            } else if (type === 'Расход') {
-                categories = window.expenseCategories || {};
-            }
-
-            for (let cat in categories) {
+function populateSubcategorySelect(subcategorySelect, type, category) {
+    subcategorySelect.innerHTML = '<option value="">-- Выберите --</option>';
+    if (!category) return;
+    let categories = {};
+    if (type === 'Доход') {
+        categories = window.incomeCategories || {};
+    } else if (type === 'Расход') {
+        categories = window.expenseCategories || {};
+    }
+    if (categories[category]) {
+        categories[category].forEach(sub => {
+            if (sub) {
                 const option = document.createElement('option');
-                option.value = cat;
-                option.textContent = cat;
-                categorySelect.appendChild(option);
+                option.value = sub;
+                option.textContent = sub;
+                subcategorySelect.appendChild(option);
             }
         });
+    }
+}
 
-        categorySelect.addEventListener('change', function() {
-            const type = typeSelect.value;
-            const category = this.value;
-            subcategorySelect.innerHTML = '<option value="">Выберите подкатегорию</option>';
+// ==================== ДОБАВЛЕНИЕ ОПЕРАЦИИ ====================
+document.addEventListener('DOMContentLoaded', function() {
+    const modalType = document.getElementById('modal_type');
+    const modalCategory = document.getElementById('modal_category');
+    const modalSubcategory = document.getElementById('modal_subcategory');
 
-            let categories = {};
-            if (type === 'Доход') {
-                categories = window.incomeCategories || {};
-            } else if (type === 'Расход') {
-                categories = window.expenseCategories || {};
-            }
+    if (modalType) {
+        modalType.addEventListener('change', function() {
+            populateCategorySelect(modalCategory, this.value);
+            modalSubcategory.innerHTML = '<option value="">-- Выберите --</option>';
+        });
 
-            if (category && categories[category]) {
-                categories[category].forEach(sub => {
-                    if (sub) {
-                        const option = document.createElement('option');
-                        option.value = sub;
-                        option.textContent = sub;
-                        subcategorySelect.appendChild(option);
-                    }
-                });
-            }
+        modalCategory.addEventListener('change', function() {
+            populateSubcategorySelect(modalSubcategory, modalType.value, this.value);
         });
     }
 });
 
 // ==================== РЕДАКТИРОВАНИЕ ОПЕРАЦИЙ ====================
-
 document.addEventListener('DOMContentLoaded', function() {
     const editModal = document.getElementById('editModal');
     if (!editModal) return;
 
-    const modal = new bootstrap.Modal(editModal);
+    const bsModal = new bootstrap.Modal(editModal);
+    const editType = document.getElementById('edit_type');
+    const editCategory = document.getElementById('edit_category');
+    const editSubcategory = document.getElementById('edit_subcategory');
+
+    editType.addEventListener('change', function() {
+        populateCategorySelect(editCategory, this.value);
+        editSubcategory.innerHTML = '<option value="">-- Выберите --</option>';
+    });
+
+    editCategory.addEventListener('change', function() {
+        populateSubcategorySelect(editSubcategory, editType.value, this.value);
+    });
 
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
@@ -70,13 +82,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 document.getElementById('edit_id').value = data.id;
                 document.getElementById('edit_date').value = data.date;
-                document.getElementById('edit_type').value = data.type;
-                document.getElementById('edit_category').value = data.category;
-                document.getElementById('edit_subcategory').value = data.subcategory || '';
+
+                editType.value = data.type;
+                editType.dispatchEvent(new Event('change'));
+
+                editCategory.value = data.category;
+                editCategory.dispatchEvent(new Event('change'));
+
+                if (data.subcategory && data.subcategory !== '') {
+                    const subOptions = editSubcategory.options;
+                    for (let i = 0; i < subOptions.length; i++) {
+                        if (subOptions[i].value === data.subcategory) {
+                            subOptions[i].selected = true;
+                            break;
+                        }
+                    }
+                }
+
                 document.getElementById('edit_amount').value = data.amount;
                 document.getElementById('edit_comment').value = data.comment || '';
 
-                modal.show();
+                bsModal.show();
             } catch (e) {
                 console.error('Ошибка загрузки:', e);
                 alert('Ошибка загрузки данных операции');
@@ -92,9 +118,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = {
                 id: document.getElementById('edit_id').value,
                 date: document.getElementById('edit_date').value,
-                type: document.getElementById('edit_type').value,
-                category: document.getElementById('edit_category').value,
-                subcategory: document.getElementById('edit_subcategory').value,
+                type: editType.value,
+                category: editCategory.value,
+                subcategory: editSubcategory.value,
                 amount: document.getElementById('edit_amount').value,
                 comment: document.getElementById('edit_comment').value
             };
@@ -115,60 +141,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (e) {
                 console.error('Ошибка сохранения:', e);
                 alert('Ошибка при сохранении');
-            }
-        });
-    }
-});
-
-// ==================== ДОБАВЛЕНИЕ ОПЕРАЦИИ (МОДАЛЬНОЕ ОКНО) ====================
-
-document.addEventListener('DOMContentLoaded', function() {
-    const modalType = document.getElementById('modal_type');
-    const modalCategory = document.getElementById('modal_category');
-    const modalSubcategory = document.getElementById('modal_subcategory');
-
-    if (modalType && modalCategory && modalSubcategory) {
-        modalType.addEventListener('change', function() {
-            const type = this.value;
-            modalCategory.innerHTML = '<option value="">Выберите категорию</option>';
-            modalSubcategory.innerHTML = '<option value="">Выберите подкатегорию</option>';
-
-            let categories = {};
-            if (type === 'Доход') {
-                categories = window.incomeCategories || {};
-            } else if (type === 'Расход') {
-                categories = window.expenseCategories || {};
-            }
-
-            for (let cat in categories) {
-                const option = document.createElement('option');
-                option.value = cat;
-                option.textContent = cat;
-                modalCategory.appendChild(option);
-            }
-        });
-
-        modalCategory.addEventListener('change', function() {
-            const type = modalType.value;
-            const category = this.value;
-            modalSubcategory.innerHTML = '<option value="">Выберите подкатегорию</option>';
-
-            let categories = {};
-            if (type === 'Доход') {
-                categories = window.incomeCategories || {};
-            } else if (type === 'Расход') {
-                categories = window.expenseCategories || {};
-            }
-
-            if (category && categories[category]) {
-                categories[category].forEach(sub => {
-                    if (sub) {
-                        const option = document.createElement('option');
-                        option.value = sub;
-                        option.textContent = sub;
-                        modalSubcategory.appendChild(option);
-                    }
-                });
             }
         });
     }

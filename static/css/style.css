@@ -12,90 +12,12 @@ body {
     line-height: 1.5;
 }
 
-/* Увеличенные шрифты для таблиц */
-.table {
-    font-size: 1rem;
-}
-
-.table td, .table th {
-    padding: 1rem 0.85rem;
-}
-
-/* Увеличенные шрифты для карточек */
-.card-title {
-    font-size: 1.2rem;
-    font-weight: 600;
-}
-
-.card-text {
-    font-size: 1rem;
-}
-
-.stat-value {
-    font-size: 2rem;
-}
-
-/* Увеличенные шрифты для форм */
-.form-label {
-    font-size: 0.95rem;
-}
-
-.form-control, .form-select {
-    font-size: 1rem;
-    padding: 0.55rem 0.85rem;
-}
-
-/* Увеличенные шрифты для кнопок */
-.btn {
-    font-size: 0.95rem;
-    padding: 0.5rem 1rem;
-}
-
-.btn-sm {
-    font-size: 0.85rem;
-    padding: 0.4rem 0.8rem;
-}
-
-/* Увеличенные шрифты для навигации */
-.nav-link {
-    font-size: 1.05rem;
-}
-
-/* Увеличенные шрифты для модальных окон */
-.modal-title {
-    font-size: 1.25rem;
-}
-
-.modal-body {
-    font-size: 1rem;
-}
-
-/* Увеличенные шрифты для бейджей (подкатегории) */
-.badge {
-    font-size: 0.85rem;
-    padding: 0.45rem 0.75rem;
-}
-
-/* Заголовки */
-h1 {
-    font-size: 1.8rem;
-}
-
-h2 {
-    font-size: 1.5rem;
-}
-
-h3 {
-    font-size: 1.3rem;
-}
-
-h4 {
-    font-size: 1.2rem;
-}
-
-h5 {
-    font-size: 1.1rem;
-}
+h1 { font-size: 1.8rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.3rem; }
+h4 { font-size: 1.2rem; }
+h5 { font-size: 1.1rem; }
+h6 { font-size: 1rem; }
 
 /* Карточки со статистикой */
 .small-box .inner h3 {

@@ -1,55 +1,13 @@
-from flask import request, redirect, url_for, flash, render_template
+from flask import Blueprint, request, redirect, url_for, flash, render_template
 from database import get_db
 from datetime import datetime, date
 
+bp = Blueprint('regular', __name__)
 
-def register_routes(app):
-    @app.route('/regular')
-    def regular():
-        filter_type = request.args.get('filter', 'all')
-        now = date.today()
 
-        with get_db() as conn:
-            # Получаем категории расходов для выпадающих списков
-            expense_cats = {}
-            expense_main = conn.execute('''
-                SELECT * FROM categories WHERE parent_id IS NULL AND type = 'Расход' ORDER BY name
-            ''').fetchall()
-
-            for cat in expense_main:
-                subcats = conn.execute('''
-                    SELECT name FROM categories WHERE parent_id = ? ORDER BY name
-                ''', (cat['id'],)).fetchall()
-                expense_cats[cat['name']] = [s['name'] for s in subcats]
-
-            # Фильтрация платежей
-            if filter_type == 'current':
-                if 10 <= now.day <= 24:
-                    period_start, period_end = 10, 24
-                else:
-                    period_start, period_end = 25, 9
-
-                payments = []
-                all_payments = conn.execute(
-                    'SELECT * FROM regular_payments ORDER BY day, category, subcategory').fetchall()
-
-                for p in all_payments:
-                    if p['day']:
-                        payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
-                        if period_start <= period_end:
-                            if period_start <= payment_day <= period_end:
-                                payments.append(p)
-                        else:
-                            if payment_day >= period_start or payment_day <= period_end:
-                                payments.append(p)
-            else:
-                payments = conn.execute('SELECT * FROM regular_payments ORDER BY day, category, subcategory').fetchall()
-
-        return render_template('regular.html', payments=payments, expense_categories=expense_cats,
-                               filter_type=filter_type, now=now)
-
-    @app.route('/regular', methods=['POST'])
-    def regular_post():
+@bp.route('/regular', methods=['GET', 'POST'])
+def regular():
+    if request.method == 'POST':
         # Добавление нового платежа
         if 'add_category' in request.form and 'add_amount' in request.form:
             amount = float(request.form['add_amount'])
@@ -57,24 +15,14 @@ def register_routes(app):
             category = request.form['add_category']
             subcategory = request.form.get('add_subcategory', '')
             interval = request.form.get('add_interval', 'monthly')
+            comment = request.form.get('add_comment', '')
 
-            print(
-                f"Добавление: category={category}, subcategory={subcategory}, amount={amount}, day={day}, interval={interval}")  # Отладка
-
-            if 'add_category' in request.form and 'add_amount' in request.form:
-                amount = float(request.form['add_amount'])
-                day = request.form['add_day']
-                category = request.form['add_category']
-                subcategory = request.form.get('add_subcategory', '')
-                interval = request.form.get('add_interval', 'monthly')
-                comment = request.form.get('add_comment', '')
-
-                with get_db() as conn:
-                    conn.execute('''
-                                   INSERT INTO regular_payments (amount, day, category, subcategory, interval, comment)
-                                   VALUES (?, ?, ?, ?, ?, ?)
-                               ''', (amount, day, category, subcategory, interval, comment))
-                flash('Платёж добавлен', 'success')
+            with get_db() as conn:
+                conn.execute('''
+                    INSERT INTO regular_payments (amount, day, category, subcategory, interval, comment)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (amount, day, category, subcategory, interval, comment))
+            flash('Платёж добавлен', 'success')
 
         # Удаление платежа
         elif 'delete_id' in request.form:
@@ -113,4 +61,44 @@ def register_routes(app):
                         conn.execute('UPDATE regular_payments SET comment = ? WHERE id = ?', (comment, pid))
             flash('Регулярные платежи обновлены', 'success')
 
-        return redirect(url_for('regular'))
+        return redirect(url_for('regular.regular'))
+
+    filter_type = request.args.get('filter', 'all')
+    now = date.today()
+
+    with get_db() as conn:
+        expense_cats = {}
+        expense_main = conn.execute('''
+            SELECT * FROM categories WHERE parent_id IS NULL AND type = 'Расход' ORDER BY name
+        ''').fetchall()
+
+        for cat in expense_main:
+            subcats = conn.execute('''
+                SELECT name FROM categories WHERE parent_id = ? ORDER BY name
+            ''', (cat['id'],)).fetchall()
+            expense_cats[cat['name']] = [s['name'] for s in subcats]
+
+        if filter_type == 'current':
+            if 10 <= now.day <= 24:
+                period_start, period_end = 10, 24
+            else:
+                period_start, period_end = 25, 9
+
+            payments = []
+            all_payments = conn.execute(
+                'SELECT * FROM regular_payments ORDER BY day, category, subcategory').fetchall()
+
+            for p in all_payments:
+                if p['day']:
+                    payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
+                    if period_start <= period_end:
+                        if period_start <= payment_day <= period_end:
+                            payments.append(p)
+                    else:
+                        if payment_day >= period_start or payment_day <= period_end:
+                            payments.append(p)
+        else:
+            payments = conn.execute('SELECT * FROM regular_payments ORDER BY day, category, subcategory').fetchall()
+
+    return render_template('regular.html', payments=payments, expense_categories=expense_cats,
+                           filter_type=filter_type, now=now)
