@@ -52,5 +52,9 @@ def budgets():
         ''', (start, end)).fetchall()
         spent_map = {r['category']: r['total'] for r in spent_raw}
 
+    total_budget = sum(v for v in budgets_map.values())
+    total_spent = sum(v for v in spent_map.values())
+
     return render_template('budgets.html', month=month, expense_categories=expense_cats,
-                           budgets_map=budgets_map, spent_map=spent_map)
+                           budgets_map=budgets_map, spent_map=spent_map,
+                           total_budget=total_budget, total_spent=total_spent)
