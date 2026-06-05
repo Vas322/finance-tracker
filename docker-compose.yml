@@ -1,0 +1,15 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - finance_data:/data
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-change-me}
+      - APP_PASSWORD=${APP_PASSWORD:-admin123}
+      - DB_PATH=/data/finance.db
+    restart: unless-stopped
+
+volumes:
+  finance_data:
