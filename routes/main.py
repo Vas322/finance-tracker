@@ -11,7 +11,8 @@ from services.regular_service import (
 )
 from services.planning_service import get_planning_data
 from services.balance_service import (
-    get_expenses_for_period, update_period_balance, update_current_period_balance,
+    get_expenses_for_period, get_income_for_period,
+    update_period_balance, update_current_period_balance,
 )
 from services.operation_service import get_operations_page, get_totals, get_latest_advance, get_planned_salary
 from services.category_service import get_all_category_names, get_income_categories, get_expense_categories
@@ -49,6 +50,7 @@ def index():
     period_start_date, period_end_date = get_period_dates(today)
     period_balance = update_period_balance(today)
     expenses_this_period = get_expenses_for_period(period_start_date, period_end_date)
+    income_this_period = get_income_for_period(period_start_date, period_end_date)
 
     regular_total_month = get_regular_total(period_type='month')
     paid_regular = get_paid_regular_payments_this_month()
@@ -71,7 +73,7 @@ def index():
     regular_after_income = get_regular_payments_after_date(today, next_income)
 
     spend_warning = "⚠️ Внимание! Денег не хватит на регулярные платежи!" if can_spend_today < 0 else ""
-    free_money_now = period_balance + total_income - total_expense - unpaid_regular
+    free_money_now = period_balance + income_this_period - expenses_this_period - unpaid_regular
     due_payments = get_due_regular_payments(today)
     all_categories = get_all_category_names()
 

@@ -30,6 +30,16 @@ def update_period_balance(today: date):
     return existing
 
 
+def get_income_for_period(start_date: date, end_date: date) -> float:
+    with get_db() as conn:
+        result = conn.execute('''
+            SELECT COALESCE(SUM(amount), 0) as total
+            FROM operations
+            WHERE type = 'Доход' AND date >= ? AND date <= ?
+        ''', (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))).fetchone()
+    return result['total']
+
+
 def update_current_period_balance(today: date, new_balance: float):
     period_start, period_end = get_period_dates(today)
     period_name = get_period(today.strftime('%Y-%m-%d'))
