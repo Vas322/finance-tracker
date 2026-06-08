@@ -1,4 +1,3 @@
-import os
 from database import get_db
 
 
@@ -7,10 +6,15 @@ def seed_default_user():
         existing = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
         if existing == 0:
             from werkzeug.security import generate_password_hash
-            default_password = os.environ.get('APP_PASSWORD', '12345')
+            import secrets
+            password = os.environ.get('APP_PASSWORD')
+            if not password:
+                password = secrets.token_urlsafe(12)
+                import sys
+                print(f'[!] APP_PASSWORD не задан. Сгенерирован random пароль для admin: {password}', file=sys.stderr, flush=True)
             conn.execute(
                 'INSERT INTO users (username, password_hash) VALUES (?, ?)',
-                ('admin', generate_password_hash(default_password))
+                ('admin', generate_password_hash(password))
             )
 
 
