@@ -98,19 +98,17 @@ def index():
         salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
         salary_remainder_note = "⚠️ Аванс ещё не внесён"
 
-    # Светофор: хватит ли денег НА РУКАХ на все оставшиеся регулярные платежи месяца
+    # Светофор: хватит ли всех денег (включая будущую ЗП) на все регулярные платежи месяца
     unpaid_regular_month = regular_total_month - paid_regular
     cash_on_hand = period_balance + income_this_period - expenses_this_period
-    buffer = cash_on_hand - unpaid_regular_month
-
     available_for_month = cash_on_hand + expected_income - unpaid_regular_month
 
     # Ежедневный лимит: сколько можно тратить в день из того, что уже на руках
     daily_limit = can_spend_today / days_to_income if days_to_income > 0 else can_spend_today
 
-    if buffer < 0:
+    if available_for_month < 0:
         traffic_light, traffic_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
-    elif buffer < 5000:
+    elif available_for_month < 5000:
         traffic_light, traffic_text = "yellow", "⚠️ Осторожно: остаток меньше 5000 ₽"
     else:
         traffic_light, traffic_text = "green", "✅ Всё хорошо"
@@ -135,7 +133,6 @@ def index():
                             traffic_light=traffic_light,
                             traffic_text=traffic_text,
                             available_for_month=available_for_month,
-                            buffer=buffer,
                             daily_limit=daily_limit,
                            regular_this_period=regular_this_period,
                            period_balance=period_balance,
