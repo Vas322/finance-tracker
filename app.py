@@ -45,11 +45,18 @@ app = create_app()
 from database import init_db, backup_db
 from apscheduler.schedulers.background import BackgroundScheduler
 
+
+def check_regular_payments():
+    from services.telegram_service import check_and_notify
+    check_and_notify()
+
+
 backup_db()
 init_db()
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(backup_db, 'cron', hour='6,18', minute=0)
+scheduler.add_job(check_regular_payments, 'cron', hour='9', minute=0)
 scheduler.start()
 
 if __name__ == '__main__':

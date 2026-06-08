@@ -6,6 +6,8 @@ class Config:
     ADVANCE_DAY = int(os.environ.get('ADVANCE_DAY', '25'))
     SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-here')
     DB_PATH = os.environ.get('DB_PATH', 'finance.db')
+    TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+    TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 
 
 SALARY_DAY = Config.SALARY_DAY
