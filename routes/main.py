@@ -70,6 +70,7 @@ def index():
 
     expected_income = planned_salary - real_advance if real_advance > 0 else planned_salary
     next_income = get_next_income_date(today)
+    upcoming_vacation = get_upcoming_vacation()
 
     vacation_pay = upcoming_vacation['estimated_pay'] if upcoming_vacation else 0
     if vacation_pay > 0:
@@ -86,7 +87,6 @@ def index():
     spend_warning = "⚠️ Внимание! Денег не хватит на регулярные платежи!" if can_spend_today < 0 else ""
     free_money_now = period_balance + income_this_period - expenses_this_period - unpaid_regular
     due_payments = get_due_regular_payments(today)
-    upcoming_vacation = get_upcoming_vacation()
     all_categories = get_all_category_names()
 
     if real_advance > 0:
