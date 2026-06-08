@@ -94,6 +94,12 @@
                             <p>Планирование</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('vacations.vacations') }}" class="nav-link {% if request.endpoint == 'vacations.vacations' %}active{% endif %}">
+                            <i class="nav-icon bi bi-sun"></i>
+                            <p>Отпуска</p>
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </div>

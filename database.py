@@ -75,6 +75,24 @@ def init_db():
                 UNIQUE(category, month)
             )
         ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS vacations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                start_date TEXT NOT NULL,
+                end_date TEXT NOT NULL,
+                status TEXT DEFAULT 'planned', -- planned, taken, cancelled
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS vacations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                start_date TEXT NOT NULL,
+                end_date TEXT NOT NULL,
+                status TEXT DEFAULT 'planned', -- planned, taken, cancelled
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        ''')
 
     from seeds import seed_default_user, seed_planned_salary, seed_categories, seed_regular_payments
     seed_default_user()

@@ -16,6 +16,7 @@ from services.balance_service import (
 )
 from services.operation_service import get_operations_page, get_totals, get_latest_advance, get_planned_salary
 from services.category_service import get_all_category_names, get_income_categories, get_expense_categories
+from services.vacation_service import get_upcoming_vacation
 
 bp = Blueprint('main', __name__)
 
@@ -75,6 +76,7 @@ def index():
     spend_warning = "⚠️ Внимание! Денег не хватит на регулярные платежи!" if can_spend_today < 0 else ""
     free_money_now = period_balance + income_this_period - expenses_this_period - unpaid_regular
     due_payments = get_due_regular_payments(today)
+    upcoming_vacation = get_upcoming_vacation()
     all_categories = get_all_category_names()
 
     if real_advance > 0:
@@ -120,8 +122,9 @@ def index():
                            expense_categories=expense_cats,
                            planning=planning,
                            regular_total_month=regular_total_month,
-                           due_payments=due_payments,
-                           page=page, total_pages=total_pages)
+                            due_payments=due_payments,
+                            upcoming_vacation=upcoming_vacation,
+                            page=page, total_pages=total_pages)
 
 
 @bp.route('/apply_regular', methods=['POST'])

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Управление отпусками{% endblock %}
+
+{% block content %}
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h4 class="card-title mb-0">🏖️ Управление отпусками</h4>
+    </div>
+    <div class="card-body">
+        <!-- Форма добавления отпуска -->
+        <div class="card card-success card-outline mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">➕ Добавить отпуск</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('vacations.vacations') }}" class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label small">Дата начала</label>
+                        <input type="date" name="start_date" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Дата окончания</label>
+                        <input type="date" name="end_date" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-success btn-sm">✅ Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Таблица отпусков -->
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Дата начала</th>
+                        <th>Дата окончания</th>
+                        <th>Дней</th>
+                        <th>Примерная сумма отпускных</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in vacations %}
+                    <tr>
+                        <td>{{ v.start_date.strftime('%d.%m.%Y') }}</td>
+                        <td>{{ v.end_date.strftime('%d.%m.%Y') }}</td>
+                        <td>{{ v.days }}</td>
+                        <td class="fw-bold text-success">{{ "{:,.0f}".format(v.estimated_pay).replace(",", " ") }} ₽</td>
+                        <td>
+                            {% if v.status == 'planned' %}
+                            <span class="badge bg-primary">Запланирован</span>
+                            {% elif v.status == 'taken' %}
+                            <span class="badge bg-success">Использован</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Отменён</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center">Нет запланированных отпусков</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

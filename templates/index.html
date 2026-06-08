@@ -23,6 +23,25 @@
 </div>
 {% endif %}
 
+{% if upcoming_vacation %}
+<!-- Виджет предстоящего отпуска -->
+<div class="row">
+    <div class="col-12 mb-3">
+        <div class="card border-info">
+            <div class="card-body text-center py-3">
+                <h5 class="card-title mb-1">🏖️ Предстоящий отпуск</h5>
+                <h3 class="text-info mb-1">{{ "{:,.0f}".format(upcoming_vacation.estimated_pay).replace(",", " ") }} ₽</h3>
+                <small class="text-muted">
+                    с {{ upcoming_vacation.start_date.strftime('%d.%m.%Y') }}
+                    по {{ upcoming_vacation.end_date.strftime('%d.%m.%Y') }}
+                    ({{ upcoming_vacation.days }} дн.)
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Светофор кассового разрыва -->
 <div class="row">
     <div class="col-12 mb-3">

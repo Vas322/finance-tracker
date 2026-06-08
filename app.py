@@ -15,6 +15,7 @@ def create_app() -> Flask:
     from routes.auth import bp as auth_bp
     from routes.analytics import bp as analytics_bp
     from routes.planning import bp as planning_bp
+    from routes.vacations import bp as vacations_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(operations_bp)
@@ -25,6 +26,7 @@ def create_app() -> Flask:
     app.register_blueprint(auth_bp)
     app.register_blueprint(analytics_bp)
     app.register_blueprint(planning_bp)
+    app.register_blueprint(vacations_bp)
 
     @app.before_request
     def check_auth():
