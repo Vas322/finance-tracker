@@ -25,11 +25,39 @@
 
 <!-- БЛОК 1: Состояние счёта -->
 <div class="row">
-    <div class="col-12 mb-3">
+    <div class="col-md-6 mb-3">
         <div class="card h-100 border-{{ 'danger' if traffic_light == 'red' else 'warning' if traffic_light == 'yellow' else 'success' }}">
-            <div class="card-body text-center py-2">
-                <h5 class="card-title mb-0">🚦 {{ traffic_text }}</h5>
-                <small class="text-muted">Свободных денег: {{ "{:,.0f}".format(free_money_now).replace(",", " ") }} ₽</small>
+            <div class="card-body text-center">
+                <h5 class="card-title mb-1">🚦 Кассовый разрыв</h5>
+                <h2 class="mb-0 text-{{ 'danger' if traffic_light == 'red' else 'warning' if traffic_light == 'yellow' else 'success' }}">
+                    {{ traffic_text }}
+                </h2>
+                <small class="text-muted">
+                    Доступно на месяц: {{ "{:,.0f}".format(available_for_month).replace(",", " ") }} ₽
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card h-100 border-info">
+            <div class="card-body text-center">
+                <h5 class="card-title mb-1">📅 Лимит на день</h5>
+                <h2 class="mb-0 text-info">
+                    {{ "{:,.0f}".format(daily_limit).replace(",", " ") }} ₽
+                </h2>
+                <small class="text-muted">Осталось {{ days_left }} дн.</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">🏦 Начальный остаток</h5>
+                <div class="d-flex justify-content-center align-items-center gap-2">
+                    <h3 class="text-secondary mb-0">{{ "{:,.0f}".format(period_balance).replace(",", " ") }} ₽</h3>
+                    <button onclick="showMoneyModal()" class="btn btn-sm btn-outline-secondary" title="Редактировать">✏️</button>
+                </div>
+                <small>Остаток на начало периода</small>
             </div>
         </div>
     </div>
@@ -69,12 +97,8 @@
     <div class="col-md-3 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">
-                <h5 class="card-title">🏦 Начальный остаток</h5>
-                <div class="d-flex justify-content-center align-items-center gap-2">
-                    <h3 class="text-secondary mb-0">{{ "{:,.0f}".format(period_balance).replace(",", " ") }} ₽</h3>
-                    <button onclick="showMoneyModal()" class="btn btn-sm btn-outline-secondary" title="Редактировать">✏️</button>
-                </div>
-                <small>Остаток на начало периода</small>
+                <h5 class="card-title">⚖️ Баланс</h5>
+                <h3 class="text-info">{{ "{:,.0f}".format(balance).replace(",", " ") }} ₽</h3>
             </div>
         </div>
     </div>

@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database import get_db
 from datetime import date
+import calendar
 
 from services.period_service import get_next_income_date, get_period_dates, get_period
 from services.regular_service import (
@@ -98,9 +99,23 @@ def index():
         salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
         salary_remainder_note = "⚠️ Аванс ещё не внесён"
 
-    if free_money_now < 0:
+    # Светофор: смотрим на весь месяц (а не только на текущий период)
+    unpaid_regular_month = regular_total_month - paid_regular
+    available_for_month = (
+        period_balance
+        + income_this_period
+        + expected_income
+        + vacation_pay
+        - expenses_this_period
+        - unpaid_regular_month
+    )
+    last_day = calendar.monthrange(today.year, today.month)[1]
+    days_left = last_day - today.day + 1
+    daily_limit = available_for_month / days_left if days_left > 0 else 0
+
+    if available_for_month < 0:
         traffic_light, traffic_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
-    elif free_money_now < 5000:
+    elif available_for_month < 5000:
         traffic_light, traffic_text = "yellow", "⚠️ Осторожно: остаток меньше 5000 ₽"
     else:
         traffic_light, traffic_text = "green", "✅ Всё хорошо"
@@ -122,8 +137,11 @@ def index():
                            spend_warning=spend_warning,
                            days_to_income=days_to_income,
                            next_income=next_income,
-                           traffic_light=traffic_light,
-                           traffic_text=traffic_text,
+                            traffic_light=traffic_light,
+                            traffic_text=traffic_text,
+                            available_for_month=available_for_month,
+                            daily_limit=daily_limit,
+                            days_left=days_left,
                            regular_this_period=regular_this_period,
                            period_balance=period_balance,
                            all_categories=all_categories,
