@@ -23,6 +23,21 @@
 </div>
 {% endif %}
 
+<!-- Светофор кассового разрыва -->
+<div class="row">
+    <div class="col-12 mb-3">
+        <div class="card h-100 border-{{ 'danger' if traffic_light == 'red' else 'warning' if traffic_light == 'yellow' else 'success' }}">
+            <div class="card-body text-center py-3">
+                <h5 class="card-title mb-1">🚦 Кассовый разрыв</h5>
+                <h2 class="mb-1 text-{{ 'danger' if traffic_light == 'red' else 'warning' if traffic_light == 'yellow' else 'success' }}">
+                    {{ traffic_text }}
+                </h2>
+                <small class="text-muted">Свободных денег: {{ "{:,.0f}".format(free_money_now).replace(",", " ") }} ₽</small>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Карточки со статистикой (первые 4) -->
 <div class="row">
     <div class="col-md-3 mb-3">
@@ -97,21 +112,6 @@
                 <h5 class="card-title">📋 Предстоящие платежи</h5>
                 <h3 class="text-danger">{{ "{:,.0f}".format(regular_after_income).replace(",", " ") }} ₽</h3>
                 <small>После получения зарплаты</small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Светофор кассового разрыва -->
-<div class="row">
-    <div class="col-12 mb-3">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <h5 class="card-title">🚦 Кассовый разрыв</h5>
-                <h3 class="text-{{ 'danger' if traffic_light == 'red' else 'warning' if traffic_light == 'yellow' else 'success' }}">
-                    {{ traffic_text }}
-                </h3>
-                <small>Свободных денег: {{ "{:,.0f}".format(free_money_now).replace(",", " ") }} ₽</small>
             </div>
         </div>
     </div>
