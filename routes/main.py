@@ -108,8 +108,8 @@ def index():
         - unpaid_regular_month
     )
 
-    # Ежедневный лимит: распределяем доступное на месяц до следующего поступления
-    daily_limit = available_for_month / days_to_income if days_to_income > 0 else 0
+    # Ежедневный лимит: сколько можно тратить в день из того, что уже на руках
+    daily_limit = can_spend_today / days_to_income if days_to_income > 0 else can_spend_today
 
     if available_for_month < 0:
         traffic_light, traffic_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
