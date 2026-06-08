@@ -25,20 +25,29 @@
 
 <!-- БЛОК 1: Состояние счёта -->
 <div class="row">
-    <div class="col-md-6 mb-3">
-        <div class="card h-100 border-{{ 'danger' if traffic_light == 'red' else 'warning' if traffic_light == 'yellow' else 'success' }}">
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-{{ 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' }}">
             <div class="card-body text-center">
-                <h5 class="card-title mb-1">🚦 Кассовый разрыв</h5>
-                <h2 class="mb-0 text-{{ 'danger' if traffic_light == 'red' else 'warning' if traffic_light == 'yellow' else 'success' }}">
-                    {{ traffic_text }}
+                <h5 class="card-title mb-1">🚦 Сегодня</h5>
+                <h2 class="mb-0 text-{{ 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' }}">
+                    {{ today_text }}
                 </h2>
-                <small class="text-muted">
-                    Доступно на месяц: {{ "{:,.0f}".format(available_for_month).replace(",", " ") }} ₽
-                </small>
+                <small class="text-muted">Можно потратить: {{ "{:,.0f}".format(can_spend_today).replace(",", " ") }} ₽</small>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-{{ 'danger' if month_light == 'red' else 'warning' if month_light == 'yellow' else 'success' }}">
+            <div class="card-body text-center">
+                <h5 class="card-title mb-1">🚦 До зарплаты</h5>
+                <h2 class="mb-0 text-{{ 'danger' if month_light == 'red' else 'warning' if month_light == 'yellow' else 'success' }}">
+                    {{ month_text }}
+                </h2>
+                <small class="text-muted">Доступно: {{ "{:,.0f}".format(available_for_month).replace(",", " ") }} ₽</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
         <div class="card h-100 border-info">
             <div class="card-body text-center">
                 <h5 class="card-title mb-1">📅 Средний лимит на день</h5>
@@ -49,6 +58,8 @@
             </div>
         </div>
     </div>
+</div>
+<div class="row">
     <div class="col-md-3 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">

@@ -98,20 +98,28 @@ def index():
         salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
         salary_remainder_note = "⚠️ Аванс ещё не внесён"
 
-    # Светофор: хватит ли всех денег (включая будущую ЗП) на все регулярные платежи месяца
+    # Светофор Сегодня — хватит ли денег на сегодня
     unpaid_regular_month = regular_total_month - paid_regular
     cash_on_hand = period_balance + income_this_period - expenses_this_period
     available_for_month = cash_on_hand + expected_income - unpaid_regular_month
 
+    if can_spend_today < 0:
+        today_light, today_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
+    elif can_spend_today < 5000:
+        today_light, today_text = "yellow", "⚠️ Осторожно: остаток меньше 5000 ₽"
+    else:
+        today_light, today_text = "green", "✅ Всё хорошо"
+
+    # Светофор До конца зарплатного месяца — хватит ли с учётом будущей ЗП на все регулярные
+    if available_for_month < 0:
+        month_light, month_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
+    elif available_for_month < 5000:
+        month_light, month_text = "yellow", "⚠️ Осторожно: остаток меньше 5000 ₽"
+    else:
+        month_light, month_text = "green", "✅ Всё хорошо"
+
     # Ежедневный лимит: сколько можно тратить в день из того, что уже на руках
     daily_limit = can_spend_today / days_to_income if days_to_income > 0 else can_spend_today
-
-    if available_for_month < 0:
-        traffic_light, traffic_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
-    elif available_for_month < 5000:
-        traffic_light, traffic_text = "yellow", "⚠️ Осторожно: остаток меньше 5000 ₽"
-    else:
-        traffic_light, traffic_text = "green", "✅ Всё хорошо"
 
     income_cats = get_income_categories()
     expense_cats = get_expense_categories()
@@ -130,8 +138,10 @@ def index():
                            spend_warning=spend_warning,
                            days_to_income=days_to_income,
                            next_income=next_income,
-                            traffic_light=traffic_light,
-                            traffic_text=traffic_text,
+                            today_light=today_light,
+                            today_text=today_text,
+                            month_light=month_light,
+                            month_text=month_text,
                             available_for_month=available_for_month,
                             daily_limit=daily_limit,
                            regular_this_period=regular_this_period,
