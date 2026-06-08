@@ -23,41 +23,18 @@
 </div>
 {% endif %}
 
-{% if upcoming_vacation %}
-<!-- Виджет предстоящего отпуска -->
-<div class="row">
-    <div class="col-12 mb-3">
-        <div class="card border-info">
-            <div class="card-body text-center py-3">
-                <h5 class="card-title mb-1">🏖️ Предстоящий отпуск</h5>
-                <h3 class="text-info mb-1">{{ "{:,.0f}".format(upcoming_vacation.estimated_pay).replace(",", " ") }} ₽</h3>
-                <small class="text-muted">
-                    с {{ upcoming_vacation.start_date.strftime('%d.%m.%Y') }}
-                    по {{ upcoming_vacation.end_date.strftime('%d.%m.%Y') }}
-                    ({{ upcoming_vacation.days }} дн.)
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Светофор кассового разрыва -->
+<!-- БЛОК 1: Состояние счёта -->
 <div class="row">
     <div class="col-12 mb-3">
         <div class="card h-100 border-{{ 'danger' if traffic_light == 'red' else 'warning' if traffic_light == 'yellow' else 'success' }}">
-            <div class="card-body text-center py-3">
-                <h5 class="card-title mb-1">🚦 Кассовый разрыв</h5>
-                <h2 class="mb-1 text-{{ 'danger' if traffic_light == 'red' else 'warning' if traffic_light == 'yellow' else 'success' }}">
-                    {{ traffic_text }}
-                </h2>
+            <div class="card-body text-center py-2">
+                <h5 class="card-title mb-0">🚦 {{ traffic_text }}</h5>
                 <small class="text-muted">Свободных денег: {{ "{:,.0f}".format(free_money_now).replace(",", " ") }} ₽</small>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Карточки со статистикой (первые 4) -->
 <div class="row">
     <div class="col-md-3 mb-3">
         <div class="card h-100">
@@ -78,42 +55,6 @@
     <div class="col-md-3 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">
-                <h5 class="card-title">⚖️ Баланс</h5>
-                <h3 class="text-info">{{ "{:,.0f}".format(balance).replace(",", " ") }} ₽</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <h5 class="card-title">🏦 Начальный остаток</h5>
-                <div class="d-flex justify-content-center align-items-center gap-2">
-                    <h3 class="text-secondary mb-0">{{ "{:,.0f}".format(period_balance).replace(",", " ") }} ₽</h3>
-                    <button onclick="showMoneyModal()" class="btn btn-sm btn-outline-secondary" title="Редактировать">
-                        ✏️
-                    </button>
-                </div>
-                <small>Остаток на начало периода</small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Ожидаемое поступление, Можно потратить сегодня, Предстоящие платежи -->
-<div class="row">
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <h5 class="card-title">📅 Ожидаемое поступление</h5>
-                <h3 class="text-primary">{{ "{:,.0f}".format(expected_income).replace(",", " ") }} ₽</h3>
-                <small>До {{ next_income.strftime('%d.%m.%Y') }} ({{ days_to_income }} дней)</small>
-                <small class="d-block text-muted">{{ salary_remainder_note }}</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            <div class="card-body text-center">
                 <h5 class="card-title">💸 Можно потратить сегодня</h5>
                 <h3 class="text-{{ 'danger' if can_spend_today < 0 else 'info' }}">
                     {{ "{:,.0f}".format(can_spend_today).replace(",", " ") }} ₽
@@ -125,12 +66,74 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
+    <div class="col-md-3 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">
-                <h5 class="card-title">📋 Предстоящие платежи</h5>
-                <h3 class="text-danger">{{ "{:,.0f}".format(regular_after_income).replace(",", " ") }} ₽</h3>
-                <small>После получения зарплаты</small>
+                <h5 class="card-title">🏦 Начальный остаток</h5>
+                <div class="d-flex justify-content-center align-items-center gap-2">
+                    <h3 class="text-secondary mb-0">{{ "{:,.0f}".format(period_balance).replace(",", " ") }} ₽</h3>
+                    <button onclick="showMoneyModal()" class="btn btn-sm btn-outline-secondary" title="Редактировать">✏️</button>
+                </div>
+                <small>Остаток на начало периода</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- БЛОК 2: Планирование (аккордеон) -->
+<div class="card card-primary card-outline mb-4">
+    <div class="card-header" id="planning-heading">
+        <h5 class="mb-0">
+            <button class="btn btn-link text-decoration-none p-0" data-bs-toggle="collapse" data-bs-target="#planning-collapse" aria-expanded="false">
+                📋 Планирование
+            </button>
+        </h5>
+    </div>
+    <div id="planning-collapse" class="collapse">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">📅 Ожидаемое поступление</h5>
+                            <h3 class="text-primary">{{ "{:,.0f}".format(expected_income).replace(",", " ") }} ₽</h3>
+                            <small>До {{ next_income.strftime('%d.%m.%Y') }} ({{ days_to_income }} дней)</small>
+                            <small class="d-block text-muted">{{ salary_remainder_note }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">⚖️ Баланс</h5>
+                            <h3 class="text-info">{{ "{:,.0f}".format(balance).replace(",", " ") }} ₽</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">📋 Предстоящие платежи</h5>
+                            <h3 class="text-danger">{{ "{:,.0f}".format(regular_after_income).replace(",", " ") }} ₽</h3>
+                            <small>После получения зарплаты</small>
+                        </div>
+                    </div>
+                </div>
+                {% if upcoming_vacation %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-info">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">🏖️ Отпуск</h5>
+                            <h3 class="text-info">{{ "{:,.0f}".format(upcoming_vacation.estimated_pay).replace(",", " ") }} ₽</h3>
+                            <small>
+                                с {{ upcoming_vacation.start_date.strftime('%d.%m.%Y') }}
+                                по {{ upcoming_vacation.end_date.strftime('%d.%m.%Y') }}
+                                ({{ upcoming_vacation.days }} дн.)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
