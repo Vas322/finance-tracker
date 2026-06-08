@@ -70,6 +70,16 @@ def index():
 
     expected_income = planned_salary - real_advance if real_advance > 0 else planned_salary
     next_income = get_next_income_date(today)
+
+    vacation_pay = upcoming_vacation['estimated_pay'] if upcoming_vacation else 0
+    if vacation_pay > 0:
+        expected_income_breakdown = (
+            f"ЗП: {'{:,.0f}'.format(expected_income).replace(',', ' ')} ₽"
+            f" + Отпускные: {'{:,.0f}'.format(vacation_pay).replace(',', ' ')} ₽"
+        )
+        expected_income += vacation_pay
+    else:
+        expected_income_breakdown = ''
     future_regular = get_regular_payments_until_date(today, next_income)
     regular_after_income = get_regular_payments_after_date(today, next_income)
 
@@ -104,8 +114,9 @@ def index():
                            total_expense=total_expense,
                            balance=balance,
                            free_money_now=free_money_now,
-                           expected_income=expected_income,
-                           future_regular=future_regular,
+                            expected_income=expected_income,
+                            expected_income_breakdown=expected_income_breakdown,
+                            future_regular=future_regular,
                            regular_after_income=regular_after_income,
                            can_spend_today=can_spend_today,
                            spend_warning=spend_warning,

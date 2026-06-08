@@ -92,48 +92,42 @@
     <div id="planning-collapse" class="collapse">
         <div class="card-body">
             <div class="row">
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">📅 Ожидаемое поступление</h5>
-                            <h3 class="text-primary">{{ "{:,.0f}".format(expected_income).replace(",", " ") }} ₽</h3>
-                            <small>До {{ next_income.strftime('%d.%m.%Y') }} ({{ days_to_income }} дней)</small>
-                            <small class="d-block text-muted">{{ salary_remainder_note }}</small>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">📅 Ожидаемое поступление</h5>
+                                <h3 class="text-primary">{{ "{:,.0f}".format(expected_income).replace(",", " ") }} ₽</h3>
+                                {% if expected_income_breakdown %}
+                                <small class="d-block">{{ expected_income_breakdown }}</small>
+                                {% endif %}
+                                <small>До {{ next_income.strftime('%d.%m.%Y') }} ({{ days_to_income }} дней)</small>
+                                <small class="d-block text-muted">{{ salary_remainder_note }}</small>
+                                {% if upcoming_vacation %}
+                                <small class="d-block text-info">
+                                    🏖️ Отпуск с {{ upcoming_vacation.start_date.strftime('%d.%m.%Y') }}
+                                    по {{ upcoming_vacation.end_date.strftime('%d.%m.%Y') }}
+                                </small>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">⚖️ Баланс</h5>
-                            <h3 class="text-info">{{ "{:,.0f}".format(balance).replace(",", " ") }} ₽</h3>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">⚖️ Баланс</h5>
+                                <h3 class="text-info">{{ "{:,.0f}".format(balance).replace(",", " ") }} ₽</h3>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">📋 Предстоящие платежи</h5>
-                            <h3 class="text-danger">{{ "{:,.0f}".format(regular_after_income).replace(",", " ") }} ₽</h3>
-                            <small>После получения зарплаты</small>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">📋 Предстоящие платежи</h5>
+                                <h3 class="text-danger">{{ "{:,.0f}".format(regular_after_income).replace(",", " ") }} ₽</h3>
+                                <small>После получения зарплаты</small>
+                            </div>
                         </div>
                     </div>
-                </div>
-                {% if upcoming_vacation %}
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100 border-info">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">🏖️ Отпуск</h5>
-                            <h3 class="text-info">{{ "{:,.0f}".format(upcoming_vacation.estimated_pay).replace(",", " ") }} ₽</h3>
-                            <small>
-                                с {{ upcoming_vacation.start_date.strftime('%d.%m.%Y') }}
-                                по {{ upcoming_vacation.end_date.strftime('%d.%m.%Y') }}
-                                ({{ upcoming_vacation.days }} дн.)
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
