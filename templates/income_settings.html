@@ -9,20 +9,22 @@
     </div>
     <div class="card-body">
         <form method="POST" action="{{ url_for('settings.save_income_settings') }}">
-            <div class="row">
+            <div class="row g-4">
                 <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Плановая зарплата за месяц (₽)</label>
-                        <input type="number" name="planned_salary" step="0.01" value="{{ planned_salary }}" class="form-control" required>
-                        <div class="form-text text-muted">Сумма, которая ожидается за полный месяц (аванс + зарплата).</div>
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">💰 Плановая зарплата за месяц</h5>
+                            <input type="number" name="planned_salary" step="0.01" value="{{ planned_salary }}" class="form-control form-control-lg mt-2" required>
+                            <small class="text-muted">Сумма, которая ожидается за полный месяц (аванс + зарплата).</small>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card h-100">
-                        <div class="card-body text-center">
+                        <div class="card-body">
                             <h5 class="card-title">🏦 Начальный остаток</h5>
-                            <div class="d-flex justify-content-center align-items-center gap-2">
-                                <h3 class="text-secondary mb-0">{{ "{:,.0f}".format(period_balance).replace(",", " ") }} ₽</h3>
+                            <div class="d-flex align-items-center gap-2 mt-2">
+                                <h3 class="mb-0">{{ "{:,.0f}".format(period_balance).replace(",", " ") }} ₽</h3>
                                 <button onclick="showMoneyModal()" class="btn btn-sm btn-outline-secondary" title="Редактировать">✏️</button>
                             </div>
                             <small>Остаток на начало периода</small>
