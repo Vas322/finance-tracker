@@ -40,3 +40,17 @@
 
 /* Прогресс-bar в аналитике */
 .progress { border-radius: 0.25rem; }
+
+/* Редактирование подкатегорий */
+.subcat-chip .input-group-text {
+    background: #e9ecef;
+    font-size: 0.85rem;
+}
+.subcat-chip .btn {
+    border: 1px solid #ced4da;
+    font-size: 0.85rem;
+}
+.subcats-list {
+    max-height: 120px;
+    overflow-y: auto;
+}

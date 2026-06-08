@@ -3,8 +3,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const expenseCategories = window.expenseCategories || {};
 
-    console.log('expenseCategories загружены:', expenseCategories);
-
     // Функция обновления подкатегорий
     function updateSubcategorySelect(categorySelect, subcategorySelect, currentSub = '') {
         const category = categorySelect.value;

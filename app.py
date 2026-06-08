@@ -1,34 +1,44 @@
 from flask import Flask, session, request, redirect, url_for
-from routes.main import bp as main_bp
-from routes.operations import bp as operations_bp
-from routes.regular import bp as regular_bp
-from routes.settings import bp as settings_bp
-from routes.categories import bp as categories_bp
-from routes.budgets import bp as budgets_bp
-from routes.auth import bp as auth_bp
-import os
-
-app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
-
-app.register_blueprint(main_bp)
-app.register_blueprint(operations_bp)
-app.register_blueprint(regular_bp)
-app.register_blueprint(settings_bp)
-app.register_blueprint(categories_bp)
-app.register_blueprint(budgets_bp)
-app.register_blueprint(auth_bp)
+from config import Config
 
 
-@app.before_request
-def check_auth():
-    if request.endpoint and request.endpoint.startswith('auth.'):
-        return
-    if request.endpoint == 'static':
-        return
-    if not session.get('logged_in'):
-        return redirect(url_for('auth.login', next=request.path))
+def create_app() -> Flask:
+    app = Flask(__name__)
+    app.secret_key = Config.SECRET_KEY
 
+    from routes.main import bp as main_bp
+    from routes.operations import bp as operations_bp
+    from routes.regular import bp as regular_bp
+    from routes.settings import bp as settings_bp
+    from routes.categories import bp as categories_bp
+    from routes.budgets import bp as budgets_bp
+    from routes.auth import bp as auth_bp
+    from routes.analytics import bp as analytics_bp
+    from routes.planning import bp as planning_bp
+
+    app.register_blueprint(main_bp)
+    app.register_blueprint(operations_bp)
+    app.register_blueprint(regular_bp)
+    app.register_blueprint(settings_bp)
+    app.register_blueprint(categories_bp)
+    app.register_blueprint(budgets_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(analytics_bp)
+    app.register_blueprint(planning_bp)
+
+    @app.before_request
+    def check_auth():
+        if request.endpoint and request.endpoint.startswith('auth.'):
+            return
+        if request.endpoint == 'static':
+            return
+        if not session.get('logged_in'):
+            return redirect(url_for('auth.login', next=request.path))
+
+    return app
+
+
+app = create_app()
 
 from database import init_db, backup_db
 from apscheduler.schedulers.background import BackgroundScheduler

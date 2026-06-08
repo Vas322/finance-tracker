@@ -1,11 +1,20 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database import get_db
-from utils import get_next_income_date, get_regular_total, apply_regular_payments, \
-    get_unpaid_regular_payments, get_regular_payments_until_date, get_regular_payments_after_date, \
-    get_regular_payments_for_period, get_paid_regular_payments_this_month, get_planning_data, \
-    get_expenses_for_period, update_period_balance, get_period_dates, get_period, update_current_period_balance, \
-    get_due_regular_payments
 from datetime import date
+
+from services.period_service import get_next_income_date, get_period_dates, get_period
+from services.regular_service import (
+    get_regular_total, apply_regular_payments,
+    get_unpaid_regular_payments, get_regular_payments_until_date,
+    get_regular_payments_after_date, get_regular_payments_for_period,
+    get_paid_regular_payments_this_month, get_due_regular_payments,
+)
+from services.planning_service import get_planning_data
+from services.balance_service import (
+    get_expenses_for_period, update_period_balance, update_current_period_balance,
+)
+from services.operation_service import get_operations_page, get_totals, get_latest_advance, get_planned_salary
+from services.category_service import get_all_category_names, get_income_categories, get_expense_categories
 
 bp = Blueprint('main', __name__)
 
@@ -19,109 +28,26 @@ def index():
     category_filter = request.args.get('category', '')
     date_from = request.args.get('date_from', '')
     date_to = request.args.get('date_to', '')
-
     page = int(request.args.get('page', 1))
-    per_page = 50
 
-    where_clause = ''
-    where_params = []
+    operations, total_pages, page = get_operations_page(
+        page=page, per_page=50,
+        period_filter=period_filter, type_filter=type_filter,
+        category_filter=category_filter, date_from=date_from, date_to=date_to,
+    )
 
-    if period_filter:
-        where_clause += ' AND period = ?'
-        where_params.append(period_filter)
-
-    if type_filter:
-        where_clause += ' AND type = ?'
-        where_params.append(type_filter)
-
-    if category_filter:
-        where_clause += ' AND category = ?'
-        where_params.append(category_filter)
-
-    if date_from:
-        where_clause += ' AND date >= ?'
-        where_params.append(date_from)
-
-    if date_to:
-        where_clause += ' AND date <= ?'
-        where_params.append(date_to)
-
-    with get_db() as conn:
-        total_count = conn.execute(
-            'SELECT COUNT(*) FROM operations WHERE 1=1' + where_clause, where_params
-        ).fetchone()[0]
-
-        total_pages = max(1, (total_count + per_page - 1) // per_page)
-        page = min(page, total_pages)
-        offset = (page - 1) * per_page
-
-        operations = conn.execute(
-            'SELECT * FROM operations WHERE 1=1' + where_clause + ' ORDER BY date DESC LIMIT ? OFFSET ?',
-            where_params + [per_page, offset]
-        ).fetchall()
-
-        all_categories = [row['name'] for row in conn.execute(
-            'SELECT DISTINCT name FROM categories WHERE parent_id IS NULL ORDER BY name').fetchall()]
-
-        total_income = \
-        conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Доход"').fetchone()[0]
-        total_expense = \
-        conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
-        balance = total_income - total_expense
-
-        planned_salary_row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
-        planned_salary = float(planned_salary_row['value']) if planned_salary_row else 185000
-
-        advance_row = conn.execute('''
-            SELECT amount
-            FROM operations
-            WHERE type = 'Доход'
-            AND category = 'Зарплата'
-            AND subcategory = 'Аванс'
-            ORDER BY date DESC
-            LIMIT 1
-        ''').fetchone()
-
-        real_advance = advance_row['amount'] if advance_row else 0
-
-        if real_advance > 0:
-            expected_remainder = planned_salary - real_advance
-            salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
-            salary_remainder_note = f"(Аванс: {real_advance:,.0f} ₽)".replace(",", " ")
-        else:
-            expected_remainder = planned_salary
-            salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
-            salary_remainder_note = "⚠️ Аванс ещё не внесён"
-
-        income_cats = {}
-        expense_cats = {}
-
-        income_main = conn.execute(
-            'SELECT * FROM categories WHERE parent_id IS NULL AND type = "Доход" ORDER BY name').fetchall()
-        for cat in income_main:
-            subcats = conn.execute('SELECT name FROM categories WHERE parent_id = ? ORDER BY name',
-                                   (cat['id'],)).fetchall()
-            income_cats[cat['name']] = [s['name'] for s in subcats]
-
-        expense_main = conn.execute(
-            'SELECT * FROM categories WHERE parent_id IS NULL AND type = "Расход" ORDER BY name').fetchall()
-        for cat in expense_main:
-            subcats = conn.execute('SELECT name FROM categories WHERE parent_id = ? ORDER BY name',
-                                   (cat['id'],)).fetchall()
-            expense_cats[cat['name']] = [s['name'] for s in subcats]
+    total_income, total_expense, balance = get_totals()
+    planned_salary = get_planned_salary()
+    real_advance = get_latest_advance()
 
     if 10 <= today.day <= 24:
         period_start, period_end = 10, 24
     else:
         period_start, period_end = 25, 9
 
-    next_income = get_next_income_date(today)
-    days_to_income = (next_income - today).days
-
+    days_to_income = (get_next_income_date(today) - today).days
     period_start_date, period_end_date = get_period_dates(today)
-
     period_balance = update_period_balance(today)
-
     expenses_this_period = get_expenses_for_period(period_start_date, period_end_date)
 
     regular_total_month = get_regular_total(period_type='month')
@@ -136,37 +62,37 @@ def index():
         saved_from_advance = planning['need_to_save_from_advance']
 
     can_spend_today = (advance_for_period - saved_from_advance) + period_balance - expenses_this_period
-
     regular_this_period = get_regular_payments_for_period(today, period_start, period_end)
-
     unpaid_regular = get_unpaid_regular_payments(today, period_start, period_end)
 
-    if real_advance > 0:
-        expected_income = planned_salary - real_advance
-    else:
-        expected_income = planned_salary
-
+    expected_income = planned_salary - real_advance if real_advance > 0 else planned_salary
+    next_income = get_next_income_date(today)
     future_regular = get_regular_payments_until_date(today, next_income)
     regular_after_income = get_regular_payments_after_date(today, next_income)
 
-    if can_spend_today < 0:
-        spend_warning = "⚠️ Внимание! Денег не хватит на регулярные платежи!"
-    else:
-        spend_warning = ""
-
+    spend_warning = "⚠️ Внимание! Денег не хватит на регулярные платежи!" if can_spend_today < 0 else ""
     free_money_now = period_balance + total_income - total_expense - unpaid_regular
-
     due_payments = get_due_regular_payments(today)
+    all_categories = get_all_category_names()
+
+    if real_advance > 0:
+        expected_remainder = planned_salary - real_advance
+        salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
+        salary_remainder_note = f"(Аванс: {real_advance:,.0f} ₽)".replace(",", " ")
+    else:
+        expected_remainder = planned_salary
+        salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
+        salary_remainder_note = "⚠️ Аванс ещё не внесён"
 
     if free_money_now < 0:
-        traffic_light = "red"
-        traffic_text = "⚠️ КАССОВЫЙ РАЗРЫВ!"
+        traffic_light, traffic_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
     elif free_money_now < 5000:
-        traffic_light = "yellow"
-        traffic_text = "⚠️ Осторожно: остаток меньше 5000 ₽"
+        traffic_light, traffic_text = "yellow", "⚠️ Осторожно: остаток меньше 5000 ₽"
     else:
-        traffic_light = "green"
-        traffic_text = "✅ Всё хорошо"
+        traffic_light, traffic_text = "green", "✅ Всё хорошо"
+
+    income_cats = get_income_categories()
+    expense_cats = get_expense_categories()
 
     return render_template('index.html',
                            operations=operations,
@@ -206,7 +132,7 @@ def apply_regular():
 @bp.route('/apply_regular/<int:payment_id>', methods=['POST'])
 def apply_single_regular(payment_id):
     from database import get_db
-    from datetime import date, datetime
+    from datetime import datetime
     today = date.today()
     today_str = today.strftime('%Y-%m-%d')
     today_day = today.day
@@ -228,7 +154,6 @@ def apply_single_regular(payment_id):
                 flash(f'Платёж "{p["category"]}" применён', 'success')
             else:
                 flash(f'Платёж "{p["category"]}" уже был применён', 'info')
-
     return redirect(url_for('main.index'))
 
 
@@ -239,91 +164,3 @@ def update_money():
     update_current_period_balance(today, new_amount)
     flash(f'Начальный остаток: {new_amount:,.0f} ₽', 'success')
     return redirect(url_for('main.index'))
-
-
-@bp.route('/analytics')
-def analytics():
-    with get_db() as conn:
-        expense_by_category_raw = conn.execute('''
-            SELECT category, COALESCE(SUM(amount), 0) as total
-            FROM operations
-            WHERE type = 'Расход'
-            GROUP BY category
-            ORDER BY total DESC
-        ''').fetchall()
-
-        expense_by_category = [{'category': row['category'], 'total': row['total']} for row in
-                               expense_by_category_raw]
-
-        total_expense = \
-        conn.execute('SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"').fetchone()[0]
-
-        monthly_raw = conn.execute('''
-            SELECT strftime('%Y-%m', date) as month,
-                   COALESCE(SUM(CASE WHEN type='Доход' THEN amount ELSE 0 END), 0) as income,
-                   COALESCE(SUM(CASE WHEN type='Расход' THEN amount ELSE 0 END), 0) as expense
-            FROM operations
-            WHERE date >= date('now', '-11 months', 'start of month')
-            GROUP BY month
-            ORDER BY month
-        ''').fetchall()
-
-        monthly_data = [{
-            'month': r['month'],
-            'income': r['income'],
-            'expense': r['expense']
-        } for r in monthly_raw]
-
-        from datetime import date
-        curr_month = date.today().strftime('%Y-%m')
-        budgets_raw = conn.execute(
-            'SELECT category, amount FROM budgets WHERE month = ?', (curr_month,)
-        ).fetchall()
-        budgets_map = {r['category']: r['amount'] for r in budgets_raw}
-
-        for item in expense_by_category:
-            item['budget'] = budgets_map.get(item['category'], 0)
-
-    return render_template('analytics.html',
-                           expense_by_category=expense_by_category,
-                           total_expense=total_expense,
-                           monthly_data=monthly_data)
-
-
-@bp.route('/budget_planning')
-def budget_planning():
-    from database import get_db
-    from utils import get_regular_total, get_paid_regular_payments_this_month, get_planning_data
-    from datetime import date
-
-    today = date.today()
-    months_ru = {
-        1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель',
-        5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
-        9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'
-    }
-    month_name = months_ru[today.month]
-
-    with get_db() as conn:
-        planned_salary_row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
-        planned_salary = float(planned_salary_row['value']) if planned_salary_row else 185000
-
-        advance_row = conn.execute('''
-            SELECT amount
-            FROM operations
-            WHERE type = 'Доход'
-            AND category = 'Зарплата'
-            AND subcategory = 'Аванс'
-            ORDER BY date DESC
-            LIMIT 1
-        ''').fetchone()
-        real_advance = advance_row['amount'] if advance_row else 0
-
-    regular_total_month = get_regular_total(period_type='month')
-    paid_regular = get_paid_regular_payments_this_month()
-    planning = get_planning_data(planned_salary, real_advance, regular_total_month, paid_regular)
-
-    return render_template('budget_planning.html',
-                           planning=planning,
-                           regular_total_month=regular_total_month,
-                           month_name=month_name)

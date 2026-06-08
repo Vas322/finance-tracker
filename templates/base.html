@@ -83,13 +83,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url_for('main.analytics') }}" class="nav-link {% if request.endpoint == 'main.analytics' %}active{% endif %}">
+                        <a href="{{ url_for('analytics.analytics') }}" class="nav-link {% if request.endpoint == 'analytics.analytics' %}active{% endif %}">
                             <i class="nav-icon bi bi-graph-up"></i>
                             <p>Аналитика</p>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url_for('main.budget_planning') }}" class="nav-link {% if request.endpoint == 'main.budget_planning' %}active{% endif %}">
+                        <a href="{{ url_for('planning.budget_planning') }}" class="nav-link {% if request.endpoint == 'planning.budget_planning' %}active{% endif %}">
                             <i class="nav-icon bi bi-calculator"></i>
                             <p>Планирование</p>
                         </a>

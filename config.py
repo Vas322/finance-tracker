@@ -1,8 +1,16 @@
-# ==================== НАСТРОЙКИ ====================
-SALARY_DAY = 10
-ADVANCE_DAY = 25
+import os
 
-# ==================== КАТЕГОРИИ ====================
+
+class Config:
+    SALARY_DAY = int(os.environ.get('SALARY_DAY', '10'))
+    ADVANCE_DAY = int(os.environ.get('ADVANCE_DAY', '25'))
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+    DB_PATH = os.environ.get('DB_PATH', 'finance.db')
+
+
+SALARY_DAY = Config.SALARY_DAY
+ADVANCE_DAY = Config.ADVANCE_DAY
+
 CATEGORIES = {
     "Расход": {
         "Транспорт": ["Такси", "Метро", "Автобус", "Авиа", "ЖД", "Бензин"],

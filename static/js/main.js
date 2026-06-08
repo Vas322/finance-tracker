@@ -1,10 +1,5 @@
 // ==================== ОБЩИЕ ФУНКЦИИ ====================
 
-// Форматирование числа с пробелами
-function formatNumber(num) {
-    return num.toLocaleString('ru-RU');
-}
-
 // Обработчик формы начального остатка (для Bootstrap)
 document.addEventListener('DOMContentLoaded', function() {
     const moneyForm = document.getElementById('moneyForm');

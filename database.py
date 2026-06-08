@@ -1,9 +1,7 @@
 import sqlite3
+from config import Config
 
-
-import os
-
-DB_PATH = os.environ.get('DB_PATH', 'finance.db')
+DB_PATH = Config.DB_PATH
 
 
 def get_db():
@@ -14,7 +12,6 @@ def get_db():
 
 def init_db():
     with get_db() as conn:
-        # Таблица операций
         conn.execute('''
             CREATE TABLE IF NOT EXISTS operations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,8 +24,6 @@ def init_db():
                 period TEXT
             )
         ''')
-
-        # Таблица регулярных платежей
         conn.execute('''
             CREATE TABLE IF NOT EXISTS regular_payments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,16 +35,12 @@ def init_db():
                 comment TEXT DEFAULT ''
             )
         ''')
-
-        # Таблица настроек
         conn.execute('''
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL
             )
         ''')
-
-        # Таблица категорий
         conn.execute('''
             CREATE TABLE IF NOT EXISTS categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,8 +50,6 @@ def init_db():
                 UNIQUE(type, name, parent_id)
             )
         ''')
-
-        # Таблица остатков по периодам
         conn.execute('''
             CREATE TABLE IF NOT EXISTS period_balance (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,8 +59,6 @@ def init_db():
                 UNIQUE(period, start_date)
             )
         ''')
-
-        # Таблица пользователей
         conn.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,8 +66,6 @@ def init_db():
                 password_hash TEXT NOT NULL
             )
         ''')
-
-        # Таблица бюджетов по категориям
         conn.execute('''
             CREATE TABLE IF NOT EXISTS budgets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,55 +76,11 @@ def init_db():
             )
         ''')
 
-        # Создаём admin пользователя, если таблица пустая
-        existing_users = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
-        if existing_users == 0:
-            from werkzeug.security import generate_password_hash
-            default_password = os.environ.get('APP_PASSWORD', '12345')
-            conn.execute(
-                'INSERT INTO users (username, password_hash) VALUES (?, ?)',
-                ('admin', generate_password_hash(default_password))
-            )
-
-        # Плановая зарплата (если нет)
-        existing_plan = conn.execute('SELECT COUNT(*) FROM settings WHERE key = "planned_salary"').fetchone()[0]
-        if existing_plan == 0:
-            conn.execute('INSERT INTO settings (key, value) VALUES (?, ?)', ('planned_salary', '185000'))
-
-        # Заполняем категории, если таблица пустая
-        existing_cats = conn.execute('SELECT COUNT(*) FROM categories').fetchone()[0]
-        if existing_cats == 0:
-            from config import CATEGORIES
-            for cat_type, categories in CATEGORIES.items():
-                for cat_name, subcats in categories.items():
-                    cursor = conn.execute(
-                        'INSERT INTO categories (type, name) VALUES (?, ?)',
-                        (cat_type, cat_name)
-                    )
-                    parent_id = cursor.lastrowid
-                    for subcat in subcats:
-                        if subcat:
-                            conn.execute(
-                                'INSERT INTO categories (type, name, parent_id) VALUES (?, ?, ?)',
-                                (cat_type, subcat, parent_id)
-                            )
-
-        # Примеры регулярных платежей (если таблица пустая)
-        existing_payments = conn.execute('SELECT COUNT(*) FROM regular_payments').fetchone()[0]
-        if existing_payments == 0:
-            examples = [
-                (35000, "2024-01-05", "ЖКХ", "Квартплата", "monthly", ""),
-                (8000, "2024-01-15", "ЖКХ", "Электричество", "monthly", ""),
-                (900, "2024-01-20", "Связь", "Интернет", "monthly", ""),
-                (300, "2024-01-01", "Связь", "VPN", "monthly", ""),
-                (600, "2024-01-10", "Связь", "Мобильная связь", "monthly", ""),
-                (500, "2024-01-25", "Подписки", "", "monthly", ""),
-            ]
-            for amount, day, category, subcategory, interval, comment in examples:
-                conn.execute('''
-                    INSERT INTO regular_payments (amount, day, category, subcategory, interval, comment)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (amount, day, category, subcategory, interval, comment))
+    from seeds import seed_default_user, seed_planned_salary, seed_categories, seed_regular_payments
+    seed_default_user()
+    seed_planned_salary()
+    seed_categories()
+    seed_regular_payments()
 
 
 def backup_db():

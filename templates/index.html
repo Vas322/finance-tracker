@@ -368,13 +368,4 @@
 </script>
 <script src="{{ url_for('static', filename='js/operations.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-<script>
-    function showMoneyModal() {
-        const modalEl = document.getElementById('moneyModal');
-        if (modalEl) {
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
-        }
-    }
-</script>
 {% endblock %}
