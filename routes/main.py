@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database import get_db
 from datetime import date
-import calendar
 
 from services.period_service import get_next_income_date, get_period_dates, get_period
 from services.regular_service import (
@@ -105,13 +104,14 @@ def index():
         period_balance
         + income_this_period
         + expected_income
-        + vacation_pay
         - expenses_this_period
         - unpaid_regular_month
     )
-    last_day = calendar.monthrange(today.year, today.month)[1]
-    days_left = last_day - today.day + 1
-    daily_limit = available_for_month / days_left if days_left > 0 else 0
+
+    # Ежедневный лимит до следующего поступления
+    current_cash = period_balance + income_this_period - expenses_this_period
+    free_until_income = current_cash - unpaid_regular
+    daily_limit = free_until_income / days_to_income if days_to_income > 0 else free_until_income
 
     if available_for_month < 0:
         traffic_light, traffic_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
@@ -141,7 +141,6 @@ def index():
                             traffic_text=traffic_text,
                             available_for_month=available_for_month,
                             daily_limit=daily_limit,
-                            days_left=days_left,
                            regular_this_period=regular_this_period,
                            period_balance=period_balance,
                            all_categories=all_categories,

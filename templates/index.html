@@ -45,7 +45,7 @@
                 <h2 class="mb-0 text-info">
                     {{ "{:,.0f}".format(daily_limit).replace(",", " ") }} ₽
                 </h2>
-                <small class="text-muted">Осталось дней в месяце: {{ days_left }}</small>
+                <small class="text-muted">До {{ next_income.strftime('%d.%m.%Y') }} осталось {{ days_to_income }} дн.</small>
             </div>
         </div>
     </div>
