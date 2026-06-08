@@ -17,6 +17,18 @@
                         <div class="form-text text-muted">Сумма, которая ожидается за полный месяц (аванс + зарплата).</div>
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">🏦 Начальный остаток</h5>
+                            <div class="d-flex justify-content-center align-items-center gap-2">
+                                <h3 class="text-secondary mb-0">{{ "{:,.0f}".format(period_balance).replace(",", " ") }} ₽</h3>
+                                <button onclick="showMoneyModal()" class="btn btn-sm btn-outline-secondary" title="Редактировать">✏️</button>
+                            </div>
+                            <small>Остаток на начало периода</small>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="mt-3 d-flex justify-content-between">
@@ -35,6 +47,29 @@
                 <li><strong>Система автоматически</strong> рассчитает ожидаемый остаток зарплаты на 10-е число.</li>
                 <li><strong>Премии</strong> — вносите как доход с категорией "Премия".</li>
             </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для начального остатка -->
+<div class="modal fade" id="moneyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Редактировать начальный остаток</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="moneyForm">
+                <div class="modal-body">
+                    <label class="form-label">Сумма (₽)</label>
+                    <input type="number" name="current_money" step="0.01" value="{{ period_balance }}"
+                           class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
