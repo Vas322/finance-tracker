@@ -436,6 +436,9 @@ def _handle_categories():
             lines.append(f'• {pname}')
     lines.append('\nПример: <code>такси 500</code> или <code>продукты супермаркет 1500</code>')
     send_message('\n'.join(lines))
+
+
+def _handle_status():
     stats = _get_financial_stats()
     today_payments = _get_payments_for_date(stats['today'])
 
