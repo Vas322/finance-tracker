@@ -15,3 +15,4 @@ Thumbs.db
 instance/
 .env
 .flaskenv
+.telegram_update_id
