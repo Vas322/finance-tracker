@@ -19,12 +19,11 @@ def send_message(text: str) -> bool:
         return False
 
 
-def check_and_notify():
-    from datetime import date, timedelta, datetime
+def _get_payments_for_date(target_date):
+    from datetime import datetime
     from database import get_db
 
-    today = date.today()
-    upcoming = []
+    result = []
     with get_db() as conn:
         payments = conn.execute('SELECT * FROM regular_payments WHERE category != ""').fetchall()
         for p in payments:
@@ -32,32 +31,60 @@ def check_and_notify():
                 continue
             payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
             interval = p['interval']
-            for offset in range(1, 4):
-                check_date = today + timedelta(days=offset)
-                check_day = check_date.day
-                due = False
-                if interval == 'monthly' and payment_day == check_day:
+            due = False
+            if interval == 'monthly' and payment_day == target_date.day:
+                due = True
+            elif interval == 'weekly':
+                pd = datetime.strptime(p['day'], '%Y-%m-%d')
+                if pd.weekday() == target_date.weekday():
                     due = True
-                elif interval == 'weekly':
-                    pd = datetime.strptime(p['day'], '%Y-%m-%d')
-                    if pd.weekday() == check_date.weekday():
-                        due = True
-                elif interval == 'yearly':
-                    pd = datetime.strptime(p['day'], '%Y-%m-%d')
-                    if pd.month == check_date.month and pd.day == check_day:
-                        due = True
-                if due:
-                    upcoming.append({'date': check_date, 'category': p['category'], 'subcategory': p['subcategory'] or '', 'amount': p['amount']})
-                    break
+            elif interval == 'yearly':
+                pd = datetime.strptime(p['day'], '%Y-%m-%d')
+                if pd.month == target_date.month and pd.day == target_date.day:
+                    due = True
+            if due:
+                result.append({
+                    'category': p['category'],
+                    'subcategory': p['subcategory'] or '',
+                    'amount': p['amount']
+                })
+    return result
 
-    if not upcoming:
+
+def _format_payments(payments):
+    lines = []
+    for p in payments:
+        sub = f' ({p["subcategory"]})' if p['subcategory'] else ''
+        amount_str = "{:,.0f}".format(p["amount"]).replace(",", " ")
+        lines.append(f'— {p["category"]}{sub} — {amount_str} ₽')
+    return '\n'.join(lines)
+
+
+def notify_tomorrow():
+    from datetime import date, timedelta
+    tomorrow = date.today() + timedelta(days=1)
+    payments = _get_payments_for_date(tomorrow)
+    if not payments:
         return
+    text = (
+        f'<b>⏰ Напоминание: завтра регулярные платежи</b>\n'
+        f'📅 {tomorrow.strftime("%d.%m")}\n\n'
+        f'{_format_payments(payments)}\n\n'
+        f'Не забудь пополнить баланс!'
+    )
+    send_message(text)
 
-    lines = ['<b>Напоминание о регулярных платежах</b>\n']
-    upcoming.sort(key=lambda x: x['date'])
-    for u in upcoming:
-        date_str = u['date'].strftime('%d.%m')
-        sub = f' ({u["subcategory"]})' if u['subcategory'] else ''
-        amount_str = "{:,.0f}".format(u["amount"]).replace(",", " ")
-        lines.append(f'📅 {date_str} — {u["category"]}{sub} — {amount_str} ₽')
-    send_message('\n'.join(lines))
+
+def notify_due_today():
+    from datetime import date
+    today = date.today()
+    payments = _get_payments_for_date(today)
+    if not payments:
+        return
+    text = (
+        f'<b>📢 Сегодня — день платежа!</b>\n'
+        f'📅 {today.strftime("%d.%m")}\n\n'
+        f'{_format_payments(payments)}\n\n'
+        f'Обязательно оплати сегодня!'
+    )
+    send_message(text)

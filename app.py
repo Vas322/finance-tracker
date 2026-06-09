@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, session, request, redirect, url_for
 from config import Config
 
@@ -47,8 +51,13 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 
 def check_regular_payments():
-    from services.telegram_service import check_and_notify
-    check_and_notify()
+    from services.telegram_service import notify_due_today
+    notify_due_today()
+
+
+def notify_upcoming_payments():
+    from services.telegram_service import notify_tomorrow
+    notify_tomorrow()
 
 
 backup_db()
@@ -56,7 +65,8 @@ init_db()
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(backup_db, 'cron', hour='6,18', minute=0)
-scheduler.add_job(check_regular_payments, 'cron', hour='9', minute=0)
+scheduler.add_job(check_regular_payments, 'cron', hour='10', minute=0)
+scheduler.add_job(notify_upcoming_payments, 'cron', hour='21', minute=0)
 scheduler.start()
 
 if __name__ == '__main__':
