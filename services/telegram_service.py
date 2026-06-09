@@ -215,12 +215,36 @@ _polling_active = False
 _last_update_id = 0
 
 
+def _api_call(method: str, payload: dict):
+    token = Config.TELEGRAM_BOT_TOKEN
+    if not token:
+        return None
+    data = json.dumps(payload).encode()
+    req = Request(f'https://api.telegram.org/bot{token}/{method}', data=data,
+                  headers={'Content-Type': 'application/json'})
+    try:
+        with urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode())
+    except (URLError, json.JSONDecodeError):
+        return None
+
+
+def set_my_commands():
+    _api_call('setMyCommands', {
+        'commands': [
+            {'command': 'start', 'description': 'Приветствие и помощь'},
+            {'command': 'status', 'description': 'Финансовый статус'},
+        ]
+    })
+
+
 def start_polling():
     global _polling_active
     token = Config.TELEGRAM_BOT_TOKEN
     chat_id = Config.TELEGRAM_CHAT_ID
     if not token or not chat_id:
         return
+    set_my_commands()
     _polling_active = True
     thread = threading.Thread(target=_polling_loop, daemon=True)
     thread.start()
