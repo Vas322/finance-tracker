@@ -94,65 +94,107 @@ def notify_due_today():
 
 # ─── Daily Digest ───────────────────────────────────────────────
 
-def send_daily_digest():
-    from datetime import date, datetime
+def _get_financial_stats():
+    from datetime import date
     from database import get_db
     from services.period_service import get_period_dates, get_next_income_date
     from services.balance_service import get_expenses_for_period, get_income_for_period, update_period_balance
+    from services.regular_service import (
+        get_regular_total, get_paid_regular_payments_this_month,
+        get_unpaid_regular_payments, get_regular_payments_until_date, get_regular_payments_after_date
+    )
+    from services.planning_service import get_planning_data
+    from services.operation_service import get_latest_advance
 
     today = date.today()
-    period_start, period_end = get_period_dates(today)
+    period_start_date, period_end_date = get_period_dates(today)
     period_balance = update_period_balance(today)
+    expenses_this_period = get_expenses_for_period(period_start_date, period_end_date)
+    income_this_period = get_income_for_period(period_start_date, period_end_date)
+    next_income = get_next_income_date(today)
+    days_to_income = (next_income - today).days
 
-    expenses_period = get_expenses_for_period(period_start, period_end)
-    income_period = get_income_for_period(period_start, period_end)
+    if 10 <= today.day <= 24:
+        period_start, period_end = 10, 24
+    else:
+        period_start, period_end = 25, 9
 
     with get_db() as conn:
         planned_salary_row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
-        planned_salary = float(planned_salary_row['value']) if planned_salary_row else 185000
+    planned_salary = float(planned_salary_row['value']) if planned_salary_row else 185000
 
-    advance_amount = planned_salary * 0.5
-    advance_day = 25
+    real_advance = get_latest_advance()
+    regular_total_month = get_regular_total(period_type='month')
+    paid_regular = get_paid_regular_payments_this_month()
+    planning = get_planning_data(planned_salary, real_advance, regular_total_month, paid_regular)
 
-    if today.day >= advance_day:
-        advance_received = income_period
-        advance_for_period = advance_received
+    if real_advance > 0 and 25 <= today.day <= 31:
+        advance_for_period = real_advance
     else:
-        last_advance = 0
-        advance_for_period = advance_amount
+        advance_for_period = planning['advance']
 
-    with get_db() as conn:
-        total_regular = sum(
-            row['amount'] for row in conn.execute('SELECT amount FROM regular_payments').fetchall()
-        )
-    saved_from_advance = min(total_regular * 0.5, advance_for_period)
+    saved_from_advance = planning['need_to_save_from_advance']
+    can_spend_today = (advance_for_period - saved_from_advance) + period_balance - expenses_this_period
 
-    can_spend_today = advance_for_period - saved_from_advance + period_balance - expenses_period
-
-    next_income = get_next_income_date(today)
-    days_to_income = (next_income - today).days
+    unpaid_regular = get_unpaid_regular_payments(today, period_start, period_end)
+    expected_income = planned_salary - real_advance if real_advance > 0 else planned_salary
+    unpaid_regular_month = regular_total_month - paid_regular
+    cash_on_hand = period_balance + income_this_period - expenses_this_period
+    available_for_month = cash_on_hand + expected_income - unpaid_regular_month
     daily_limit = can_spend_today / days_to_income if days_to_income > 0 else can_spend_today
 
-    cash_on_hand = period_balance + income_period - expenses_period
-    if today.day >= advance_day:
-        remaining_salary = planned_salary - advance_received if advance_received < planned_salary else 0
-    else:
-        remaining_salary = planned_salary
-    available_for_month = cash_on_hand + remaining_salary - total_regular
+    return {
+        'today': today,
+        'period_balance': period_balance,
+        'can_spend_today': can_spend_today,
+        'available_for_month': available_for_month,
+        'daily_limit': daily_limit,
+        'next_income': next_income,
+        'days_to_income': days_to_income,
+        'cash_on_hand': cash_on_hand,
+        'expected_income': expected_income,
+        'expenses_this_period': expenses_this_period,
+        'income_this_period': income_this_period,
+        'unpaid_regular': unpaid_regular,
+        'paid_regular': paid_regular,
+        'regular_total_month': regular_total_month,
+        'planned_salary': planned_salary,
+        'real_advance': real_advance,
+    }
 
-    today_payments = _get_payments_for_date(today)
-    today_expenses = get_expenses_for_period(today, today)
 
-    today_emoji = "🟢" if can_spend_today >= 5000 else ("🟡" if can_spend_today >= 0 else "🔴")
-    month_emoji = "🟢" if available_for_month >= 5000 else ("🟡" if available_for_month >= 0 else "🔴")
+def send_daily_digest():
+    import locale
+    try:
+        locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+    except locale.Error:
+        pass
+
+    stats = _get_financial_stats()
+    today_payments = _get_payments_for_date(stats['today'])
+
+    def light(val):
+        if val < 0:
+            return '🔴'
+        if val < 5000:
+            return '🟡'
+        return '🟢'
+
+    today_str = stats['today'].strftime('%d.%m.%Y')
+    can_str = "{:,.0f}".format(stats['can_spend_today']).replace(",", " ")
+    month_str = "{:,.0f}".format(stats['available_for_month']).replace(",", " ")
+    limit_str = "{:,.0f}".format(stats['daily_limit']).replace(",", " ")
+    bal_str = "{:,.0f}".format(stats['period_balance']).replace(",", " ")
+    income_str = stats['next_income'].strftime('%d.%m')
 
     lines = [
         f'<b>☀️ Доброе утро!</b>',
-        f'📅 {today.strftime("%d.%m.%Y")}\n',
-        f'{today_emoji} Сегодня: {"{:,.0f}".format(can_spend_today).replace(",", " ")} ₽',
-        f'{month_emoji} До зарплаты: {"{:,.0f}".format(available_for_month).replace(",", " ")} ₽',
-        f'📊 Средний лимит: {"{:,.0f}".format(daily_limit).replace(",", " ")} ₽/день',
-        f'📆 Дохода через: {days_to_income} дн.\n',
+        f'📅 {today_str}\n',
+        f'{light(stats["can_spend_today"])} Сегодня: {can_str} ₽',
+        f'{light(stats["available_for_month"])} До зарплаты: {month_str} ₽',
+        f'📊 Лимит на день: {limit_str} ₽',
+        f'💰 Остаток периода: {bal_str} ₽',
+        f'📆 Следующий доход: {income_str} (через {stats["days_to_income"]} дн.)\n',
     ]
 
     if today_payments:
@@ -160,13 +202,29 @@ def send_daily_digest():
         lines.append(_format_payments(today_payments))
         lines.append('')
 
-    if today_expenses > 0:
-        lines.append(f'💸 Уже потрачено сегодня: {"{:,.0f}".format(today_expenses).replace(",", " ")} ₽')
+    today_exp = "{:,.0f}".format(
+        _get_expenses_today()
+    ).replace(",", " ")
+    if float(today_exp.replace(' ', '')) > 0:
+        lines.append(f'💸 Уже потрачено сегодня: {today_exp} ₽')
 
     send_message('\n'.join(lines))
 
 
+def _get_expenses_today():
+    from datetime import date
+    from services.balance_service import get_expenses_for_period
+    today = date.today()
+    return get_expenses_for_period(today, today)
+
+
 # ─── Budget Alert ───────────────────────────────────────────────
+
+def check_budget_alert(category: str, amount: float):
+    from datetime import date
+    from database import get_db
+
+    today = date.today()
 
 def check_budget_alert(category: str, amount: float):
     from datetime import date
@@ -302,46 +360,8 @@ def _handle_command(text: str):
 
 
 def _handle_status():
-    from datetime import date
-    from database import get_db
-    from services.period_service import get_period_dates, get_next_income_date
-    from services.balance_service import get_expenses_for_period, get_income_for_period, update_period_balance
-
-    today = date.today()
-    period_start, period_end = get_period_dates(today)
-    period_balance = update_period_balance(today)
-
-    expenses_period = get_expenses_for_period(period_start, period_end)
-    income_period = get_income_for_period(period_start, period_end)
-
-    with get_db() as conn:
-        planned_salary_row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
-        planned_salary = float(planned_salary_row['value']) if planned_salary_row else 185000
-
-    advance_amount = planned_salary * 0.5
-    if today.day >= 25:
-        advance_for_period = income_period
-    else:
-        advance_for_period = advance_amount
-
-    with get_db() as conn:
-        total_regular = sum(
-            row['amount'] for row in conn.execute('SELECT amount FROM regular_payments').fetchall()
-        )
-    saved_from_advance = min(total_regular * 0.5, advance_for_period)
-
-    can_spend_today = advance_for_period - saved_from_advance + period_balance - expenses_period
-
-    next_income = get_next_income_date(today)
-    days_to_income = (next_income - today).days
-    daily_limit = can_spend_today / days_to_income if days_to_income > 0 else can_spend_today
-
-    cash_on_hand = period_balance + income_period - expenses_period
-    if today.day >= 25:
-        remaining_salary = planned_salary - advance_for_period if advance_for_period < planned_salary else 0
-    else:
-        remaining_salary = planned_salary
-    available_for_month = cash_on_hand + remaining_salary - total_regular
+    stats = _get_financial_stats()
+    today_payments = _get_payments_for_date(stats['today'])
 
     def light(val):
         if val < 0:
@@ -350,16 +370,31 @@ def _handle_status():
             return '🟡'
         return '🟢'
 
-    today_payments = _get_payments_for_date(today)
+    can_str = "{:,.0f}".format(stats['can_spend_today']).replace(",", " ")
+    month_str = "{:,.0f}".format(stats['available_for_month']).replace(",", " ")
+    limit_str = "{:,.0f}".format(stats['daily_limit']).replace(",", " ")
+    bal_str = "{:,.0f}".format(stats['period_balance']).replace(",", " ")
+    income_str = stats['next_income'].strftime('%d.%m')
 
     lines = [
         f'<b>📊 Финансовый статус</b>\n',
-        f'{light(can_spend_today)} Сегодня: {"{:,.0f}".format(can_spend_today).replace(",", " ")} ₽',
-        f'{light(available_for_month)} До зарплаты: {"{:,.0f}".format(available_for_month).replace(",", " ")} ₽',
-        f'📊 Лимит на день: {"{:,.0f}".format(daily_limit).replace(",", " ")} ₽',
-        f'💰 Остаток периода: {"{:,.0f}".format(period_balance).replace(",", " ")} ₽',
-        f'📆 Следующий доход: {next_income.strftime("%d.%m")} (через {days_to_income} дн.)',
+        f'{light(stats["can_spend_today"])} Сегодня: {can_str} ₽',
+        f'{light(stats["available_for_month"])} До зарплаты: {month_str} ₽',
+        f'📊 Лимит на день: {limit_str} ₽',
+        f'💰 Остаток периода: {bal_str} ₽',
+        f'📆 Следующий доход: {income_str} (через {stats["days_to_income"]} дн.)',
     ]
+
+    if stats['real_advance'] > 0:
+        adv_str = "{:,.0f}".format(stats['real_advance']).replace(",", " ")
+        lines.append(f'💳 Аванс получен: {adv_str} ₽')
+    else:
+        lines.append(f'💳 Аванс ещё не внесён')
+
+    exp_str = "{:,.0f}".format(stats['expenses_this_period']).replace(",", " ")
+    inc_str = "{:,.0f}".format(stats['income_this_period']).replace(",", " ")
+    lines.append(f'📉 Расходов за период: {exp_str} ₽')
+    lines.append(f'📈 Доходов за период: {inc_str} ₽')
 
     if today_payments:
         lines.append(f'\n<b>📢 Платежи сегодня:</b>')
