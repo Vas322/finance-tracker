@@ -319,6 +319,7 @@ def set_my_commands():
         'commands': [
             {'command': 'start', 'description': 'Приветствие и помощь'},
             {'command': 'status', 'description': 'Финансовый статус'},
+            {'command': 'categories', 'description': 'Список категорий расходов'},
         ]
     })
 
@@ -379,22 +380,62 @@ def _looks_like_expense(text: str) -> bool:
     return len(words) >= 2 and bool(re.search(r'\d+', words[-1].replace(',', '.')))
 
 
+def _fuzzy_match(query: str, target: str) -> bool:
+    if query in target or target in query:
+        return True
+    q_words = query.split()
+    t_words = target.split()
+    for qw in q_words:
+        for tw in t_words:
+            if len(qw) > 2 and (qw in tw or tw in qw):
+                return True
+    return False
+
+
 def _handle_command(text: str):
     if text == '/start':
         send_message(
             f'<b>👋 Привет! Я бот Finance Tracker</b>\n\n'
             f'Доступные команды:\n'
-            f'/status — текущее финансовое состояние\n\n'
+            f'/status — текущее финансовое состояние\n'
+            f'/categories — все категории расходов\n\n'
             f'<b>Добавить расход:</b>\n'
-            f'Просто напиши категорию и сумму, например:\n'
+            f'Напиши категорию и сумму, например:\n'
             f'<code>такси 500</code>\n'
-            f'<code>продукты супермаркет 1500</code>'
+            f'<code>продукты супермаркет 1500</code>\n'
+            f'<code>кафе 800</code>\n\n'
+            f'Не знаешь категорию — напиши /categories'
         )
     elif text == '/status':
         _handle_status()
+    elif text == '/categories':
+        _handle_categories()
 
 
-def _handle_status():
+def _handle_categories():
+    from database import get_db
+    with get_db() as conn:
+        cats = conn.execute(
+            'SELECT id, name, parent_id FROM categories WHERE type = "Расход" ORDER BY name'
+        ).fetchall()
+
+    parent_map = {}
+    child_map = {}
+    for c in cats:
+        if c['parent_id'] is None:
+            parent_map[c['id']] = c['name']
+        else:
+            child_map.setdefault(c['parent_id'], []).append(c['name'])
+
+    lines = ['<b>📋 Категории расходов</b>\n']
+    for pid, pname in parent_map.items():
+        subs = child_map.get(pid, [])
+        if subs:
+            lines.append(f'• {pname}: {", ".join(subs)}')
+        else:
+            lines.append(f'• {pname}')
+    lines.append('\nПример: <code>такси 500</code> или <code>продукты супермаркет 1500</code>')
+    send_message('\n'.join(lines))
     stats = _get_financial_stats()
     today_payments = _get_payments_for_date(stats['today'])
 
@@ -523,6 +564,14 @@ def _handle_add_expense(text: str):
                 subcategory = ''
                 comment = ''
         else:
+            suggestions = [n for n in list(parent_map.values()) if _fuzzy_match(query, n.lower())]
+            if suggestions:
+                send_message(
+                    f'❓ Категория не найдена. Возможно, вы имели в виду:\n'
+                    + '\n'.join(f'• {s}' for s in suggestions[:5])
+                    + '\n\nНапиши /categories для полного списка'
+                )
+                return
             category = 'Другое'
             comment = query
 
