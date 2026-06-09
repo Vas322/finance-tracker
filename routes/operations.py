@@ -23,6 +23,10 @@ def add_operation():
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (date_str, op_type, category, subcategory, amount, comment, period))
 
+    if op_type == 'Расход':
+        from services.telegram_service import check_budget_alert
+        check_budget_alert(category, amount)
+
     flash('Операция добавлена', 'success')
     return redirect(url_for('main.index'))
 

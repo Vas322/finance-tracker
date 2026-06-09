@@ -60,6 +60,11 @@ def notify_upcoming_payments():
     notify_tomorrow()
 
 
+def daily_digest():
+    from services.telegram_service import send_daily_digest
+    send_daily_digest()
+
+
 backup_db()
 init_db()
 
@@ -67,7 +72,11 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(backup_db, 'cron', hour='6,18', minute=0)
 scheduler.add_job(check_regular_payments, 'cron', hour='10', minute=0)
 scheduler.add_job(notify_upcoming_payments, 'cron', hour='21', minute=0)
+scheduler.add_job(daily_digest, 'cron', hour='9', minute=0)
 scheduler.start()
+
+from services.telegram_service import start_polling
+start_polling()
 
 if __name__ == '__main__':
     app.run(debug=True)
