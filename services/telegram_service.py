@@ -270,7 +270,34 @@ def check_budget_alert(category: str, amount: float):
 # ─── Bot Polling ────────────────────────────────────────────────
 
 _polling_active = False
-_last_update_id = 0
+_UPDATE_ID_FILE = None
+
+
+def _get_update_id_file():
+    global _UPDATE_ID_FILE
+    if _UPDATE_ID_FILE is None:
+        import os
+        db_dir = os.path.dirname(os.path.abspath(Config.DB_PATH)) if not os.path.isabs(Config.DB_PATH) else os.path.dirname(Config.DB_PATH)
+        if not db_dir:
+            db_dir = '.'
+        _UPDATE_ID_FILE = os.path.join(db_dir, '.telegram_update_id')
+    return _UPDATE_ID_FILE
+
+
+def _load_last_update_id():
+    try:
+        with open(_get_update_id_file()) as f:
+            return int(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        return 0
+
+
+def _save_last_update_id(update_id):
+    try:
+        with open(_get_update_id_file(), 'w') as f:
+            f.write(str(update_id))
+    except OSError:
+        pass
 
 
 def _api_call(method: str, payload: dict):
@@ -314,17 +341,19 @@ def stop_polling():
 
 
 def _polling_loop():
-    global _last_update_id, _polling_active
+    global _polling_active
     token = Config.TELEGRAM_BOT_TOKEN
+    offset = _load_last_update_id()
 
     while _polling_active:
         try:
-            url = f'https://api.telegram.org/bot{token}/getUpdates?offset={_last_update_id + 1}&timeout=30'
+            url = f'https://api.telegram.org/bot{token}/getUpdates?offset={offset + 1}&timeout=30'
             req = Request(url)
             with urlopen(req, timeout=35) as resp:
                 data = json.loads(resp.read().decode())
                 for update in data.get('result', []):
-                    _last_update_id = update['update_id']
+                    offset = update['update_id']
+                    _save_last_update_id(offset)
                     _process_update(update)
         except (URLError, json.JSONDecodeError, ConnectionError):
             time.sleep(10)
@@ -340,8 +369,14 @@ def _process_update(update):
 
     if text.startswith('/'):
         _handle_command(text)
-    else:
+    elif _looks_like_expense(text):
         _handle_add_expense(text)
+
+
+def _looks_like_expense(text: str) -> bool:
+    import re
+    words = text.strip().split()
+    return len(words) >= 2 and bool(re.search(r'\d+', words[-1].replace(',', '.')))
 
 
 def _handle_command(text: str):
