@@ -3,6 +3,7 @@ from database import get_db
 from datetime import date
 from services.period_service import get_period, get_period_dates
 from services.balance_service import update_period_balance
+from services.telegram_service import send_message
 
 bp = Blueprint('settings', __name__)
 
@@ -28,4 +29,14 @@ def save_income_settings():
         conn.execute('UPDATE settings SET value = ? WHERE key = "planned_salary"', (planned_salary,))
 
     flash('Настройки доходов сохранены', 'success')
+    return redirect(url_for('settings.income_settings'))
+
+
+@bp.route('/test_telegram')
+def test_telegram():
+    ok = send_message('🔔 Тестовое уведомление из Finance Tracker')
+    if ok:
+        flash('Тестовое уведомление отправлено', 'success')
+    else:
+        flash('Ошибка отправки. Проверьте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID', 'danger')
     return redirect(url_for('settings.income_settings'))
