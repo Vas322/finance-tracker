@@ -371,7 +371,7 @@ def _process_update(update):
     if text.startswith('/'):
         _handle_command(text)
     elif _looks_like_expense(text):
-        _handle_add_expense(text)
+        _handle_add_operation(text)
 
 
 def _looks_like_expense(text: str) -> bool:
@@ -404,6 +404,11 @@ def _handle_command(text: str):
             f'<code>такси 500</code>\n'
             f'<code>продукты супермаркет 1500</code>\n'
             f'<code>кафе 800</code>\n\n'
+            f'<b>Добавить доход:</b>\n'
+            f'<code>аванс 50000</code>\n'
+            f'<code>зарплата 100000</code>\n'
+            f'<code>премия 20000</code>\n'
+            f'<code>фриланс проект 30000</code>\n\n'
             f'Не знаешь категорию — напиши /categories'
         )
     elif text == '/status':
@@ -485,14 +490,49 @@ def _handle_status():
     send_message('\n'.join(lines))
 
 
-def _handle_add_expense(text: str):
+def _match_category(op_type: str, query: str):
+    from database import get_db
+    with get_db() as conn:
+        all_cats = conn.execute(
+            'SELECT id, type, name, parent_id FROM categories WHERE type = ? ORDER BY name',
+            (op_type,)
+        ).fetchall()
+    parent_map = {}
+    sub_map = {}
+    for c in all_cats:
+        if c['parent_id'] is None:
+            parent_map[c['name'].lower()] = c['name']
+        else:
+            sub_map[c['name'].lower()] = c['name']
+
+    for sub_name_lower, sub_name in sub_map.items():
+        if sub_name_lower in query or query == sub_name_lower:
+            for c in all_cats:
+                if c['name'].lower() == sub_name_lower and c['parent_id'] is not None:
+                    for p in all_cats:
+                        if p['id'] == c['parent_id'] and p['parent_id'] is None:
+                            return p['name'], sub_name, query.replace(sub_name_lower, '').strip()
+            break
+
+    for cat_name_lower, cat_name in parent_map.items():
+        if cat_name_lower in query or query == cat_name_lower:
+            remaining = query.replace(cat_name_lower, '').strip()
+            return cat_name, remaining if remaining else '', ''
+
+    suggestions = [n for n in list(parent_map.values()) if _fuzzy_match(query, n.lower())]
+    if suggestions:
+        return None, suggestions[:5], None
+    return 'Другое', '', query
+
+
+def _handle_add_operation(text: str):
     from datetime import date
     from database import get_db
     from utils import get_period
 
     words = text.strip().split()
     if len(words) < 2:
-        send_message('❌ Формат: <code>категория сумма</code> или <code>категория подкатегория сумма</code>')
+        send_message('❌ Формат: <code>категория сумма</code>\nПример: <code>такси 500</code> или <code>аванс 50000</code>')
         return
 
     last = words[-1]
@@ -504,92 +544,42 @@ def _handle_add_expense(text: str):
 
     query = ' '.join(words[:-1]).strip().lower()
 
-    with get_db() as conn:
-        all_cats = conn.execute(
-            'SELECT id, type, name, parent_id FROM categories WHERE type = "Расход" ORDER BY name'
-        ).fetchall()
-
-    parent_map = {}
-    sub_map = {}
-    for c in all_cats:
-        if c['parent_id'] is None:
-            parent_map[c['name'].lower()] = c['name']
-        else:
-            sub_map[c['name'].lower()] = c['name']
-
-    parent_children = {}
-    for c in all_cats:
-        if c['parent_id'] is not None:
-            pname = None
-            for p in all_cats:
-                if p['id'] == c['parent_id'] and p['parent_id'] is None:
-                    pname = p['name']
-                    break
-            if pname:
-                parent_children.setdefault(pname.lower(), {})[c['name'].lower()] = c['name']
-
-    category = None
-    subcategory = ''
-    comment = ''
-
-    matched_sub = None
-    matched_parent = None
-
-    for sub_name_lower, sub_name in sub_map.items():
-        if sub_name_lower in query or query == sub_name_lower:
-            matched_sub = sub_name
-            break
-
-    if matched_sub:
-        for c in all_cats:
-            if c['name'].lower() == sub_name_lower and c['parent_id'] is not None:
-                for p in all_cats:
-                    if p['id'] == c['parent_id'] and p['parent_id'] is None:
-                        matched_parent = p['name']
-                        break
-                break
-        if matched_parent:
-            category = matched_parent
-            subcategory = matched_sub
-            comment = query.replace(matched_sub.lower(), '').strip()
+    income_keywords_start = {'аванс', 'зарплат', 'преми', 'заработ', 'подработк', 'фриланс', 'кэшбэк', 'кешбэк', 'подарк'}
+    if any(query.startswith(kw) for kw in income_keywords_start):
+        op_type = 'Доход'
+        result = _match_category('Доход', query)
+        if result[0] is None:
+            send_message('❓ Категория дохода не найдена. Возможно:\n' + '\n'.join(f'• {s}' for s in result[1]))
+            return
+        category, subcategory, comment = result
+        emoji = '💰'
+        label = 'Доход'
     else:
-        for cat_name_lower, cat_name in parent_map.items():
-            if cat_name_lower in query or query == cat_name_lower:
-                matched_parent = cat_name
-                break
-        if matched_parent:
-            category = matched_parent
-            remaining = query.replace(matched_parent.lower(), '').strip()
-            if remaining:
-                subcategory = remaining
-                comment = ''
-            else:
-                subcategory = ''
-                comment = ''
-        else:
-            suggestions = [n for n in list(parent_map.values()) if _fuzzy_match(query, n.lower())]
-            if suggestions:
-                send_message(
-                    f'❓ Категория не найдена. Возможно, вы имели в виду:\n'
-                    + '\n'.join(f'• {s}' for s in suggestions[:5])
-                    + '\n\nНапиши /categories для полного списка'
-                )
-                return
-            category = 'Другое'
-            comment = query
+        op_type = 'Расход'
+        result = _match_category('Расход', query)
+        if result[0] is None:
+            send_message(
+                '❓ Категория не найдена. Возможно, вы имели в виду:\n'
+                + '\n'.join(f'• {s}' for s in result[1])
+                + '\n\nНапиши /categories для полного списка'
+            )
+            return
+        category, subcategory, comment = result
+        emoji = '💳' if any(kw in query for kw in ['карт', 'счёт', 'перевод']) else '💸'
+        label = 'Расход'
 
     today = date.today()
-    today_str = today.strftime('%Y-%m-%d')
-    period = get_period(today_str)
+    period = get_period(today.strftime('%Y-%m-%d'))
 
     with get_db() as conn:
         conn.execute(
             'INSERT INTO operations (date, type, category, subcategory, amount, comment, period) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (today_str, 'Расход', category, subcategory, amount, comment, period)
+            (today.strftime('%Y-%m-%d'), op_type, category, subcategory, amount, comment, period)
         )
 
     sub = f' ({subcategory})' if subcategory else ''
     amount_str = "{:,.0f}".format(amount).replace(",", " ")
-    send_message(f'✅ Расход добавлен: {category}{sub} — {amount_str} ₽')
+    send_message(f'✅ {label} добавлен: {emoji} {category}{sub} — {amount_str} ₽')
 
-    check_budget_alert(category, amount)
+    if op_type == 'Расход':
+        check_budget_alert(category, amount)
