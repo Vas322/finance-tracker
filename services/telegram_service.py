@@ -396,6 +396,9 @@ def _handle_status():
     lines.append(f'📉 Расходов за период: {exp_str} ₽')
     lines.append(f'📈 Доходов за период: {inc_str} ₽')
 
+    today_exp = "{:,.0f}".format(_get_expenses_today()).replace(",", " ")
+    lines.append(f'💸 Потрачено сегодня: {today_exp} ₽')
+
     if today_payments:
         lines.append(f'\n<b>📢 Платежи сегодня:</b>')
         lines.append(_format_payments(today_payments))
