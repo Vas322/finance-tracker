@@ -271,16 +271,13 @@ def check_budget_alert(category: str, amount: float):
 
 _polling_active = False
 _UPDATE_ID_FILE = None
+_seen_updates = set()
 
 
 def _get_update_id_file():
     global _UPDATE_ID_FILE
     if _UPDATE_ID_FILE is None:
-        import os
-        db_dir = os.path.dirname(os.path.abspath(Config.DB_PATH)) if not os.path.isabs(Config.DB_PATH) else os.path.dirname(Config.DB_PATH)
-        if not db_dir:
-            db_dir = '.'
-        _UPDATE_ID_FILE = os.path.join(db_dir, '.telegram_update_id')
+        _UPDATE_ID_FILE = '.telegram_update_id'
     return _UPDATE_ID_FILE
 
 
@@ -353,8 +350,14 @@ def _polling_loop():
             with urlopen(req, timeout=35) as resp:
                 data = json.loads(resp.read().decode())
                 for update in data.get('result', []):
-                    offset = update['update_id']
-                    _save_last_update_id(offset)
+                    uid = update['update_id']
+                    if uid in _seen_updates:
+                        continue
+                    _seen_updates.add(uid)
+                    if len(_seen_updates) > 100:
+                        _seen_updates.clear()
+                    _save_last_update_id(uid)
+                    offset = uid
                     _process_update(update)
         except (URLError, json.JSONDecodeError, ConnectionError):
             time.sleep(10)
