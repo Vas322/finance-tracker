@@ -509,16 +509,25 @@ def _match_category(op_type: str, query: str):
             sub_map[c['name'].lower()] = c['name']
 
     q_words = query.split()
+    best_match = None
+    best_type = None
+    best_remaining = query
+    best_sub = ''
 
     for cat_name_lower, cat_name in parent_map.items():
-        if query == cat_name_lower or q_words[0] == cat_name_lower:
-            remaining = query.replace(cat_name_lower, '', 1).strip()
-            rest_words = remaining.split()
-            if rest_words:
-                for sub_name_lower, sub_name in sub_map.items():
-                    if sub_name_lower in rest_words[0]:
-                        return cat_name, sub_name, remaining.replace(sub_name_lower, '', 1).strip()
-            return cat_name, remaining if remaining else '', ''
+        if cat_name_lower in query:
+            if best_match is None or query.index(cat_name_lower) < query.index(best_match):
+                best_match = cat_name_lower
+                best_type = 'parent'
+                best_remaining = query.replace(cat_name_lower, '', 1).strip()
+
+    if best_type == 'parent':
+        rest_words = best_remaining.split()
+        if rest_words:
+            for sub_name_lower, sub_name in sub_map.items():
+                if sub_name_lower in rest_words[0]:
+                    return parent_map[best_match], sub_name, best_remaining.replace(sub_name_lower, '', 1).strip()
+        return parent_map[best_match], best_remaining if best_remaining else '', ''
 
     for sub_name_lower, sub_name in sub_map.items():
         if sub_name_lower in q_words:
@@ -528,7 +537,6 @@ def _match_category(op_type: str, query: str):
                         if p['id'] == c['parent_id'] and p['parent_id'] is None:
                             remaining = query.replace(sub_name_lower, '', 1).strip()
                             return p['name'], sub_name, remaining
-            break
 
     suggestions = [n for n in list(parent_map.values()) if _fuzzy_match(query, n.lower())]
     if suggestions:
