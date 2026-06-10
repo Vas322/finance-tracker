@@ -1,11 +1,11 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from database import get_db
+from database import get_db, get_period_balance
 from datetime import date
 
 from services.period_service import get_next_income_date, get_period_dates, get_period
 from services.regular_service import (
     get_regular_total, apply_regular_payments,
-    get_unpaid_regular_payments, get_regular_payments_until_date,
+    get_regular_payments_until_date,
     get_regular_payments_after_date, get_regular_payments_for_period,
     get_paid_regular_payments_this_month, get_due_regular_payments,
 )
@@ -57,16 +57,33 @@ def index():
     paid_regular = get_paid_regular_payments_this_month()
     planning = get_planning_data(planned_salary, real_advance, regular_total_month, paid_regular)
 
-    if real_advance > 0 and 25 <= today.day <= 31:
-        advance_for_period = real_advance
-        saved_from_advance = planning['need_to_save_from_advance']
+    if 10 <= today.day <= 24:
+        reserve = planning['need_to_save_from_remaining']
+        prev_month = today.month - 1
+        prev_year = today.year
+        if prev_month < 1:
+            prev_month = 12
+            prev_year -= 1
+        prev_start = date(prev_year, prev_month, 25)
+        prev_period = '25-09'
     else:
-        advance_for_period = planning['advance']
-        saved_from_advance = planning['need_to_save_from_advance']
+        reserve = planning['need_to_save_from_advance']
+        prev_start = date(today.year, today.month, 10)
+        prev_period = '10-24'
 
-    can_spend_today = (advance_for_period - saved_from_advance) + period_balance - expenses_this_period
+    prev_balance = get_period_balance(prev_period, prev_start.strftime('%Y-%m-%d'))
+    if prev_balance is None:
+        with get_db() as conn:
+            prev_balance = conn.execute('''
+                SELECT COALESCE(SUM(CASE WHEN type = 'Доход' THEN amount ELSE -amount END), 0)
+                FROM operations WHERE date < ?
+            ''', (prev_start.strftime('%Y-%m-%d'),)).fetchone()[0]
+
+    leftover_from_prev = period_balance - prev_balance
+    can_spend_today = leftover_from_prev + income_this_period - expenses_this_period - reserve
+    free_money_now = can_spend_today
+
     regular_this_period = get_regular_payments_for_period(today, period_start, period_end)
-    unpaid_regular = get_unpaid_regular_payments(today, period_start, period_end)
 
     expected_income = planned_salary - real_advance if real_advance > 0 else planned_salary
     next_income = get_next_income_date(today)
@@ -85,7 +102,6 @@ def index():
     regular_after_income = get_regular_payments_after_date(today, next_income)
 
     spend_warning = "⚠️ Внимание! Денег не хватит на регулярные платежи!" if can_spend_today < 0 else ""
-    free_money_now = period_balance + income_this_period - expenses_this_period - unpaid_regular
     due_payments = get_due_regular_payments(today)
     all_categories = get_all_category_names()
 
@@ -178,7 +194,7 @@ def apply_regular():
 
 @bp.route('/apply_regular/<int:payment_id>', methods=['POST'])
 def apply_single_regular(payment_id):
-    from database import get_db
+    from database import get_db, get_period_balance
     from datetime import datetime
     today = date.today()
     today_str = today.strftime('%Y-%m-%d')
