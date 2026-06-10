@@ -140,7 +140,17 @@ def _get_financial_stats():
     expected_income = planned_salary - real_advance if real_advance > 0 else planned_salary
     unpaid_regular_month = regular_total_month - paid_regular
     cash_on_hand = period_balance + income_this_period - expenses_this_period
-    available_for_month = cash_on_hand + expected_income - unpaid_regular_month
+
+    with get_db() as conn:
+        remaining_received = conn.execute('''
+            SELECT COALESCE(SUM(amount), 0) FROM operations
+            WHERE type = 'Доход' AND category = 'Зарплата'
+              AND (subcategory != 'Аванс' OR subcategory IS NULL)
+              AND date >= ? AND date <= ?
+        ''', (period_start_date.strftime('%Y-%m-%d'), period_end_date.strftime('%Y-%m-%d'))).fetchone()[0]
+
+    future_income = max(0, expected_income - remaining_received)
+    available_for_month = cash_on_hand + future_income - unpaid_regular_month
     daily_limit = can_spend_today / days_to_income if days_to_income > 0 else can_spend_today
 
     return {

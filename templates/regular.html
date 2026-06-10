@@ -136,6 +136,16 @@
                     </tbody>
                 </table>
             </div>
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <div class="card border-primary">
+                        <div class="card-body text-center py-2">
+                            <h6 class="card-title mb-1">📊 Итого регулярных платежей</h6>
+                            <h4 class="mb-0 text-primary">{{ "{:,.0f}".format(regular_total).replace(",", " ") }} ₽</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="mt-3">
                 <button type="submit" class="btn btn-primary btn-sm" id="saveAllBtn">💾 Сохранить все изменения</button>
             </div>

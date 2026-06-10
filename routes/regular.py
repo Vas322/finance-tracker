@@ -101,4 +101,5 @@ def regular():
             payments = conn.execute('SELECT * FROM regular_payments ORDER BY day, category, subcategory').fetchall()
 
     return render_template('regular.html', payments=payments, expense_categories=expense_cats,
-                           filter_type=filter_type, now=now)
+                           filter_type=filter_type, now=now,
+                           regular_total=sum(p['amount'] for p in payments))

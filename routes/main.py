@@ -101,7 +101,18 @@ def index():
     # Светофор Сегодня — хватит ли денег на сегодня
     unpaid_regular_month = regular_total_month - paid_regular
     cash_on_hand = period_balance + income_this_period - expenses_this_period
-    available_for_month = cash_on_hand + expected_income - unpaid_regular_month
+
+    # Сколько из оставшейся зарплаты (не аванс) уже получено в этом периоде
+    with get_db() as conn:
+        remaining_received = conn.execute('''
+            SELECT COALESCE(SUM(amount), 0) FROM operations
+            WHERE type = 'Доход' AND category = 'Зарплата'
+              AND (subcategory != 'Аванс' OR subcategory IS NULL)
+              AND date >= ? AND date <= ?
+        ''', (period_start_date.strftime('%Y-%m-%d'), period_end_date.strftime('%Y-%m-%d'))).fetchone()[0]
+
+    future_income = max(0, expected_income - remaining_received)
+    available_for_month = cash_on_hand + future_income - unpaid_regular_month
 
     if can_spend_today < 0:
         today_light, today_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
