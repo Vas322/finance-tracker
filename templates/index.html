@@ -413,6 +413,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const tbody = table.querySelector('tbody');
 
     var originalRows = null;
+    var sortInitialized = false;
+
+    headers.forEach(function(header) {
+        if (header.dataset.sort === 'date') {
+            header.classList.add('sort-init');
+        }
+    });
 
     headers.forEach(function(header) {
         const indicator = document.createElement('span');
@@ -472,6 +479,11 @@ document.addEventListener('DOMContentLoaded', function() {
             rows.forEach(function(row) { tbody.appendChild(row); });
         });
     });
+
+    setTimeout(function() {
+        var dateHeader = document.querySelector('th.sortable[data-sort="date"]');
+        if (dateHeader) { dateHeader.click(); setTimeout(function() { dateHeader.click(); }, 0); }
+    }, 0);
 });
 </script>
 {% endblock %}
