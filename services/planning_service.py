@@ -10,14 +10,14 @@ def get_planning_data(planned_salary: float, real_advance: float, regular_total:
         advance_percent = 0.5
         advance = planned_salary * advance_percent
         remaining_salary = planned_salary - advance
-    regular_to_save = max(0, regular_total - paid_regular)
-    need_to_save_from_advance = regular_to_save * advance_percent
-    need_to_save_from_remaining = regular_to_save * (1 - advance_percent)
+    need_to_save_from_advance = regular_total * advance_percent
+    need_to_save_from_remaining = regular_total * (1 - advance_percent)
     return {
         'advance': advance,
         'remaining_salary': remaining_salary,
         'advance_percent': advance_percent,
-        'regular_to_save': regular_to_save,
+        'regular_to_save': regular_total,
+        'paid_regular': paid_regular,
         'need_to_save_from_advance': need_to_save_from_advance,
         'need_to_save_from_remaining': need_to_save_from_remaining,
         'left_from_advance': advance - need_to_save_from_advance,

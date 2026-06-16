@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from database import get_db, get_period_balance
+from database import get_db
 from datetime import date
 
 from services.period_service import get_next_income_date, get_period_dates, get_period
@@ -57,29 +57,19 @@ def index():
     paid_regular = get_paid_regular_payments_this_month()
     planning = get_planning_data(planned_salary, real_advance, regular_total_month, paid_regular)
 
+    remaining_regulars = max(0, regular_total_month - paid_regular)
     if 10 <= today.day <= 24:
-        reserve = planning['need_to_save_from_remaining']
-        prev_month = today.month - 1
-        prev_year = today.year
-        if prev_month < 1:
-            prev_month = 12
-            prev_year -= 1
-        prev_start = date(prev_year, prev_month, 25)
-        prev_period = '25-09'
+        reserve = remaining_regulars * (1 - planning['advance_percent'])
+        prev_start = date(today.year, today.month - 1, 25) if today.month > 1 else date(today.year - 1, 12, 25)
+        prev_end = date(today.year, today.month, 9)
     else:
-        reserve = planning['need_to_save_from_advance']
+        reserve = remaining_regulars * planning['advance_percent']
         prev_start = date(today.year, today.month, 10)
-        prev_period = '10-24'
+        prev_end = date(today.year, today.month, 24)
 
-    prev_balance = get_period_balance(prev_period, prev_start.strftime('%Y-%m-%d'))
-    if prev_balance is None:
-        with get_db() as conn:
-            prev_balance = conn.execute('''
-                SELECT COALESCE(SUM(CASE WHEN type = 'Доход' THEN amount ELSE -amount END), 0)
-                FROM operations WHERE date < ?
-            ''', (prev_start.strftime('%Y-%m-%d'),)).fetchone()[0]
-
-    leftover_from_prev = period_balance - prev_balance
+    prev_income = get_income_for_period(prev_start, prev_end)
+    prev_expenses = get_expenses_for_period(prev_start, prev_end)
+    leftover_from_prev = prev_income - prev_expenses
     can_spend_today = leftover_from_prev + income_this_period - expenses_this_period - reserve
     free_money_now = can_spend_today
 
@@ -194,29 +184,22 @@ def apply_regular():
 
 @bp.route('/apply_regular/<int:payment_id>', methods=['POST'])
 def apply_single_regular(payment_id):
-    from database import get_db, get_period_balance
     from datetime import datetime
+    amount = float(request.form.get('amount', 0))
     today = date.today()
     today_str = today.strftime('%Y-%m-%d')
     today_day = today.day
 
     with get_db() as conn:
         p = conn.execute('SELECT * FROM regular_payments WHERE id = ?', (payment_id,)).fetchone()
-        if p and p['category']:
-            existing = conn.execute(
-                'SELECT id FROM operations WHERE date = ? AND category = ? AND subcategory = ? AND amount = ? AND type = \'Расход\'',
-                (today_str, p['category'], p['subcategory'], p['amount'])
-            ).fetchone()
-            if not existing:
-                period = "10-24" if 10 <= today_day <= 24 else "25-09"
-                conn.execute(
-                    'INSERT INTO operations (date, type, category, subcategory, amount, comment, period) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    (today_str, 'Расход', p['category'], p['subcategory'], p['amount'],
-                     f'Авто: {p["interval"]}', period)
-                )
-                flash(f'Платёж "{p["category"]}" применён', 'success')
-            else:
-                flash(f'Платёж "{p["category"]}" уже был применён', 'info')
+        if p and p['category'] and amount > 0:
+            period = "10-24" if 10 <= today_day <= 24 else "25-09"
+            conn.execute(
+                'INSERT INTO operations (date, type, category, subcategory, amount, comment, period) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                (today_str, 'Расход', p['category'], p['subcategory'], amount,
+                 f'Авто: {p["interval"]}', period)
+            )
+            flash(f'Платёж "{p["category"]}" — {amount:,.0f} ₽ применён', 'success')
     return redirect(url_for('main.index'))
 
 

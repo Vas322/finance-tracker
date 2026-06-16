@@ -71,8 +71,8 @@
                 <div class="alert alert-info">
                     <strong>📌 Итого:</strong>
                     Регулярных платежей за месяц: <strong>{{ "{:,.0f}".format(planning.regular_to_save).replace(",", " ") }} ₽</strong>
-                    {% if planning.regular_to_save < regular_total_month %}
-                    <span class="text-success">(уже оплачено: {{ "{:,.0f}".format(regular_total_month - planning.regular_to_save).replace(",", " ") }} ₽)</span>
+                    {% if planning.paid_regular > 0 %}
+                    <span class="text-success">(уже оплачено: {{ "{:,.0f}".format(planning.paid_regular).replace(",", " ") }} ₽, осталось: {{ "{:,.0f}".format(planning.regular_to_save - planning.paid_regular).replace(",", " ") }} ₽)</span>
                     {% endif %}
                 </div>
             </div>

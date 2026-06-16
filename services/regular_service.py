@@ -147,7 +147,7 @@ def get_paid_regular_payments_this_month() -> float:
 
 def get_due_regular_payments(today: date):
     today_day = today.day
-    today_str = today.strftime('%Y-%m-%d')
+    month_start = date(today.year, today.month, 1).strftime('%Y-%m-%d')
     due = []
     with get_db() as conn:
         payments = conn.execute('SELECT * FROM regular_payments').fetchall()
@@ -156,21 +156,21 @@ def get_due_regular_payments(today: date):
                 continue
             payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
             should_apply = False
-            if p['interval'] == 'monthly' and payment_day == today_day:
+            if p['interval'] == 'monthly' and payment_day <= today_day:
                 should_apply = True
             elif p['interval'] == 'weekly':
                 pd = datetime.strptime(p['day'], '%Y-%m-%d')
-                if pd.weekday() == today.weekday():
+                if pd.weekday() <= today.weekday():
                     should_apply = True
             elif p['interval'] == 'yearly':
                 pd = datetime.strptime(p['day'], '%Y-%m-%d')
-                if pd.month == today.month and pd.day == today_day:
+                if pd.month == today.month and pd.day <= today_day:
                     should_apply = True
             if not should_apply:
                 continue
             existing = conn.execute(
-                'SELECT id FROM operations WHERE date = ? AND category = ? AND subcategory = ? AND amount = ? AND type = \'Расход\'',
-                (today_str, p['category'], p['subcategory'], p['amount'])
+                'SELECT id FROM operations WHERE date >= ? AND category = ? AND subcategory = ? AND type = \'Расход\'',
+                (month_start, p['category'], p['subcategory'] or '')
             ).fetchone()
             if not existing:
                 due.append({

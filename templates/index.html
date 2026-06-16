@@ -2,23 +2,30 @@
 
 {% block title %}Дашборд{% endblock %}
 
+{% block extra_head %}
+<style>
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { background-color: #e9ecef; }
+.sortable .sort-indicator { margin-left: 4px; opacity: 0.4; }
+.sortable.sort-active .sort-indicator { opacity: 1; }
+</style>
+{% endblock %}
+
 {% block content %}
 {% if due_payments %}
 <div class="alert alert-warning alert-dismissible fade show" role="alert">
-    <strong>📅 Сегодня ожидаются регулярные платежи:</strong>
+    <strong>📅 Ожидаются регулярные платежи:</strong>
     <div class="mt-2">
         {% for p in due_payments %}
         <div class="d-flex align-items-center justify-content-between mb-1 p-1 border-bottom border-warning border-opacity-25">
-            <span>{{ p.category }}{% if p.subcategory %} / {{ p.subcategory }}{% endif %} — <strong>{{ "{:,.0f}".format(p.amount).replace(",", " ") }} ₽</strong></span>
-            <form method="POST" action="{{ url_for('main.apply_single_regular', payment_id=p.id) }}" style="display:inline">
+            <span>{{ p.category }}{% if p.subcategory %} / {{ p.subcategory }}{% endif %} —</span>
+            <form method="POST" action="{{ url_for('main.apply_single_regular', payment_id=p.id) }}" style="display:inline" class="d-flex align-items-center gap-2">
+                <input type="number" name="amount" class="form-control form-control-sm" style="width: 120px" value="{{ p.amount }}" step="0.01" required>
                 <button type="submit" class="btn btn-success btn-sm py-0">✅ Применить</button>
             </form>
         </div>
         {% endfor %}
     </div>
-    <form method="POST" action="{{ url_for('main.apply_regular') }}" class="mt-2">
-        <button type="submit" class="btn btn-warning btn-sm">✅ Применить все</button>
-    </form>
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 {% endif %}
@@ -224,13 +231,13 @@
         <h5 class="card-title mb-0">📋 Последние операции</h5>
     </div>
     <div class="table-responsive">
-        <table class="table table-sm table-hover">
+        <table class="table table-sm table-hover" id="operations-table">
             <thead class="table-light">
             <tr>
-                <th><i class="bi bi-calendar-event me-1"></i> Дата</th>
-                <th><i class="bi bi-tag me-1"></i> Тип</th>
-                <th><i class="bi bi-folder me-1"></i> Категория</th>
-                <th><i class="bi bi-currency-ruble me-1"></i> Сумма</th>
+                <th class="sortable" data-sort="date"><i class="bi bi-calendar-event me-1"></i> Дата</th>
+                <th class="sortable" data-sort="type"><i class="bi bi-tag me-1"></i> Тип</th>
+                <th class="sortable" data-sort="category"><i class="bi bi-folder me-1"></i> Категория</th>
+                <th class="sortable" data-sort="amount"><i class="bi bi-currency-ruble me-1"></i> Сумма</th>
                 <th><i class="bi bi-graph-up me-1"></i> Период</th>
                 <th><i class="bi bi-chat me-1"></i> Комментарий</th>
                 <th><i class="bi bi-gear me-1"></i> Действия</th>
@@ -239,10 +246,10 @@
             <tbody>
             {% for op in operations %}
             <tr>
-                <td>{{ op.date }}</td>
-                <td>{{ op.type }}</td>
-                <td>{{ op.category }}{% if op.subcategory %} / {{ op.subcategory }}{% endif %}</td>
-                <td class="fw-bold {{ 'text-success' if op.type == 'Доход' else 'text-danger' }}">
+                <td data-value="{{ op.date }}T{{ '{:04d}'.format(op.id) }}">{{ op.date }}</td>
+                <td data-value="{{ op.type }}">{{ op.type }}</td>
+                <td data-value="{{ op.category }}{% if op.subcategory %} / {{ op.subcategory }}{% endif %}">{{ op.category }}{% if op.subcategory %} / {{ op.subcategory }}{% endif %}</td>
+                <td class="fw-bold {{ 'text-success' if op.type == 'Доход' else 'text-danger' }}" data-value="{{ op.amount }}">
                     {{ "{:,.0f}".format(op.amount).replace(",", " ") }} ₽
                 </td>
                 <td>{{ op.period }}</td>
@@ -398,4 +405,73 @@
 </script>
 <script src="{{ url_for('static', filename='js/operations.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('operations-table');
+    if (!table) return;
+    const headers = table.querySelectorAll('th.sortable');
+    const tbody = table.querySelector('tbody');
+
+    var originalRows = null;
+
+    headers.forEach(function(header) {
+        const indicator = document.createElement('span');
+        indicator.className = 'sort-indicator';
+        header.appendChild(indicator);
+
+        header.addEventListener('click', function() {
+            const sortKey = header.dataset.sort;
+            const isAsc = header.classList.contains('sort-asc');
+            const isDesc = header.classList.contains('sort-desc');
+
+            if (originalRows === null) {
+                originalRows = Array.from(tbody.querySelectorAll('tr'));
+            }
+
+            headers.forEach(function(h) {
+                h.classList.remove('sort-active', 'sort-asc', 'sort-desc');
+                h.querySelector('.sort-indicator').textContent = '';
+            });
+
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            if (rows.length === 0 || rows[0].children.length === 0) return;
+
+            var direction = 'asc';
+            if (isAsc) {
+                direction = 'desc';
+                header.classList.add('sort-desc');
+                header.querySelector('.sort-indicator').textContent = '▼';
+            } else if (isDesc) {
+                originalRows.forEach(function(row) { tbody.appendChild(row); });
+                return;
+            } else {
+                header.classList.add('sort-asc');
+                header.querySelector('.sort-indicator').textContent = '▲';
+            }
+            header.classList.add('sort-active');
+
+            const colIndex = Array.from(header.parentElement.children).indexOf(header);
+
+            rows.sort(function(a, b) {
+                var aVal = a.children[colIndex]?.dataset.value || a.children[colIndex]?.textContent.trim();
+                var bVal = b.children[colIndex]?.dataset.value || b.children[colIndex]?.textContent.trim();
+
+                if (sortKey === 'amount') {
+                    aVal = parseFloat(aVal) || 0;
+                    bVal = parseFloat(bVal) || 0;
+                } else {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+
+                if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            rows.forEach(function(row) { tbody.appendChild(row); });
+        });
+    });
+});
+</script>
 {% endblock %}
