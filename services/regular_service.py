@@ -26,10 +26,10 @@ def _get_paid_set():
     today = date.today()
     with get_db() as conn:
         ops = conn.execute(
-            'SELECT category, subcategory, amount FROM operations WHERE date >= ? AND type = \'Расход\'',
+            'SELECT category, subcategory FROM operations WHERE date >= ? AND type = \'Расход\'',
             (date(today.year, today.month, 1),)
         ).fetchall()
-    return {(op['category'], op['subcategory'], op['amount']) for op in ops}
+    return {(op['category'], op['subcategory'] or '') for op in ops}
 
 
 def get_regular_total(period_type: str = 'month') -> float:
@@ -65,7 +65,7 @@ def get_regular_payments_filtered(
         if exclude_paid:
             if paid is None:
                 paid = _get_paid_set()
-            if (p['category'], p['subcategory'], p['amount']) in paid:
+            if (p['category'], p['subcategory'] or '') in paid:
                 continue
         mult = _payment_mult(p['interval'], period_type)
         total += p['amount'] * mult
@@ -93,7 +93,7 @@ def get_unpaid_regular_payments(today: date, start: int, end: int) -> float:
             continue
         if today_day < payment_day:
             continue
-        if (p['category'], p['subcategory'], p['amount']) in paid:
+        if (p['category'], p['subcategory'] or '') in paid:
             continue
         mult = _payment_mult(p['interval'], 'period')
         total += p['amount'] * mult
@@ -138,11 +138,16 @@ def get_regular_payments_for_month() -> float:
 def get_paid_regular_payments_this_month() -> float:
     paid = _get_paid_set()
     payments = _get_all_payments()
-    paid_amounts = set()
+    total = 0.0
+    checked = set()
     for p in payments:
-        if (p['category'], p['subcategory'], p['amount']) in paid:
-            paid_amounts.add(p['amount'])
-    return sum(paid_amounts)
+        key = (p['category'], p['subcategory'] or '')
+        if key in checked:
+            continue
+        checked.add(key)
+        if key in paid:
+            total += p['amount']
+    return total
 
 
 def get_due_regular_payments(today: date):

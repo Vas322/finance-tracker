@@ -38,7 +38,7 @@ def index():
         category_filter=category_filter, date_from=date_from, date_to=date_to,
     )
 
-    total_income, total_expense, balance = get_totals()
+    total_income, total_expense, balance, total_expense_without_regulars = get_totals()
     planned_salary = get_planned_salary()
     real_advance = get_latest_advance()
 
@@ -59,18 +59,16 @@ def index():
 
     remaining_regulars = max(0, regular_total_month - paid_regular)
     if 10 <= today.day <= 24:
-        reserve = remaining_regulars * (1 - planning['advance_percent'])
         prev_start = date(today.year, today.month - 1, 25) if today.month > 1 else date(today.year - 1, 12, 25)
         prev_end = date(today.year, today.month, 9)
     else:
-        reserve = remaining_regulars * planning['advance_percent']
         prev_start = date(today.year, today.month, 10)
         prev_end = date(today.year, today.month, 24)
 
     prev_income = get_income_for_period(prev_start, prev_end)
     prev_expenses = get_expenses_for_period(prev_start, prev_end)
     leftover_from_prev = prev_income - prev_expenses
-    can_spend_today = leftover_from_prev + income_this_period - expenses_this_period - reserve
+    can_spend_today = leftover_from_prev + income_this_period - expenses_this_period - remaining_regulars
     free_money_now = can_spend_today
 
     regular_this_period = get_regular_payments_for_period(today, period_start, period_end)
@@ -91,7 +89,6 @@ def index():
     future_regular = get_regular_payments_until_date(today, next_income)
     regular_after_income = get_regular_payments_after_date(today, next_income)
 
-    spend_warning = "⚠️ Внимание! Денег не хватит на регулярные платежи!" if can_spend_today < 0 else ""
     due_payments = get_due_regular_payments(today)
     all_categories = get_all_category_names()
 
@@ -145,6 +142,7 @@ def index():
                            operations=operations,
                            total_income=total_income,
                            total_expense=total_expense,
+                           total_expense_without_regulars=total_expense_without_regulars,
                            balance=balance,
                            free_money_now=free_money_now,
                             expected_income=expected_income,
@@ -152,7 +150,6 @@ def index():
                             future_regular=future_regular,
                            regular_after_income=regular_after_income,
                            can_spend_today=can_spend_today,
-                           spend_warning=spend_warning,
                            days_to_income=days_to_income,
                            next_income=next_income,
                             today_light=today_light,

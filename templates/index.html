@@ -81,23 +81,12 @@
             <div class="card-body text-center">
                 <h5 class="card-title">💸 Расходы</h5>
                 <h3 class="text-danger">{{ "{:,.0f}".format(total_expense).replace(",", " ") }} ₽</h3>
+                <small class="text-muted">в т.ч. регулярные: {{ "{:,.0f}".format(total_expense - total_expense_without_regulars).replace(",", " ") }} ₽</small>
+                <br><small class="text-success">без регулярных: {{ "{:,.0f}".format(total_expense_without_regulars).replace(",", " ") }} ₽</small>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <h5 class="card-title">💸 Можно потратить сегодня</h5>
-                <h3 class="text-{{ 'danger' if can_spend_today < 0 else 'info' }}">
-                    {{ "{:,.0f}".format(can_spend_today).replace(",", " ") }} ₽
-                </h3>
-                <small>После внесения регулярных платежей</small>
-                {% if spend_warning %}
-                <div class="alert alert-danger mt-2 small">{{ spend_warning }}</div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+
     <div class="col-md-3 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">

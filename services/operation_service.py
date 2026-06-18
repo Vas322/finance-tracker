@@ -49,7 +49,16 @@ def get_totals():
         total_expense = conn.execute(
             'SELECT COALESCE(SUM(amount), 0) FROM operations WHERE type="Расход"'
         ).fetchone()[0]
-    return total_income, total_expense, total_income - total_expense
+        total_expense_without_regulars = conn.execute('''
+            SELECT COALESCE(SUM(o.amount), 0) FROM operations o
+            WHERE o.type = 'Расход'
+            AND NOT EXISTS (
+                SELECT 1 FROM regular_payments r
+                WHERE r.category = o.category
+                AND (r.subcategory = o.subcategory OR (r.subcategory IS NULL AND o.subcategory IS NULL))
+            )
+        ''').fetchone()[0]
+    return total_income, total_expense, total_income - total_expense, total_expense_without_regulars
 
 
 def get_latest_advance():
