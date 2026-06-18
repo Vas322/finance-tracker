@@ -76,10 +76,6 @@ def get_regular_payments_for_period(today: date, start: int, end: int) -> float:
     return get_regular_payments_filtered(start_day=start, end_day=end, period_type='period')
 
 
-def get_regular_total_for_month() -> float:
-    return get_regular_total(period_type='month')
-
-
 def get_unpaid_regular_payments(today: date, start: int, end: int) -> float:
     payments = _get_all_payments()
     paid = _get_paid_set()
@@ -129,10 +125,6 @@ def get_regular_payments_after_date(today: date, target_date: date) -> float:
             mult = _payment_mult(p['interval'], 'period')
             total += p['amount'] * mult
     return total
-
-
-def get_regular_payments_for_month() -> float:
-    return get_regular_total(period_type='month')
 
 
 def get_paid_regular_payments_this_month() -> float:
@@ -222,3 +214,4 @@ def apply_regular_payments():
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                     ''', (today_str, 'Расход', p['category'], p['subcategory'], p['amount'],
                           f'Авто: {p["interval"]}', period))
+        conn.commit()

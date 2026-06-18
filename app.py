@@ -9,6 +9,17 @@ from config import Config
 def create_app() -> Flask:
     app = Flask(__name__)
     app.secret_key = Config.SECRET_KEY
+    app.config['WTF_CSRF_TIME_LIMIT'] = None
+
+    from flask_wtf.csrf import CSRFProtect
+    CSRFProtect(app)
+
+    from extensions import limiter
+    limiter.init_app(app)
+
+    @app.template_filter('money')
+    def money_format(value):
+        return "{:,.0f}".format(value).replace(",", " ")
 
     from routes.main import bp as main_bp
     from routes.operations import bp as operations_bp
@@ -79,4 +90,4 @@ if __name__ == '__main__':
     from services.telegram_service import start_polling
     start_polling()
 
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=os.environ.get('FLASK_DEBUG', '0') == '1', use_reloader=False)

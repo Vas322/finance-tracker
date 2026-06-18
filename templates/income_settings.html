@@ -8,7 +8,7 @@
         <h4 class="card-title mb-0">⚙️ Настройки доходов</h4>
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ url_for('settings.save_income_settings') }}">
+        <form method="POST" action="{{ url_for('settings.save_income_settings') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="row g-4">
                 <div class="col-md-6">
                     <div class="card h-100">

@@ -19,7 +19,7 @@
         {% for p in due_payments %}
         <div class="d-flex align-items-center justify-content-between mb-1 p-1 border-bottom border-warning border-opacity-25">
             <span>{{ p.category }}{% if p.subcategory %} / {{ p.subcategory }}{% endif %} —</span>
-            <form method="POST" action="{{ url_for('main.apply_single_regular', payment_id=p.id) }}" style="display:inline" class="d-flex align-items-center gap-2">
+            <form method="POST" action="{{ url_for('main.apply_single_regular', payment_id=p.id) }}" style="display:inline" class="d-flex align-items-center gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="number" name="amount" class="form-control form-control-sm" style="width: 120px" value="{{ p.amount }}" step="0.01" required>
                 <button type="submit" class="btn btn-success btn-sm py-0">✅ Применить</button>
             </form>
@@ -32,7 +32,7 @@
 
 <!-- БЛОК 1: Состояние счёта -->
 <div class="row">
-    <div class="col-md-4 mb-3">
+    <div class="col-md-6 mb-3">
         <div class="card h-100 border-{{ 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' }}">
             <div class="card-body text-center">
                 <h5 class="card-title mb-1">🚦 Сегодня</h5>
@@ -43,18 +43,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card h-100 border-{{ 'danger' if month_light == 'red' else 'warning' if month_light == 'yellow' else 'success' }}">
-            <div class="card-body text-center">
-                <h5 class="card-title mb-1">🚦 До зарплаты</h5>
-                <h2 class="mb-0 text-{{ 'danger' if month_light == 'red' else 'warning' if month_light == 'yellow' else 'success' }}">
-                    {{ month_text }}
-                </h2>
-                <small class="text-muted">Доступно: {{ "{:,.0f}".format(available_for_month).replace(",", " ") }} ₽</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
+    <div class="col-md-6 mb-3">
         <div class="card h-100 border-info">
             <div class="card-body text-center">
                 <h5 class="card-title mb-1">📅 Средний лимит на день</h5>
@@ -68,7 +57,7 @@
 </div>
 
 <div class="row">
-    <div class="col-md-3 mb-3">
+    <div class="col-md-4 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">💰 Доходы</h5>
@@ -76,7 +65,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
+    <div class="col-md-4 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">💸 Расходы</h5>
@@ -86,8 +75,7 @@
             </div>
         </div>
     </div>
-
-    <div class="col-md-3 mb-3">
+    <div class="col-md-4 mb-3">
         <div class="card h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">⚖️ Баланс</h5>
@@ -114,9 +102,6 @@
                             <div class="card-body text-center">
                                 <h5 class="card-title">📅 Ожидаемое поступление</h5>
                                 <h3 class="text-primary">{{ "{:,.0f}".format(expected_income).replace(",", " ") }} ₽</h3>
-                                {% if expected_income_breakdown %}
-                                <small class="d-block">{{ expected_income_breakdown }}</small>
-                                {% endif %}
                                 <small>До {{ next_income.strftime('%d.%m.%Y') }} ({{ days_to_income }} дней)</small>
                                 <small class="d-block text-muted">{{ salary_remainder_note }}</small>
                                 {% if upcoming_vacation %}
@@ -207,7 +192,7 @@
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
         <i class="bi bi-plus-circle"></i> Добавить операцию
     </button>
-    <form method="POST" action="{{ url_for('main.apply_regular') }}" style="display:inline">
+    <form method="POST" action="{{ url_for('main.apply_regular') }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-outline-warning">
             <i class="bi bi-clock"></i> Применить регулярные
         </button>
@@ -341,7 +326,7 @@
                 <h5 class="modal-title">➕ Добавить операцию</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="addForm" method="POST" action="{{ url_for('operations.add_operation') }}">
+            <form id="addForm" method="POST" action="{{ url_for('operations.add_operation') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-2">
                         <label class="form-label small">Дата</label>

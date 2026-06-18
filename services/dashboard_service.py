@@ -1,0 +1,84 @@
+from datetime import date
+from database import get_db
+from config import Config
+from services.period_service import get_period_dates
+from services.balance_service import get_expenses_for_period, get_income_for_period, update_period_balance
+from services.regular_service import get_regular_total, get_paid_regular_payments_this_month
+from services.operation_service import get_latest_advance
+
+
+def compute_dashboard_stats(today=None):
+    if today is None:
+        today = date.today()
+
+    period_start_date, period_end_date = get_period_dates(today)
+    period_balance = update_period_balance(today)
+    expenses_this_period = get_expenses_for_period(period_start_date, period_end_date)
+    income_this_period = get_income_for_period(period_start_date, period_end_date)
+
+    from services.period_service import get_next_income_date
+    next_income = get_next_income_date(today)
+    days_to_income = (next_income - today).days
+
+    with get_db() as conn:
+        row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
+    planned_salary = float(row['value']) if row else Config.DEFAULT_PLANNED_SALARY
+
+    real_advance = get_latest_advance()
+    regular_total_month = get_regular_total(period_type='month')
+    paid_regular = get_paid_regular_payments_this_month()
+    remaining_regulars = max(0, regular_total_month - paid_regular)
+
+    if 10 <= today.day <= 24:
+        prev_start = date(today.year, today.month - 1, 25) if today.month > 1 else date(today.year - 1, 12, 25)
+        prev_end = date(today.year, today.month, 9)
+    else:
+        prev_start = date(today.year, today.month, 10)
+        prev_end = date(today.year, today.month, 24)
+    prev_income = get_income_for_period(prev_start, prev_end)
+    prev_expenses = get_expenses_for_period(prev_start, prev_end)
+    leftover_from_prev = prev_income - prev_expenses
+    can_spend_today = leftover_from_prev + income_this_period - expenses_this_period - remaining_regulars
+
+    expected_income = planned_salary - real_advance if real_advance > 0 else planned_salary
+    cash_on_hand = period_balance + income_this_period - expenses_this_period
+    unpaid_regular_month = regular_total_month - paid_regular
+
+    with get_db() as conn:
+        remaining_received = conn.execute('''
+            SELECT COALESCE(SUM(amount), 0) FROM operations
+            WHERE type = 'Доход' AND category = 'Зарплата'
+              AND (subcategory != 'Аванс' OR subcategory IS NULL)
+              AND date >= ? AND date <= ?
+        ''', (period_start_date.strftime('%Y-%m-%d'), period_end_date.strftime('%Y-%m-%d'))).fetchone()[0]
+
+    future_income = max(0, expected_income - remaining_received)
+    available_for_month = cash_on_hand + future_income - unpaid_regular_month
+    daily_limit = can_spend_today / days_to_income if days_to_income > 0 else can_spend_today
+
+    return {
+        'today': today,
+        'period_start_date': period_start_date,
+        'period_end_date': period_end_date,
+        'period_balance': period_balance,
+        'expenses_this_period': expenses_this_period,
+        'income_this_period': income_this_period,
+        'next_income': next_income,
+        'days_to_income': days_to_income,
+        'planned_salary': planned_salary,
+        'real_advance': real_advance,
+        'regular_total_month': regular_total_month,
+        'paid_regular': paid_regular,
+        'remaining_regulars': remaining_regulars,
+        'leftover_from_prev': leftover_from_prev,
+        'prev_income': prev_income,
+        'prev_expenses': prev_expenses,
+        'can_spend_today': can_spend_today,
+        'expected_income': expected_income,
+        'cash_on_hand': cash_on_hand,
+        'future_income': future_income,
+        'available_for_month': available_for_month,
+        'daily_limit': daily_limit,
+        'unpaid_regular_month': unpaid_regular_month,
+        'remaining_received': remaining_received,
+    }

@@ -96,42 +96,11 @@ def notify_due_today():
 
 def _get_financial_stats():
     from datetime import date
-    from database import get_db
-    from services.period_service import get_period_dates, get_next_income_date
-    from services.balance_service import get_expenses_for_period, get_income_for_period, update_period_balance
-    from services.regular_service import (
-        get_regular_total, get_paid_regular_payments_this_month,
-        get_unpaid_regular_payments
-    )
-    from services.operation_service import get_latest_advance
+    from services.regular_service import get_unpaid_regular_payments
+    from services.dashboard_service import compute_dashboard_stats
 
     today = date.today()
-    period_start_date, period_end_date = get_period_dates(today)
-    period_balance = update_period_balance(today)
-    expenses_this_period = get_expenses_for_period(period_start_date, period_end_date)
-    income_this_period = get_income_for_period(period_start_date, period_end_date)
-    next_income = get_next_income_date(today)
-    days_to_income = (next_income - today).days
-
-    with get_db() as conn:
-        planned_salary_row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
-    planned_salary = float(planned_salary_row['value']) if planned_salary_row else 185000
-
-    real_advance = get_latest_advance()
-    regular_total_month = get_regular_total(period_type='month')
-    paid_regular = get_paid_regular_payments_this_month()
-    remaining_regulars = max(0, regular_total_month - paid_regular)
-
-    if 10 <= today.day <= 24:
-        prev_start = date(today.year, today.month - 1, 25) if today.month > 1 else date(today.year - 1, 12, 25)
-        prev_end = date(today.year, today.month, 9)
-    else:
-        prev_start = date(today.year, today.month, 10)
-        prev_end = date(today.year, today.month, 24)
-    prev_income = get_income_for_period(prev_start, prev_end)
-    prev_expenses = get_expenses_for_period(prev_start, prev_end)
-    leftover_from_prev = prev_income - prev_expenses
-    can_spend_today = leftover_from_prev + income_this_period - expenses_this_period - remaining_regulars
+    stats = compute_dashboard_stats(today)
 
     if 10 <= today.day <= 24:
         period_start, period_end = 10, 24
@@ -139,39 +108,24 @@ def _get_financial_stats():
         period_start, period_end = 25, 9
 
     unpaid_regular = get_unpaid_regular_payments(today, period_start, period_end)
-    expected_income = planned_salary - real_advance if real_advance > 0 else planned_salary
-    unpaid_regular_month = regular_total_month - paid_regular
-    cash_on_hand = period_balance + income_this_period - expenses_this_period
-
-    with get_db() as conn:
-        remaining_received = conn.execute('''
-            SELECT COALESCE(SUM(amount), 0) FROM operations
-            WHERE type = 'Доход' AND category = 'Зарплата'
-              AND (subcategory != 'Аванс' OR subcategory IS NULL)
-              AND date >= ? AND date <= ?
-        ''', (period_start_date.strftime('%Y-%m-%d'), period_end_date.strftime('%Y-%m-%d'))).fetchone()[0]
-
-    future_income = max(0, expected_income - remaining_received)
-    available_for_month = cash_on_hand + future_income - unpaid_regular_month
-    daily_limit = can_spend_today / days_to_income if days_to_income > 0 else can_spend_today
 
     return {
-        'today': today,
-        'period_balance': period_balance,
-        'can_spend_today': can_spend_today,
-        'available_for_month': available_for_month,
-        'daily_limit': daily_limit,
-        'next_income': next_income,
-        'days_to_income': days_to_income,
-        'cash_on_hand': cash_on_hand,
-        'expected_income': expected_income,
-        'expenses_this_period': expenses_this_period,
-        'income_this_period': income_this_period,
+        'today': stats['today'],
+        'period_balance': stats['period_balance'],
+        'can_spend_today': stats['can_spend_today'],
+        'available_for_month': stats['available_for_month'],
+        'daily_limit': stats['daily_limit'],
+        'next_income': stats['next_income'],
+        'days_to_income': stats['days_to_income'],
+        'cash_on_hand': stats['cash_on_hand'],
+        'expected_income': stats['expected_income'],
+        'expenses_this_period': stats['expenses_this_period'],
+        'income_this_period': stats['income_this_period'],
         'unpaid_regular': unpaid_regular,
-        'paid_regular': paid_regular,
-        'regular_total_month': regular_total_month,
-        'planned_salary': planned_salary,
-        'real_advance': real_advance,
+        'paid_regular': stats['paid_regular'],
+        'regular_total_month': stats['regular_total_month'],
+        'planned_salary': stats['planned_salary'],
+        'real_advance': stats['real_advance'],
     }
 
 

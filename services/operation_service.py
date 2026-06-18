@@ -1,4 +1,5 @@
 from database import get_db
+from config import Config
 
 
 def get_operations_page(
@@ -74,4 +75,4 @@ def get_latest_advance():
 def get_planned_salary():
     with get_db() as conn:
         row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
-    return float(row['value']) if row else 185000
+    return float(row['value']) if row else Config.DEFAULT_PLANNED_SALARY

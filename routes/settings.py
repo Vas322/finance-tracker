@@ -1,5 +1,6 @@
 from flask import Blueprint, request, redirect, url_for, flash, render_template
 from database import get_db
+from config import Config
 from datetime import date
 from services.period_service import get_period, get_period_dates
 from services.balance_service import update_period_balance
@@ -17,7 +18,7 @@ def income_settings():
         planned_salary = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
 
     return render_template('income_settings.html',
-                           planned_salary=float(planned_salary['value']) if planned_salary else 185000,
+                           planned_salary=float(planned_salary['value']) if planned_salary else Config.DEFAULT_PLANNED_SALARY,
                            period_balance=period_balance)
 
 

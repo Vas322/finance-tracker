@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from werkzeug.security import check_password_hash
 from database import get_user, create_user
 from functools import wraps
+from extensions import limiter
 
 bp = Blueprint('auth', __name__)
 
@@ -16,6 +17,7 @@ def login_required(f):
 
 
 @bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()

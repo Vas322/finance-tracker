@@ -24,7 +24,7 @@
                 <h5 class="card-title mb-0">➕ Добавить регулярный платёж</h5>
             </div>
             <div class="card-body">
-                <form method="POST" class="row g-2">
+                <form method="POST" class="row g-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="col-md-2">
                         <label class="form-label small">Категория</label>
                         <select name="add_category" id="add_category" class="form-select form-select-sm" required>
@@ -68,7 +68,7 @@
         </div>
 
         <!-- Таблица платежей -->
-        <form method="POST" id="mainForm">
+        <form method="POST" id="mainForm"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="table-responsive">
                 <table class="table table-sm table-hover">
                     <thead class="table-light">

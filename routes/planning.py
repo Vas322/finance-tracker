@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template
 from database import get_db
+from config import Config
 from services.regular_service import get_regular_total, get_paid_regular_payments_this_month
 from services.planning_service import get_planning_data
 from datetime import date
@@ -21,7 +22,7 @@ def budget_planning():
         planned_salary_row = conn.execute(
             'SELECT value FROM settings WHERE key = "planned_salary"'
         ).fetchone()
-        planned_salary = float(planned_salary_row['value']) if planned_salary_row else 185000
+        planned_salary = float(planned_salary_row['value']) if planned_salary_row else Config.DEFAULT_PLANNED_SALARY
 
         advance_row = conn.execute('''
             SELECT amount FROM operations

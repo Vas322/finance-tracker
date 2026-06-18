@@ -80,19 +80,16 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 start_date TEXT NOT NULL,
                 end_date TEXT NOT NULL,
-                status TEXT DEFAULT 'planned', -- planned, taken, cancelled
+                status TEXT DEFAULT 'planned',
                 created_at TEXT DEFAULT (datetime('now'))
             )
         ''')
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS vacations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                start_date TEXT NOT NULL,
-                end_date TEXT NOT NULL,
-                status TEXT DEFAULT 'planned', -- planned, taken, cancelled
-                created_at TEXT DEFAULT (datetime('now'))
-            )
-        ''')
+
+    # Индексы для операций
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_date ON operations(date)')
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_type ON operations(type)')
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_category ON operations(category)')
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_period ON operations(period)')
 
     from seeds import seed_default_user, seed_planned_salary, seed_categories, seed_regular_payments
     seed_default_user()

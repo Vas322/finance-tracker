@@ -2,21 +2,15 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database import get_db
 from datetime import date
 
-from services.period_service import get_next_income_date, get_period_dates, get_period
 from services.regular_service import (
-    get_regular_total, apply_regular_payments,
-    get_regular_payments_until_date,
-    get_regular_payments_after_date, get_regular_payments_for_period,
-    get_paid_regular_payments_this_month, get_due_regular_payments,
+    apply_regular_payments,
+    get_regular_payments_after_date, get_due_regular_payments,
 )
-from services.planning_service import get_planning_data
-from services.balance_service import (
-    get_expenses_for_period, get_income_for_period,
-    update_period_balance, update_current_period_balance,
-)
-from services.operation_service import get_operations_page, get_totals, get_latest_advance, get_planned_salary
+from services.balance_service import update_current_period_balance
+from services.operation_service import get_operations_page, get_totals
 from services.category_service import get_all_category_names, get_income_categories, get_expense_categories
 from services.vacation_service import get_upcoming_vacation
+from services.dashboard_service import compute_dashboard_stats
 
 bp = Blueprint('main', __name__)
 
@@ -39,83 +33,30 @@ def index():
     )
 
     total_income, total_expense, balance, total_expense_without_regulars = get_totals()
-    planned_salary = get_planned_salary()
-    real_advance = get_latest_advance()
+    stats = compute_dashboard_stats(today)
+
+    planned_salary = stats['planned_salary']
+    real_advance = stats['real_advance']
+    can_spend_today = stats['can_spend_today']
+    expected_income = stats['expected_income']
+    next_income = stats['next_income']
+    days_to_income = stats['days_to_income']
+    daily_limit = stats['daily_limit']
 
     if 10 <= today.day <= 24:
         period_start, period_end = 10, 24
     else:
         period_start, period_end = 25, 9
 
-    days_to_income = (get_next_income_date(today) - today).days
-    period_start_date, period_end_date = get_period_dates(today)
-    period_balance = update_period_balance(today)
-    expenses_this_period = get_expenses_for_period(period_start_date, period_end_date)
-    income_this_period = get_income_for_period(period_start_date, period_end_date)
-
-    regular_total_month = get_regular_total(period_type='month')
-    paid_regular = get_paid_regular_payments_this_month()
-    planning = get_planning_data(planned_salary, real_advance, regular_total_month, paid_regular)
-
-    remaining_regulars = max(0, regular_total_month - paid_regular)
-    if 10 <= today.day <= 24:
-        prev_start = date(today.year, today.month - 1, 25) if today.month > 1 else date(today.year - 1, 12, 25)
-        prev_end = date(today.year, today.month, 9)
-    else:
-        prev_start = date(today.year, today.month, 10)
-        prev_end = date(today.year, today.month, 24)
-
-    prev_income = get_income_for_period(prev_start, prev_end)
-    prev_expenses = get_expenses_for_period(prev_start, prev_end)
-    leftover_from_prev = prev_income - prev_expenses
-    can_spend_today = leftover_from_prev + income_this_period - expenses_this_period - remaining_regulars
-    free_money_now = can_spend_today
-
-    regular_this_period = get_regular_payments_for_period(today, period_start, period_end)
-
-    expected_income = planned_salary - real_advance if real_advance > 0 else planned_salary
-    next_income = get_next_income_date(today)
     upcoming_vacation = get_upcoming_vacation()
-
-    vacation_pay = upcoming_vacation['estimated_pay'] if upcoming_vacation else 0
-    if vacation_pay > 0:
-        expected_income_breakdown = (
-            f"ЗП: {'{:,.0f}'.format(expected_income).replace(',', ' ')} ₽"
-            f" + Отпускные: {'{:,.0f}'.format(vacation_pay).replace(',', ' ')} ₽"
-        )
-        expected_income += vacation_pay
-    else:
-        expected_income_breakdown = ''
-    future_regular = get_regular_payments_until_date(today, next_income)
     regular_after_income = get_regular_payments_after_date(today, next_income)
-
     due_payments = get_due_regular_payments(today)
     all_categories = get_all_category_names()
 
     if real_advance > 0:
-        expected_remainder = planned_salary - real_advance
-        salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
         salary_remainder_note = f"(Аванс: {real_advance:,.0f} ₽)".replace(",", " ")
     else:
-        expected_remainder = planned_salary
-        salary_remainder_text = f"{expected_remainder:,.0f} ₽".replace(",", " ")
         salary_remainder_note = "⚠️ Аванс ещё не внесён"
-
-    # Светофор Сегодня — хватит ли денег на сегодня
-    unpaid_regular_month = regular_total_month - paid_regular
-    cash_on_hand = period_balance + income_this_period - expenses_this_period
-
-    # Сколько из оставшейся зарплаты (не аванс) уже получено в этом периоде
-    with get_db() as conn:
-        remaining_received = conn.execute('''
-            SELECT COALESCE(SUM(amount), 0) FROM operations
-            WHERE type = 'Доход' AND category = 'Зарплата'
-              AND (subcategory != 'Аванс' OR subcategory IS NULL)
-              AND date >= ? AND date <= ?
-        ''', (period_start_date.strftime('%Y-%m-%d'), period_end_date.strftime('%Y-%m-%d'))).fetchone()[0]
-
-    future_income = max(0, expected_income - remaining_received)
-    available_for_month = cash_on_hand + future_income - unpaid_regular_month
 
     if can_spend_today < 0:
         today_light, today_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
@@ -123,17 +64,6 @@ def index():
         today_light, today_text = "yellow", "⚠️ Осторожно: остаток меньше 5000 ₽"
     else:
         today_light, today_text = "green", "✅ Всё хорошо"
-
-    # Светофор До конца зарплатного месяца — хватит ли с учётом будущей ЗП на все регулярные
-    if available_for_month < 0:
-        month_light, month_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
-    elif available_for_month < 5000:
-        month_light, month_text = "yellow", "⚠️ Осторожно: остаток меньше 5000 ₽"
-    else:
-        month_light, month_text = "green", "✅ Всё хорошо"
-
-    # Ежедневный лимит: сколько можно тратить в день из того, что уже на руках
-    daily_limit = can_spend_today / days_to_income if days_to_income > 0 else can_spend_today
 
     income_cats = get_income_categories()
     expense_cats = get_expense_categories()
@@ -144,32 +74,21 @@ def index():
                            total_expense=total_expense,
                            total_expense_without_regulars=total_expense_without_regulars,
                            balance=balance,
-                           free_money_now=free_money_now,
-                            expected_income=expected_income,
-                            expected_income_breakdown=expected_income_breakdown,
-                            future_regular=future_regular,
+                           expected_income=expected_income,
                            regular_after_income=regular_after_income,
                            can_spend_today=can_spend_today,
                            days_to_income=days_to_income,
                            next_income=next_income,
-                            today_light=today_light,
-                            today_text=today_text,
-                            month_light=month_light,
-                            month_text=month_text,
-                            available_for_month=available_for_month,
-                            daily_limit=daily_limit,
-                           regular_this_period=regular_this_period,
-                           period_balance=period_balance,
+                           today_light=today_light,
+                           today_text=today_text,
+                           daily_limit=daily_limit,
                            all_categories=all_categories,
-                           salary_remainder_text=salary_remainder_text,
                            salary_remainder_note=salary_remainder_note,
                            income_categories=income_cats,
                            expense_categories=expense_cats,
-                           planning=planning,
-                           regular_total_month=regular_total_month,
-                            due_payments=due_payments,
-                            upcoming_vacation=upcoming_vacation,
-                            page=page, total_pages=total_pages)
+                           due_payments=due_payments,
+                           upcoming_vacation=upcoming_vacation,
+                           page=page, total_pages=total_pages)
 
 
 @bp.route('/apply_regular', methods=['POST'])

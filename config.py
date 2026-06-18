@@ -6,8 +6,11 @@ load_dotenv()
 class Config:
     SALARY_DAY = int(os.environ.get('SALARY_DAY', '10'))
     ADVANCE_DAY = int(os.environ.get('ADVANCE_DAY', '25'))
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY:
+        raise RuntimeError('SECRET_KEY environment variable is not set. Add it to .env or set it in your system environment.')
     DB_PATH = os.environ.get('DB_PATH', 'finance.db')
+    DEFAULT_PLANNED_SALARY = 185000
     TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
     TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 

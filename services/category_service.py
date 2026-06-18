@@ -1,32 +1,30 @@
 from database import get_db
 
 
-def get_income_categories():
-    income_cats = {}
+def _get_categories_by_type(op_type: str):
     with get_db() as conn:
-        income_main = conn.execute(
-            'SELECT * FROM categories WHERE parent_id IS NULL AND type = "Доход" ORDER BY name'
-        ).fetchall()
-        for cat in income_main:
-            subcats = conn.execute(
-                'SELECT name FROM categories WHERE parent_id = ? ORDER BY name', (cat['id'],)
-            ).fetchall()
-            income_cats[cat['name']] = [s['name'] for s in subcats]
-    return income_cats
+        rows = conn.execute('''
+            SELECT p.id, p.name as parent, s.name as sub
+            FROM categories p
+            LEFT JOIN categories s ON s.parent_id = p.id
+            WHERE p.parent_id IS NULL AND p.type = ?
+            ORDER BY p.name, s.name
+        ''', (op_type,)).fetchall()
+    result = {}
+    for row in rows:
+        if row['id'] not in result:
+            result[row['id']] = {'parent': row['parent'], 'subs': []}
+        if row['sub']:
+            result[row['id']]['subs'].append(row['sub'])
+    return {v['parent']: v['subs'] for v in result.values()}
+
+
+def get_income_categories():
+    return _get_categories_by_type('Доход')
 
 
 def get_expense_categories():
-    expense_cats = {}
-    with get_db() as conn:
-        expense_main = conn.execute(
-            'SELECT * FROM categories WHERE parent_id IS NULL AND type = "Расход" ORDER BY name'
-        ).fetchall()
-        for cat in expense_main:
-            subcats = conn.execute(
-                'SELECT name FROM categories WHERE parent_id = ? ORDER BY name', (cat['id'],)
-            ).fetchall()
-            expense_cats[cat['name']] = [s['name'] for s in subcats]
-    return expense_cats
+    return _get_categories_by_type('Расход')
 
 
 def get_all_category_names():

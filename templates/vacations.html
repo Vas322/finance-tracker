@@ -14,7 +14,7 @@
                 <h5 class="card-title mb-0">➕ Добавить отпуск</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('vacations.vacations') }}" class="row g-2">
+                <form method="POST" action="{{ url_for('vacations.vacations') }}" class="row g-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="col-md-4">
                         <label class="form-label small">Дата начала</label>
                         <input type="date" name="start_date" class="form-control form-control-sm" required>
@@ -30,6 +30,12 @@
             </div>
         </div>
 
+        <!-- Итого за год -->
+        <div class="alert alert-info py-2 mb-3">
+            <strong>📅 Всего дней отпуска в {{ current_year }} году:</strong>
+            {{ yearly_days }} дн.
+        </div>
+
         <!-- Таблица отпусков -->
         <div class="table-responsive">
             <table class="table table-sm table-hover">
@@ -38,7 +44,6 @@
                         <th>Дата начала</th>
                         <th>Дата окончания</th>
                         <th>Дней</th>
-                        <th>Примерная сумма отпускных</th>
                         <th>Статус</th>
                     </tr>
                 </thead>
@@ -48,7 +53,6 @@
                         <td>{{ v.start_date.strftime('%d.%m.%Y') }}</td>
                         <td>{{ v.end_date.strftime('%d.%m.%Y') }}</td>
                         <td>{{ v.days }}</td>
-                        <td class="fw-bold text-success">{{ "{:,.0f}".format(v.estimated_pay).replace(",", " ") }} ₽</td>
                         <td>
                             {% if v.status == 'planned' %}
                             <span class="badge bg-primary">Запланирован</span>
@@ -61,7 +65,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center">Нет запланированных отпусков</td>
+                        <td colspan="4" class="text-center">Нет запланированных отпусков</td>
                     </tr>
                     {% endfor %}
                 </tbody>
