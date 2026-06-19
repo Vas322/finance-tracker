@@ -56,8 +56,10 @@
                         <td>
                             {% if v.status == 'planned' %}
                             <span class="badge bg-primary">Запланирован</span>
-                            {% elif v.status == 'taken' %}
-                            <span class="badge bg-success">Использован</span>
+                            {% elif v.status == 'ongoing' %}
+                            <span class="badge bg-warning text-dark">Идёт отпуск</span>
+                            {% elif v.status == 'completed' %}
+                            <span class="badge bg-success">Отпуск окончен</span>
                             {% else %}
                             <span class="badge bg-secondary">Отменён</span>
                             {% endif %}
