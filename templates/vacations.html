@@ -31,9 +31,10 @@
         </div>
 
         <!-- Итого за год -->
-        <div class="alert alert-info py-2 mb-3">
-            <strong>📅 Всего дней отпуска в {{ current_year }} году:</strong>
-            {{ yearly_days }} дн.
+        <div class="alert alert-info py-2 mb-3 d-flex justify-content-between">
+            <span><strong>📅 Всего дней отпуска в {{ current_year }} году:</strong> {{ yearly_stats.all }} дн.</span>
+            <span><strong>✅ Использовано:</strong> {{ yearly_stats.used }} дн.</span>
+            <span><strong>📅 Осталось:</strong> {{ yearly_stats.remaining }} дн.</span>
         </div>
 
         <!-- Таблица отпусков -->

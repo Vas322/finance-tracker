@@ -26,9 +26,10 @@ def _sync_vacation_status(row, conn):
     return current
 
 
-def get_yearly_vacation_days(year: int) -> int:
-    from database import get_db
-    total = 0
+def get_yearly_vacation_stats(year: int) -> dict:
+    today = date.today()
+    all_days = 0
+    used_days = 0
     with get_db() as conn:
         rows = conn.execute(
             'SELECT start_date, end_date, status FROM vacations'
@@ -40,8 +41,15 @@ def get_yearly_vacation_days(year: int) -> int:
             if s.year <= year <= e.year:
                 start = s if s.year >= year else date(year, 1, 1)
                 end = e if e.year <= year else date(year, 12, 31)
-                total += (end - start).days + 1
-    return total
+                days = (end - start).days + 1
+                all_days += days
+                if status == 'completed':
+                    used_days += days
+    return {
+        'all': all_days,
+        'used': used_days,
+        'remaining': all_days - used_days,
+    }
 
 
 def get_upcoming_vacation() -> Optional[dict]:

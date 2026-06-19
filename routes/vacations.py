@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from datetime import datetime
-from services.vacation_service import add_vacation, get_all_vacations, get_yearly_vacation_days
+from services.vacation_service import add_vacation, get_all_vacations, get_yearly_vacation_stats
 
 bp = Blueprint('vacations', __name__)
 
@@ -24,5 +24,5 @@ def vacations():
 
     all_vacations = get_all_vacations()
     current_year = datetime.now().year
-    yearly_days = get_yearly_vacation_days(current_year)
-    return render_template('vacations.html', vacations=all_vacations, yearly_days=yearly_days, current_year=current_year)
+    yearly_stats = get_yearly_vacation_stats(current_year)
+    return render_template('vacations.html', vacations=all_vacations, yearly_stats=yearly_stats, current_year=current_year)
