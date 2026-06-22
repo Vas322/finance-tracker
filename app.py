@@ -78,12 +78,12 @@ def daily_digest():
 
 
 backup_db()  # local_db_backup
-run_backup()
 init_db()
 
 if __name__ == '__main__':
     scheduler = BackgroundScheduler()
-    scheduler.add_job(run_backup, 'cron', hour='6,18', minute=0)
+    scheduler.add_job(backup_db, 'cron', hour='6,18', minute=0)
+    scheduler.add_job(run_backup, 'cron', hour=0, minute=0)
     scheduler.add_job(check_regular_payments, 'cron', hour='10', minute=0)
     scheduler.add_job(notify_upcoming_payments, 'cron', hour='21', minute=0)
     scheduler.add_job(daily_digest, 'cron', hour='9', minute=0)
@@ -93,3 +93,4 @@ if __name__ == '__main__':
     start_polling()
 
     app.run(debug=os.environ.get('FLASK_DEBUG', '0') == '1', use_reloader=False)
+

@@ -6,13 +6,30 @@ from urllib.error import URLError
 from config import Config
 
 
-def send_message(text: str) -> bool:
+def send_message(text: str, reply_markup: dict = None) -> bool:
     token = Config.TELEGRAM_BOT_TOKEN
     chat_id = Config.TELEGRAM_CHAT_ID
     if not token or not chat_id:
         return False
-    payload = json.dumps({'chat_id': chat_id, 'text': text, 'parse_mode': 'HTML'}).encode()
+    payload = {'chat_id': chat_id, 'text': text, 'parse_mode': 'HTML'}
+    if reply_markup:
+        payload['reply_markup'] = reply_markup
+    payload = json.dumps(payload).encode()
     req = Request(f'https://api.telegram.org/bot{token}/sendMessage', data=payload,
+                  headers={'Content-Type': 'application/json'})
+    try:
+        with urlopen(req, timeout=10) as resp:
+            return resp.status == 200
+    except URLError:
+        return False
+
+
+def answer_callback_query(callback_query_id: str, text: str = ''):
+    token = Config.TELEGRAM_BOT_TOKEN
+    if not token:
+        return False
+    payload = json.dumps({'callback_query_id': callback_query_id, 'text': text}).encode()
+    req = Request(f'https://api.telegram.org/bot{token}/answerCallbackQuery', data=payload,
                   headers={'Content-Type': 'application/json'})
     try:
         with urlopen(req, timeout=10) as resp:
@@ -283,6 +300,7 @@ def set_my_commands():
             {'command': 'start', 'description': 'Приветствие и помощь'},
             {'command': 'status', 'description': 'Финансовый статус'},
             {'command': 'categories', 'description': 'Список категорий расходов'},
+            {'command': 'backup', 'description': 'Создать бэкап на Яндекс.Диск'},
         ]
     })
 
@@ -330,6 +348,11 @@ def _polling_loop():
 
 
 def _process_update(update):
+    cb = update.get('callback_query')
+    if cb:
+        answer_callback_query(cb['id'], '⏳ Создаю бэкап...')
+        _handle_backup()
+        return
     msg = update.get('message') or update.get('edited_message')
     if not msg:
         return
@@ -363,11 +386,15 @@ def _fuzzy_match(query: str, target: str) -> bool:
 
 def _handle_command(text: str):
     if text == '/start':
+        keyboard = {'inline_keyboard': [[
+            {'text': '📦 Создать бэкап', 'callback_data': 'backup'}
+        ]]}
         send_message(
             f'<b>👋 Привет! Я бот Finance Tracker</b>\n\n'
             f'Доступные команды:\n'
             f'/status — текущее финансовое состояние\n'
-            f'/categories — все категории расходов\n\n'
+            f'/categories — все категории расходов\n'
+            f'/backup — создать бэкап на Яндекс.Диск\n\n'
             f'<b>Добавить расход:</b>\n'
             f'Напиши категорию и сумму, например:\n'
             f'<code>такси 500</code>\n'
@@ -378,13 +405,15 @@ def _handle_command(text: str):
             f'<code>зарплата 100000</code>\n'
             f'<code>премия 20000</code>\n'
             f'<code>фриланс проект 30000</code>\n\n'
-            f'Не знаешь категорию — напиши /categories'
+            f'Не знаешь категорию — напиши /categories',
+            reply_markup=keyboard
         )
     elif text == '/status':
         _handle_status()
     elif text == '/categories':
         _handle_categories()
-
+    elif text == '/backup':
+        _handle_backup()
 
 def _handle_categories():
     from database import get_db
@@ -457,6 +486,16 @@ def _handle_status():
         lines.append(_format_payments(today_payments))
 
     send_message('\n'.join(lines))
+
+
+def _handle_backup():
+    send_message('\u23f3 \u0421\u043e\u0437\u0434\u0430\u044e \u0431\u044d\u043a\u0430\u043f \u0438 \u0437\u0430\u0433\u0440\u0443\u0436\u0430\u044e \u043d\u0430 \u042f\u043d\u0434\u0435\u043a\u0441.\u0414\u0438\u0441\u043a...')
+    from services.backup_service import run_backup
+    try:
+        run_backup()
+        send_message('\u2705 \u0411\u044d\u043a\u0430\u043f \u0441\u043e\u0437\u0434\u0430\u043d \u0438 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043d \u043d\u0430 \u042f\u043d\u0434\u0435\u043a\u0441.\u0414\u0438\u0441\u043a')
+    except Exception as e:
+        send_message(f'\u274c \u041e\u0448\u0438\u0431\u043a\u0430 \u043f\u0440\u0438 \u0441\u043e\u0437\u0434\u0430\u043d\u0438\u0438 \u0431\u044d\u043a\u0430\u043f\u0430: {e}')
 
 
 def _match_category(op_type: str, query: str):
@@ -568,3 +607,7 @@ def _handle_add_operation(text: str):
 
     if op_type == 'Расход':
         check_budget_alert(category, amount)
+
+
+
+
