@@ -13,6 +13,7 @@ class Config:
     DEFAULT_PLANNED_SALARY = 185000
     TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
     TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
+    YANDEX_DISK_TOKEN = os.environ.get('YANDEX_DISK_TOKEN', '')
 
 
 SALARY_DAY = Config.SALARY_DAY

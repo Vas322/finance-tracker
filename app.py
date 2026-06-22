@@ -58,6 +58,7 @@ def create_app() -> Flask:
 app = create_app()
 
 from database import init_db, backup_db
+from services.backup_service import run_backup
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
@@ -76,12 +77,13 @@ def daily_digest():
     send_daily_digest()
 
 
-backup_db()
+backup_db()  # local_db_backup
+run_backup()
 init_db()
 
 if __name__ == '__main__':
     scheduler = BackgroundScheduler()
-    scheduler.add_job(backup_db, 'cron', hour='6,18', minute=0)
+    scheduler.add_job(run_backup, 'cron', hour='6,18', minute=0)
     scheduler.add_job(check_regular_payments, 'cron', hour='10', minute=0)
     scheduler.add_job(notify_upcoming_payments, 'cron', hour='21', minute=0)
     scheduler.add_job(daily_digest, 'cron', hour='9', minute=0)
