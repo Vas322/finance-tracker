@@ -151,18 +151,18 @@ def get_due_regular_payments(today: date):
             if not p['day'] or not p['category']:
                 continue
             payment_day = datetime.strptime(p['day'], '%Y-%m-%d').day
-            should_apply = False
-            if p['interval'] == 'monthly' and payment_day <= today_day:
-                should_apply = True
+            is_due = False
+            if p['interval'] == 'monthly' and payment_day == today_day:
+                is_due = True
             elif p['interval'] == 'weekly':
                 pd = datetime.strptime(p['day'], '%Y-%m-%d')
-                if pd.weekday() <= today.weekday():
-                    should_apply = True
+                if pd.weekday() == today.weekday():
+                    is_due = True
             elif p['interval'] == 'yearly':
                 pd = datetime.strptime(p['day'], '%Y-%m-%d')
-                if pd.month == today.month and pd.day <= today_day:
-                    should_apply = True
-            if not should_apply:
+                if pd.month == today.month and pd.day == today_day:
+                    is_due = True
+            if not is_due:
                 continue
             due.append({
                 'id': p['id'],

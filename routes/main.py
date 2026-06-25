@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from database import get_db
 from datetime import date
 
@@ -50,7 +50,9 @@ def index():
 
     upcoming_vacation = get_upcoming_vacation()
     regular_after_income = get_regular_payments_after_date(today, next_income)
-    due_payments = get_due_regular_payments(today)
+    confirmed = session.get('confirmed_payments', {})
+    this_month = today.strftime('%Y-%m')
+    due_payments = [p for p in get_due_regular_payments(today) if confirmed.get(str(p['id'])) != this_month]
     all_categories = get_all_category_names()
 
     if real_advance > 0:
@@ -109,20 +111,16 @@ def apply_single_regular(payment_id):
     with get_db() as conn:
         p = conn.execute('SELECT * FROM regular_payments WHERE id = ?', (payment_id,)).fetchone()
         if p and p['category'] and amount > 0:
-            existing = conn.execute(
-                'SELECT id FROM operations WHERE date >= ? AND category = ? AND subcategory = ? AND type = \'Расход\'',
-                (date(today.year, today.month, 1).strftime('%Y-%m-%d'), p['category'], p['subcategory'] or '')
-            ).fetchone()
-            if existing:
-                flash(f'Платёж "{p["category"]}" уже был применён в этом месяце', 'warning')
-            else:
-                period = "10-24" if 10 <= today_day <= 24 else "25-09"
-                conn.execute(
-                    'INSERT INTO operations (date, type, category, subcategory, amount, comment, period) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    (today_str, 'Расход', p['category'], p['subcategory'], amount,
-                     f'Авто: {p["interval"]}', period)
-                )
-                flash(f'Платёж "{p["category"]}" — {amount:,.0f} ₽ применён', 'success')
+            period = "10-24" if 10 <= today_day <= 24 else "25-09"
+            conn.execute(
+                'INSERT INTO operations (date, type, category, subcategory, amount, comment, period) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                (today_str, 'Расход', p['category'], p['subcategory'], amount,
+                 f'Авто: {p["interval"]}', period)
+            )
+            confirmed = session.get('confirmed_payments', {})
+            confirmed[str(payment_id)] = today.strftime('%Y-%m')
+            session['confirmed_payments'] = confirmed
+            flash(f'Платёж "{p["category"]}" — {amount:,.0f} ₽ применён', 'success')
     return redirect(url_for('main.index'))
 
 
