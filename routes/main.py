@@ -7,7 +7,7 @@ from services.regular_service import (
     get_regular_payments_after_date, get_due_regular_payments,
 )
 from services.balance_service import update_current_period_balance
-from services.operation_service import get_operations_page, get_totals
+from services.operation_service import get_operations_page
 from services.category_service import get_all_category_names, get_income_categories, get_expense_categories
 from services.vacation_service import get_upcoming_vacation
 from services.dashboard_service import compute_dashboard_stats
@@ -32,7 +32,6 @@ def index():
         category_filter=category_filter, date_from=date_from, date_to=date_to,
     )
 
-    total_income, total_expense, balance, total_expense_without_regulars = get_totals()
     stats = compute_dashboard_stats(today)
 
     planned_salary = stats['planned_salary']
@@ -72,10 +71,10 @@ def index():
 
     return render_template('index.html',
                            operations=operations,
-                           total_income=total_income,
-                           total_expense=total_expense,
-                           total_expense_without_regulars=total_expense_without_regulars,
-                           balance=balance,
+                           total_income=stats['income_this_period'],
+                           total_expense=stats['expenses_this_period'],
+                           total_expense_without_regulars=stats['total_expense_without_regulars'],
+                           balance=stats['income_this_period'] - stats['expenses_this_period'],
                            expected_income=expected_income,
                            regular_after_income=regular_after_income,
                            can_spend_today=can_spend_today,

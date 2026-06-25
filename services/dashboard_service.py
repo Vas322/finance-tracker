@@ -44,6 +44,18 @@ def compute_dashboard_stats(today=None):
     cash_on_hand = period_balance + income_this_period - expenses_this_period
     unpaid_regular_month = regular_total_month - paid_regular
 
+    # Расходы без регулярных за текущий период
+    with get_db() as conn:
+        total_expense_without_regulars = conn.execute('''
+            SELECT COALESCE(SUM(o.amount), 0) FROM operations o
+            WHERE o.type = 'Расход' AND o.date >= ? AND o.date <= ?
+            AND NOT EXISTS (
+                SELECT 1 FROM regular_payments r
+                WHERE r.category = o.category
+                AND (r.subcategory = o.subcategory OR (r.subcategory IS NULL AND o.subcategory IS NULL))
+            )
+        ''', (period_start_date.strftime('%Y-%m-%d'), period_end_date.strftime('%Y-%m-%d'))).fetchone()[0]
+
     with get_db() as conn:
         remaining_received = conn.execute('''
             SELECT COALESCE(SUM(amount), 0) FROM operations
@@ -81,4 +93,5 @@ def compute_dashboard_stats(today=None):
         'daily_limit': daily_limit,
         'unpaid_regular_month': unpaid_regular_month,
         'remaining_received': remaining_received,
+        'total_expense_without_regulars': total_expense_without_regulars,
     }
