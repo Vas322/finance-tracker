@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template
 from database import get_db
 from config import Config
-from services.regular_service import get_regular_total, get_paid_regular_payments_this_month
+from services.regular_service import get_regular_total, get_paid_regular_payments_in_period
 from services.planning_service import get_planning_data
+from services.period_service import get_period_dates
 from datetime import date
 
 bp = Blueprint('planning', __name__)
@@ -32,7 +33,8 @@ def budget_planning():
         real_advance = advance_row['amount'] if advance_row else 0
 
     regular_total_month = get_regular_total(period_type='month')
-    paid_regular = get_paid_regular_payments_this_month()
+    period_start, period_end = get_period_dates(today)
+    paid_regular = get_paid_regular_payments_in_period(period_start, period_end)
     planning = get_planning_data(planned_salary, real_advance, regular_total_month, paid_regular)
 
     return render_template('budget_planning.html',

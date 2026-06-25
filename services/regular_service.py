@@ -22,12 +22,16 @@ def _day_in_range(day: int, start: int, end: int) -> bool:
     return day >= start or day <= end
 
 
-def _get_paid_set():
+def _get_paid_set(start_date=None, end_date=None):
     today = date.today()
+    if start_date is None:
+        start_date = date(today.year, today.month, 1)
+    if end_date is None:
+        end_date = date(today.year, today.month, today.day)
     with get_db() as conn:
         ops = conn.execute(
-            'SELECT category, subcategory FROM operations WHERE date >= ? AND type = \'Расход\'',
-            (date(today.year, today.month, 1),)
+            'SELECT category, subcategory FROM operations WHERE date >= ? AND date <= ? AND type = \'Расход\'',
+            (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
         ).fetchall()
     return {(op['category'], op['subcategory'] or '') for op in ops}
 
@@ -129,6 +133,21 @@ def get_regular_payments_after_date(today: date, target_date: date) -> float:
 
 def get_paid_regular_payments_this_month() -> float:
     paid = _get_paid_set()
+    payments = _get_all_payments()
+    total = 0.0
+    checked = set()
+    for p in payments:
+        key = (p['category'], p['subcategory'] or '')
+        if key in checked:
+            continue
+        checked.add(key)
+        if key in paid:
+            total += p['amount']
+    return total
+
+
+def get_paid_regular_payments_in_period(start_date, end_date) -> float:
+    paid = _get_paid_set(start_date, end_date)
     payments = _get_all_payments()
     total = 0.0
     checked = set()
