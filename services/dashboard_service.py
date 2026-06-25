@@ -29,16 +29,11 @@ def compute_dashboard_stats(today=None):
     paid_regular = get_paid_regular_payments_this_month()
     remaining_regulars = max(0, regular_total_month - paid_regular)
 
-    if 10 <= today.day <= 24:
-        prev_start = date(today.year, today.month - 1, 25) if today.month > 1 else date(today.year - 1, 12, 25)
-        prev_end = date(today.year, today.month, 9)
+    if planned_salary > 0 and income_this_period > 0:
+        regular_reserve = regular_total_month * (income_this_period / planned_salary)
     else:
-        prev_start = date(today.year, today.month, 10)
-        prev_end = date(today.year, today.month, 24)
-    prev_income = get_income_for_period(prev_start, prev_end)
-    prev_expenses = get_expenses_for_period(prev_start, prev_end)
-    leftover_from_prev = prev_income - prev_expenses
-    can_spend_today = leftover_from_prev + income_this_period - expenses_this_period - remaining_regulars
+        regular_reserve = 0
+    can_spend_today = period_balance + income_this_period - expenses_this_period - regular_reserve
 
     expected_income = planned_salary - real_advance if real_advance > 0 else planned_salary
     cash_on_hand = period_balance + income_this_period - expenses_this_period
@@ -82,9 +77,7 @@ def compute_dashboard_stats(today=None):
         'regular_total_month': regular_total_month,
         'paid_regular': paid_regular,
         'remaining_regulars': remaining_regulars,
-        'leftover_from_prev': leftover_from_prev,
-        'prev_income': prev_income,
-        'prev_expenses': prev_expenses,
+        'regular_reserve': regular_reserve,
         'can_spend_today': can_spend_today,
         'expected_income': expected_income,
         'cash_on_hand': cash_on_hand,
