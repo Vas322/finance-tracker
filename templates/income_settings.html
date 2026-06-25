@@ -64,7 +64,7 @@
                 <h5 class="modal-title">Редактировать начальный остаток</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="moneyForm">
+            <form id="moneyForm"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <label class="form-label">Сумма (₽)</label>
                     <input type="number" name="current_money" step="0.01" value="{{ period_balance }}"
