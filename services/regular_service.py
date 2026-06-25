@@ -144,7 +144,6 @@ def get_paid_regular_payments_this_month() -> float:
 
 def get_due_regular_payments(today: date):
     today_day = today.day
-    month_start = date(today.year, today.month, 1).strftime('%Y-%m-%d')
     due = []
     with get_db() as conn:
         payments = conn.execute('SELECT * FROM regular_payments').fetchall()
@@ -165,18 +164,13 @@ def get_due_regular_payments(today: date):
                     should_apply = True
             if not should_apply:
                 continue
-            existing = conn.execute(
-                'SELECT id FROM operations WHERE date >= ? AND category = ? AND subcategory = ? AND type = \'Расход\'',
-                (month_start, p['category'], p['subcategory'] or '')
-            ).fetchone()
-            if not existing:
-                due.append({
-                    'id': p['id'],
-                    'category': p['category'],
-                    'subcategory': p['subcategory'] or '',
-                    'amount': p['amount'],
-                    'interval': p['interval']
-                })
+            due.append({
+                'id': p['id'],
+                'category': p['category'],
+                'subcategory': p['subcategory'] or '',
+                'amount': p['amount'],
+                'interval': p['interval']
+            })
     return due
 
 

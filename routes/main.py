@@ -109,13 +109,20 @@ def apply_single_regular(payment_id):
     with get_db() as conn:
         p = conn.execute('SELECT * FROM regular_payments WHERE id = ?', (payment_id,)).fetchone()
         if p and p['category'] and amount > 0:
-            period = "10-24" if 10 <= today_day <= 24 else "25-09"
-            conn.execute(
-                'INSERT INTO operations (date, type, category, subcategory, amount, comment, period) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                (today_str, 'Расход', p['category'], p['subcategory'], amount,
-                 f'Авто: {p["interval"]}', period)
-            )
-            flash(f'Платёж "{p["category"]}" — {amount:,.0f} ₽ применён', 'success')
+            existing = conn.execute(
+                'SELECT id FROM operations WHERE date >= ? AND category = ? AND subcategory = ? AND type = \'Расход\'',
+                (date(today.year, today.month, 1).strftime('%Y-%m-%d'), p['category'], p['subcategory'] or '')
+            ).fetchone()
+            if existing:
+                flash(f'Платёж "{p["category"]}" уже был применён в этом месяце', 'warning')
+            else:
+                period = "10-24" if 10 <= today_day <= 24 else "25-09"
+                conn.execute(
+                    'INSERT INTO operations (date, type, category, subcategory, amount, comment, period) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    (today_str, 'Расход', p['category'], p['subcategory'], amount,
+                     f'Авто: {p["interval"]}', period)
+                )
+                flash(f'Платёж "{p["category"]}" — {amount:,.0f} ₽ применён', 'success')
     return redirect(url_for('main.index'))
 
 
