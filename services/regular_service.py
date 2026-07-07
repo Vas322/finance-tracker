@@ -22,39 +22,36 @@ def _day_in_range(day: int, start: int, end: int) -> bool:
     return day >= start or day <= end
 
 
-def _get_paid_set(start_date=None, end_date=None):
+def _get_paid_ids(start_date=None, end_date=None):
+    """Возвращает set{regular_payment_id} оплаченных регулярных платежей за период."""
     today = date.today()
     if start_date is None:
         start_date = date(today.year, today.month, 1)
     if end_date is None:
         end_date = date(today.year, today.month, today.day)
     with get_db() as conn:
-        ops = conn.execute(
-            'SELECT category, subcategory FROM operations WHERE date >= ? AND date <= ? AND type = \'Расход\'',
+        rows = conn.execute(
+            'SELECT DISTINCT regular_payment_id FROM operations WHERE date >= ? AND date <= ? AND type = \'Расход\' AND regular_payment_id IS NOT NULL',
             (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
         ).fetchall()
-    return {(op['category'], op['subcategory'] or '') for op in ops}
+    return {row['regular_payment_id'] for row in rows}
 
 
-def get_regular_total(period_type: str = 'month') -> float:
-    total = 0.0
+def get_regular_total(period_type: str = 'month') -> int:
+    total = 0
     for p in _get_all_payments():
         mult = _payment_mult(p['interval'], period_type)
-        total += p['amount'] * mult
+        total += int(p['amount'] * mult)
     return total
 
 
 def get_regular_payments_filtered(
-    start_day: Optional[int] = None,
-    end_day: Optional[int] = None,
-    max_day: Optional[int] = None,
-    exclude_paid: bool = False,
-    period_type: str = 'period'
+    start_day=None, end_day=None, max_day=None,
+    exclude_paid=False, period_type='period'
 ) -> float:
     payments = _get_all_payments()
     paid = None
-    today = None
-    total = 0.0
+    total = 0
     for p in payments:
         if not p['day']:
             continue
@@ -68,11 +65,11 @@ def get_regular_payments_filtered(
                 continue
         if exclude_paid:
             if paid is None:
-                paid = _get_paid_set()
-            if (p['category'], p['subcategory'] or '') in paid:
+                paid = _get_paid_ids()
+            if p['id'] in paid:
                 continue
         mult = _payment_mult(p['interval'], period_type)
-        total += p['amount'] * mult
+        total += int(p['amount'] * mult)
     return total
 
 
@@ -82,8 +79,8 @@ def get_regular_payments_for_period(today: date, start: int, end: int) -> float:
 
 def get_unpaid_regular_payments(today: date, start: int, end: int) -> float:
     payments = _get_all_payments()
-    paid = _get_paid_set()
-    total = 0.0
+    paid = _get_paid_ids()
+    total = 0
     today_day = today.day
     for p in payments:
         if not p['day']:
@@ -93,10 +90,10 @@ def get_unpaid_regular_payments(today: date, start: int, end: int) -> float:
             continue
         if today_day < payment_day:
             continue
-        if (p['category'], p['subcategory'] or '') in paid:
+        if p['id'] in paid:
             continue
         mult = _payment_mult(p['interval'], 'period')
-        total += p['amount'] * mult
+        total += int(p['amount'] * mult)
     return total
 
 
@@ -132,31 +129,21 @@ def get_regular_payments_after_date(today: date, target_date: date) -> float:
 
 
 def get_paid_regular_payments_this_month() -> float:
-    paid = _get_paid_set()
+    paid = _get_paid_ids()
     payments = _get_all_payments()
-    total = 0.0
-    checked = set()
+    total = 0
     for p in payments:
-        key = (p['category'], p['subcategory'] or '')
-        if key in checked:
-            continue
-        checked.add(key)
-        if key in paid:
+        if p['id'] in paid:
             total += p['amount']
     return total
 
 
 def get_paid_regular_payments_in_period(start_date, end_date) -> float:
-    paid = _get_paid_set(start_date, end_date)
+    paid = _get_paid_ids(start_date, end_date)
     payments = _get_all_payments()
-    total = 0.0
-    checked = set()
+    total = 0
     for p in payments:
-        key = (p['category'], p['subcategory'] or '')
-        if key in checked:
-            continue
-        checked.add(key)
-        if key in paid:
+        if p['id'] in paid:
             total += p['amount']
     return total
 
@@ -230,13 +217,13 @@ def apply_regular_payments():
             if should_apply and p['category']:
                 existing = conn.execute('''
                     SELECT id FROM operations
-                    WHERE date = ? AND category = ? AND subcategory = ? AND amount = ? AND type = 'Расход'
-                ''', (today_str, p['category'], p['subcategory'], p['amount'])).fetchone()
+                    WHERE date = ? AND regular_payment_id = ? AND type = 'Расход'
+                ''', (today_str, p['id'])).fetchone()
                 if not existing:
                     period = "10-24" if 10 <= today_day <= 24 else "25-09"
                     conn.execute('''
-                        INSERT INTO operations (date, type, category, subcategory, amount, comment, period)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO operations (date, type, category, subcategory, amount, comment, period, regular_payment_id)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (today_str, 'Расход', p['category'], p['subcategory'], p['amount'],
-                          f'Авто: {p["interval"]}', period))
+                          f'Авто: {p["interval"]}', period, p['id']))
         conn.commit()

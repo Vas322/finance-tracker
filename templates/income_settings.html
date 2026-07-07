@@ -24,7 +24,7 @@
                         <div class="card-body">
                             <h5 class="card-title">🏦 Начальный остаток</h5>
                             <div class="d-flex align-items-center gap-2 mt-2">
-                                <h3 class="mb-0">{{ "{:,.0f}".format(period_balance).replace(",", " ") }} ₽</h3>
+                                <h3 class="mb-0">{{ period_balance|money }} ₽</h3>
                                 <button type="button" onclick="showMoneyModal()" class="btn btn-sm btn-outline-secondary" title="Редактировать">✏️</button>
                             </div>
                             <small>Остаток на начало периода</small>
@@ -66,7 +66,7 @@
             <form id="moneyForm"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <label class="form-label">Сумма (₽)</label>
-                    <input type="number" name="current_money" step="0.01" value="{{ period_balance }}"
+                    <input type="number" name="current_money" step="0.01" value="{{ period_balance // 100 }}"
                            class="form-control" required>
                 </div>
                 <div class="modal-footer">

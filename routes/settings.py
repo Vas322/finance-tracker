@@ -18,7 +18,7 @@ def income_settings():
         planned_salary = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
 
     return render_template('income_settings.html',
-                           planned_salary=float(planned_salary['value']) if planned_salary else Config.DEFAULT_PLANNED_SALARY,
+                           planned_salary=float(planned_salary['value']) if planned_salary else Config.DEFAULT_PLANNED_SALARY / 100,
                            period_balance=period_balance)
 
 

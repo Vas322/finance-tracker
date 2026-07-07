@@ -49,13 +49,13 @@
                                     {% set budget = item.get('budget', 0) %}
                                     <tr>
                                         <td>{{ item.category }}</td>
-                                        <td>{{ "{:,.0f}".format(item.total).replace(",", " ") }} ₽</td>
+                                        <td>{{ item.total|money }} ₽</td>
                                         <td>{{ "{:.1f}".format(item.total / total_expense * 100) if total_expense > 0 else 0 }}%</td>
                                         <td>
                                             {% if budget > 0 %}
                                             {% set pct = (item.total / budget * 100) %}
                                             <div class="d-flex align-items-center gap-2">
-                                                <span class="small">{{ '{:,.0f}'.format(budget).replace(',', ' ') }} ₽</span>
+                                                <span class="small">{{ budget|money }} ₽</span>
                                                 <div class="progress flex-grow-1" style="height:16px;min-width:80px;">
                                                     <div class="progress-bar {{ 'bg-danger' if pct > 100 else 'bg-success' }}"
                                                          role="progressbar" style="width: {{ pct if pct <= 100 else 100 }}%;">
@@ -64,7 +64,7 @@
                                                 </div>
                                             </div>
                                             <small class="{{ 'text-danger' if item.total > budget else 'text-success' }}">
-                                                {{ '{:,.0f}'.format(budget - item.total).replace(',', ' ') }} ₽
+                                                {{ (budget - item.total)|money }} ₽
                                             </small>
                                             {% else %}
                                             <span class="text-muted small">—</span>
@@ -80,7 +80,7 @@
                             </table>
                         </div>
                         <div class="mt-3 alert alert-info">
-                            <strong>Всего расходов:</strong> {{ "{:,.0f}".format(total_expense).replace(",", " ") }} ₽
+                            <strong>Всего расходов:</strong> {{ total_expense|money }} ₽
                         </div>
                     </div>
                 </div>

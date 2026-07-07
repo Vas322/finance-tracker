@@ -10,7 +10,7 @@ class Config:
     if not SECRET_KEY:
         raise RuntimeError('SECRET_KEY environment variable is not set. Add it to .env or set it in your system environment.')
     DB_PATH = os.environ.get('DB_PATH', 'finance.db')
-    DEFAULT_PLANNED_SALARY = 185000
+    DEFAULT_PLANNED_SALARY = 18500000
     TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
     TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
     YANDEX_DISK_TOKEN = os.environ.get('YANDEX_DISK_TOKEN', '')

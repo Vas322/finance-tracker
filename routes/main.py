@@ -1,3 +1,4 @@
+from decimal import Decimal
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from database import get_db
 from datetime import date
@@ -56,13 +57,13 @@ def index():
     all_categories = get_all_category_names()
 
     if real_advance > 0:
-        salary_remainder_note = f"(Аванс: {real_advance:,.0f} ₽)".replace(",", " ")
+        salary_remainder_note = f"(Аванс: {real_advance//100:,.0f} ₽)".replace(",", " ")
     else:
         salary_remainder_note = "⚠️ Аванс ещё не внесён"
 
     if can_spend_today < 0:
         today_light, today_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"
-    elif can_spend_today < 5000:
+    elif can_spend_today < 500000:
         today_light, today_text = "yellow", "⚠️ Осторожно: остаток меньше 5000 ₽"
     else:
         today_light, today_text = "green", "✅ Всё хорошо"
@@ -123,7 +124,7 @@ def apply_regular():
 @bp.route('/apply_regular/<int:payment_id>', methods=['POST'])
 def apply_single_regular(payment_id):
     from datetime import datetime
-    amount = float(request.form.get('amount', 0))
+    amount = int(Decimal(request.form.get('amount', 0)) * 100)
     today = date.today()
     today_str = today.strftime('%Y-%m-%d')
     today_day = today.day
@@ -133,21 +134,21 @@ def apply_single_regular(payment_id):
         if p and p['category'] and amount > 0:
             period = "10-24" if 10 <= today_day <= 24 else "25-09"
             conn.execute(
-                'INSERT INTO operations (date, type, category, subcategory, amount, comment, period) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO operations (date, type, category, subcategory, amount, comment, period, regular_payment_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                 (today_str, 'Расход', p['category'], p['subcategory'], amount,
-                 f'Авто: {p["interval"]}', period)
+                 f'Авто: {p["interval"]}', period, payment_id)
             )
             confirmed = session.get('confirmed_payments', {})
             confirmed[str(payment_id)] = today.strftime('%Y-%m')
             session['confirmed_payments'] = confirmed
-            flash(f'Платёж "{p["category"]}" — {amount:,.0f} ₽ применён', 'success')
+            flash(f'Платёж "{p["category"]}" — {amount//100:,.0f} ₽ применён', 'success')
     return redirect(url_for('main.index'))
 
 
 @bp.route('/update_money', methods=['POST'])
 def update_money():
-    new_amount = float(request.form['current_money'])
+    new_amount = int(Decimal(request.form['current_money']) * 100)
     today = date.today()
     update_current_period_balance(today, new_amount)
-    flash(f'Начальный остаток: {new_amount:,.0f} ₽', 'success')
+    flash(f'Начальный остаток: {new_amount//100:,.0f} ₽', 'success')
     return redirect(url_for('main.index'))

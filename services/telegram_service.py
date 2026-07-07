@@ -74,7 +74,7 @@ def _format_payments(payments):
     lines = []
     for p in payments:
         sub = f' ({p["subcategory"]})' if p['subcategory'] else ''
-        amount_str = "{:,.0f}".format(p["amount"]).replace(",", " ")
+        amount_str = "{:,.0f}".format(p["amount"] // 100).replace(",", " ")
         lines.append(f'— {p["category"]}{sub} — {amount_str} ₽')
     return '\n'.join(lines)
 
@@ -159,15 +159,15 @@ def send_daily_digest():
     def light(val):
         if val < 0:
             return '🔴'
-        if val < 5000:
+        if val < 500000:
             return '🟡'
         return '🟢'
 
     today_str = stats['today'].strftime('%d.%m.%Y')
-    can_str = "{:,.0f}".format(stats['can_spend_today']).replace(",", " ")
-    month_str = "{:,.0f}".format(stats['available_for_month']).replace(",", " ")
-    limit_str = "{:,.0f}".format(stats['daily_limit']).replace(",", " ")
-    bal_str = "{:,.0f}".format(stats['period_balance']).replace(",", " ")
+    can_str = "{:,.0f}".format(stats['can_spend_today'] // 100).replace(",", " ")
+    month_str = "{:,.0f}".format(stats['available_for_month'] // 100).replace(",", " ")
+    limit_str = "{:,.0f}".format(stats['daily_limit'] // 100).replace(",", " ")
+    bal_str = "{:,.0f}".format(stats['period_balance'] // 100).replace(",", " ")
     income_str = stats['next_income'].strftime('%d.%m')
 
     lines = [
@@ -186,9 +186,9 @@ def send_daily_digest():
         lines.append('')
 
     today_exp = "{:,.0f}".format(
-        _get_expenses_today()
+        _get_expenses_today() // 100
     ).replace(",", " ")
-    if float(today_exp.replace(' ', '')) > 0:
+    if int(today_exp.replace(' ', '')) > 0:
         lines.append(f'💸 Уже потрачено сегодня: {today_exp} ₽')
 
     send_message('\n'.join(lines))
@@ -209,15 +209,15 @@ def notify_traffic_change(old_level: int, new_level: int, stats: dict) -> None:
 
     colors = {0: ('🟢', '✅ Всё хорошо'), 1: ('🟡', '⚠️ Осторожно: остаток меньше 5 000 ₽'), 2: ('🔴', '🚨 КАССОВЫЙ РАЗРЫВ!')}
     emoji, text = colors[new_level]
-    can_spend = int(stats.get('can_spend_today', 0))
-    daily_limit = int(stats.get('daily_limit', 0))
+    can_spend = stats.get('can_spend_today', 0)
+    daily_limit = stats.get('daily_limit', 0)
     days = stats.get('days_to_income', 0)
 
     message = (
         f'🚦 <b>Статус светофора изменился!</b>\n\n'
         f'{emoji} {text}\n'
-        f'💰 Можно потратить: {can_spend:,.0f} ₽\n'
-        f'📊 Лимит дня: {daily_limit:,.0f} ₽\n'
+        f'💰 Можно потратить: {can_spend // 100:,.0f} ₽\n'
+        f'📊 Лимит дня: {daily_limit // 100:,.0f} ₽\n'
         f'📅 До зарплаты: {days} дн.'
     )
 
@@ -233,13 +233,7 @@ def notify_traffic_change(old_level: int, new_level: int, stats: dict) -> None:
 
 # ─── Budget Alert ───────────────────────────────────────────────
 
-def check_budget_alert(category: str, amount: float):
-    from datetime import date
-    from database import get_db
-
-    today = date.today()
-
-def check_budget_alert(category: str, amount: float):
+def check_budget_alert(category: str, amount: int):
     from datetime import date
     from database import get_db
 
@@ -268,14 +262,14 @@ def check_budget_alert(category: str, amount: float):
         budget_amount = budget['amount']
         if spent > budget_amount:
             pct = int((spent / budget_amount) * 100)
-            amount_str = "{:,.0f}".format(spent).replace(",", " ")
-            budget_str = "{:,.0f}".format(budget_amount).replace(",", " ")
+            amount_str = "{:,.0f}".format(spent // 100).replace(",", " ")
+            budget_str = "{:,.0f}".format(budget_amount // 100).replace(",", " ")
             text = (
                 f'<b>⚠️ Превышение бюджета!</b>\n'
                 f'Категория: {category}\n'
                 f'Лимит: {budget_str} ₽\n'
                 f'Потрачено: {amount_str} ₽ ({pct}%)\n'
-                f'Перерасход: {"{:,.0f}".format(spent - budget_amount).replace(",", " ")} ₽'
+                f'Перерасход: {"{:,.0f}".format((spent - budget_amount) // 100).replace(",", " ")} ₽'
             )
             send_message(text)
 
@@ -478,14 +472,14 @@ def _handle_status():
     def light(val):
         if val < 0:
             return '🔴'
-        if val < 5000:
+        if val < 500000:
             return '🟡'
         return '🟢'
 
-    can_str = "{:,.0f}".format(stats['can_spend_today']).replace(",", " ")
-    month_str = "{:,.0f}".format(stats['available_for_month']).replace(",", " ")
-    limit_str = "{:,.0f}".format(stats['daily_limit']).replace(",", " ")
-    bal_str = "{:,.0f}".format(stats['period_balance']).replace(",", " ")
+    can_str = "{:,.0f}".format(stats['can_spend_today'] // 100).replace(",", " ")
+    month_str = "{:,.0f}".format(stats['available_for_month'] // 100).replace(",", " ")
+    limit_str = "{:,.0f}".format(stats['daily_limit'] // 100).replace(",", " ")
+    bal_str = "{:,.0f}".format(stats['period_balance'] // 100).replace(",", " ")
     income_str = stats['next_income'].strftime('%d.%m')
 
     lines = [
@@ -498,17 +492,17 @@ def _handle_status():
     ]
 
     if stats['real_advance'] > 0:
-        adv_str = "{:,.0f}".format(stats['real_advance']).replace(",", " ")
+        adv_str = "{:,.0f}".format(stats['real_advance'] // 100).replace(",", " ")
         lines.append(f'💳 Аванс получен: {adv_str} ₽')
     else:
         lines.append(f'💳 Аванс ещё не внесён')
 
-    exp_str = "{:,.0f}".format(stats['expenses_this_period']).replace(",", " ")
-    inc_str = "{:,.0f}".format(stats['income_this_period']).replace(",", " ")
+    exp_str = "{:,.0f}".format(stats['expenses_this_period'] // 100).replace(",", " ")
+    inc_str = "{:,.0f}".format(stats['income_this_period'] // 100).replace(",", " ")
     lines.append(f'📉 Расходов за период: {exp_str} ₽')
     lines.append(f'📈 Доходов за период: {inc_str} ₽')
 
-    today_exp = "{:,.0f}".format(_get_expenses_today()).replace(",", " ")
+    today_exp = "{:,.0f}".format(_get_expenses_today() // 100).replace(",", " ")
     lines.append(f'💸 Потрачено сегодня: {today_exp} ₽')
 
     if today_payments:
@@ -581,6 +575,7 @@ def _match_category(op_type: str, query: str):
 
 def _handle_add_operation(text: str):
     from datetime import date
+    from decimal import Decimal
     from database import get_db
     from utils import get_period
 
@@ -591,7 +586,7 @@ def _handle_add_operation(text: str):
 
     last = words[-1]
     try:
-        amount = abs(float(last.replace(',', '.')))
+        amount = int(Decimal(last.replace(',', '.')) * 100)
     except ValueError:
         send_message('❌ Не могу распознать сумму. Пример: <code>такси 500</code>')
         return
@@ -632,7 +627,7 @@ def _handle_add_operation(text: str):
         )
 
     sub = f' ({subcategory})' if subcategory else ''
-    amount_str = "{:,.0f}".format(amount).replace(",", " ")
+    amount_str = "{:,.0f}".format(amount // 100).replace(",", " ")
     send_message(f'✅ {label} добавлен: {emoji} {category}{sub} — {amount_str} ₽')
 
     if op_type == 'Расход':

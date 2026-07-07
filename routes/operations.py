@@ -1,3 +1,4 @@
+from decimal import Decimal
 from flask import Blueprint, request, redirect, url_for, flash, jsonify, Response
 from database import get_db
 from utils import get_period
@@ -13,7 +14,7 @@ def add_operation():
     op_type = request.form['type']
     category = request.form['category']
     subcategory = request.form.get('subcategory', '')
-    amount = float(request.form['amount'])
+    amount = int(Decimal(request.form['amount']) * 100)
     comment = request.form.get('comment', '')
     period = get_period(date_str)
 
@@ -44,7 +45,9 @@ def get_operation(id):
     with get_db() as conn:
         op = conn.execute('SELECT * FROM operations WHERE id = ?', (id,)).fetchone()
         if op:
-            return jsonify(dict(op))
+            result = dict(op)
+            result['amount'] = result['amount'] // 100
+            return jsonify(result)
         return jsonify({'error': 'Operation not found'}), 404
 
 
@@ -73,7 +76,7 @@ def export_csv():
     writer.writerow(['Дата', 'Тип', 'Категория', 'Подкатегория', 'Сумма', 'Комментарий', 'Период'])
     for r in rows:
         writer.writerow([r['date'], r['type'], r['category'], r['subcategory'] or '',
-                         r['amount'], r['comment'] or '', r['period'] or ''])
+                         r['amount'] / 100, r['comment'] or '', r['period'] or ''])
 
     return Response(
         output.getvalue().encode('utf-8-sig'),
@@ -85,11 +88,12 @@ def export_csv():
 @bp.route('/edit_operation', methods=['POST'])
 def edit_operation():
     data = request.json
+    amount = int(Decimal(data['amount']) * 100)
     with get_db() as conn:
         conn.execute('''
             UPDATE operations 
             SET date = ?, type = ?, category = ?, subcategory = ?, amount = ?, comment = ?
             WHERE id = ?
         ''', (data['date'], data['type'], data['category'], data['subcategory'],
-              data['amount'], data['comment'], data['id']))
+              amount, data['comment'], data['id']))
     return jsonify({'success': True})

@@ -3,7 +3,7 @@ from database import get_db, get_period_balance, set_period_balance
 from services.period_service import get_period_dates, get_period
 
 
-def get_expenses_for_period(start_date: date, end_date: date) -> float:
+def get_expenses_for_period(start_date: date, end_date: date) -> int:
     with get_db() as conn:
         result = conn.execute('''
             SELECT COALESCE(SUM(amount), 0) as total
@@ -30,7 +30,7 @@ def update_period_balance(today: date):
     return existing
 
 
-def get_income_for_period(start_date: date, end_date: date) -> float:
+def get_income_for_period(start_date: date, end_date: date) -> int:
     with get_db() as conn:
         result = conn.execute('''
             SELECT COALESCE(SUM(amount), 0) as total
@@ -40,7 +40,7 @@ def get_income_for_period(start_date: date, end_date: date) -> float:
     return result['total']
 
 
-def update_current_period_balance(today: date, new_balance: float):
+def update_current_period_balance(today: date, new_balance: int):
     period_start, period_end = get_period_dates(today)
     period_name = get_period(today.strftime('%Y-%m-%d'))
     set_period_balance(period_name, period_start.strftime('%Y-%m-%d'), new_balance)

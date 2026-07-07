@@ -19,7 +19,7 @@ def create_app() -> Flask:
 
     @app.template_filter('money')
     def money_format(value):
-        return "{:,.0f}".format(value).replace(",", " ")
+        return "{:,.0f}".format(int(value) // 100).replace(",", " ")
 
     from routes.main import bp as main_bp
     from routes.operations import bp as operations_bp

@@ -22,7 +22,7 @@ def compute_dashboard_stats(today=None):
 
     with get_db() as conn:
         row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
-    planned_salary = float(row['value']) if row else Config.DEFAULT_PLANNED_SALARY
+    planned_salary = int(float(row['value']) * 100) if row else Config.DEFAULT_PLANNED_SALARY
 
     real_advance = get_latest_advance()
     regular_total_month = get_regular_total(period_type='month')

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from flask import Blueprint, request, redirect, url_for, flash, render_template
 from database import get_db
 from datetime import datetime, date
@@ -10,7 +11,7 @@ def regular():
     if request.method == 'POST':
         # Добавление нового платежа
         if 'add_category' in request.form and 'add_amount' in request.form:
-            amount = float(request.form['add_amount'])
+            amount = int(Decimal(request.form['add_amount']) * 100)
             day = request.form['add_day']
             category = request.form['add_category']
             subcategory = request.form.get('add_subcategory', '')
@@ -37,7 +38,7 @@ def regular():
                 for key, value in request.form.items():
                     if key.startswith('amount_'):
                         pid = int(key.split('_')[1])
-                        amount = float(value)
+                        amount = int(Decimal(value) * 100)
                         conn.execute('UPDATE regular_payments SET amount = ? WHERE id = ?', (amount, pid))
                     elif key.startswith('day_'):
                         pid = int(key.split('_')[1])

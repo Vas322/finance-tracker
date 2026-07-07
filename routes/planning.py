@@ -23,7 +23,7 @@ def budget_planning():
         planned_salary_row = conn.execute(
             'SELECT value FROM settings WHERE key = "planned_salary"'
         ).fetchone()
-        planned_salary = float(planned_salary_row['value']) if planned_salary_row else Config.DEFAULT_PLANNED_SALARY
+        planned_salary = int(float(planned_salary_row['value']) * 100) if planned_salary_row else Config.DEFAULT_PLANNED_SALARY
 
         advance_row = conn.execute('''
             SELECT amount FROM operations

@@ -75,4 +75,4 @@ def get_latest_advance():
 def get_planned_salary():
     with get_db() as conn:
         row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
-    return float(row['value']) if row else Config.DEFAULT_PLANNED_SALARY
+    return int(float(row['value']) * 100) if row else Config.DEFAULT_PLANNED_SALARY

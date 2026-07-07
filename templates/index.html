@@ -20,7 +20,7 @@
         <div class="d-flex align-items-center justify-content-between mb-1 p-1 border-bottom border-warning border-opacity-25">
             <span>{{ p.category }}{% if p.subcategory %} / {{ p.subcategory }}{% endif %} —</span>
             <form method="POST" action="{{ url_for('main.apply_single_regular', payment_id=p.id) }}" style="display:inline" class="d-flex align-items-center gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="number" name="amount" class="form-control form-control-sm" style="width: 120px" value="{{ p.amount }}" step="0.01" required>
+                <input type="number" name="amount" class="form-control form-control-sm" style="width: 120px" value="{{ p.amount // 100 }}" step="0.01" required>
                 <button type="submit" class="btn btn-success btn-sm py-0">✅ Применить</button>
             </form>
         </div>
@@ -39,7 +39,7 @@
                 <h2 class="mb-0 text-{{ 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' }}">
                     {{ today_text }}
                 </h2>
-                <small class="text-muted">Можно потратить: {{ "{:,.0f}".format(can_spend_today).replace(",", " ") }} ₽</small>
+                <small class="text-muted">Можно потратить: {{ can_spend_today|money }} ₽</small>
             </div>
         </div>
     </div>
@@ -48,7 +48,7 @@
             <div class="card-body text-center">
                 <h5 class="card-title mb-1">📅 Средний лимит на день</h5>
                 <h2 class="mb-0 text-info">
-                    {{ "{:,.0f}".format(daily_limit).replace(",", " ") }} ₽
+                    {{ daily_limit|money }} ₽
                 </h2>
                 <small class="text-muted">До {{ next_income.strftime('%d.%m.%Y') }} осталось {{ days_to_income }} дн.</small>
             </div>
@@ -61,7 +61,7 @@
         <div class="card h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">💰 Доходы</h5>
-                <h3 class="text-success">{{ "{:,.0f}".format(total_income).replace(",", " ") }} ₽</h3>
+                <h3 class="text-success">{{ total_income|money }} ₽</h3>
             </div>
         </div>
     </div>
@@ -69,9 +69,9 @@
         <div class="card h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">💸 Расходы</h5>
-                <h3 class="text-danger">{{ "{:,.0f}".format(total_expense).replace(",", " ") }} ₽</h3>
-                <small class="text-muted">в т.ч. регулярные: {{ "{:,.0f}".format(total_expense - total_expense_without_regulars).replace(",", " ") }} ₽</small>
-                <br><small class="text-success">без регулярных: {{ "{:,.0f}".format(total_expense_without_regulars).replace(",", " ") }} ₽</small>
+                <h3 class="text-danger">{{ total_expense|money }} ₽</h3>
+                <small class="text-muted">в т.ч. регулярные: {{ (total_expense - total_expense_without_regulars)|money }} ₽</small>
+                <br><small class="text-success">без регулярных: {{ total_expense_without_regulars|money }} ₽</small>
             </div>
         </div>
     </div>
@@ -79,7 +79,7 @@
         <div class="card h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">⚖️ Баланс</h5>
-                <h3 class="text-info">{{ "{:,.0f}".format(balance).replace(",", " ") }} ₽</h3>
+                <h3 class="text-info">{{ balance|money }} ₽</h3>
             </div>
         </div>
     </div>
@@ -101,7 +101,7 @@
                         <div class="card h-100">
                             <div class="card-body text-center">
                                 <h5 class="card-title">📅 Ожидаемое поступление</h5>
-                                <h3 class="text-primary">{{ "{:,.0f}".format(expected_income).replace(",", " ") }} ₽</h3>
+                                <h3 class="text-primary">{{ expected_income|money }} ₽</h3>
                                 <small>До {{ next_income.strftime('%d.%m.%Y') }} ({{ days_to_income }} дней)</small>
                                 <small class="d-block text-muted">{{ salary_remainder_note }}</small>
                                 {% if upcoming_vacation %}
@@ -117,7 +117,7 @@
                         <div class="card h-100">
                             <div class="card-body text-center">
                                 <h5 class="card-title">⚖️ Баланс</h5>
-                                <h3 class="text-info">{{ "{:,.0f}".format(balance).replace(",", " ") }} ₽</h3>
+                                <h3 class="text-info">{{ balance|money }} ₽</h3>
                             </div>
                         </div>
                     </div>
@@ -125,7 +125,7 @@
                         <div class="card h-100">
                             <div class="card-body text-center">
                                 <h5 class="card-title">📋 Предстоящие платежи</h5>
-                                <h3 class="text-danger">{{ "{:,.0f}".format(regular_after_income).replace(",", " ") }} ₽</h3>
+                                <h3 class="text-danger">{{ regular_after_income|money }} ₽</h3>
                                 <small>После получения зарплаты</small>
                             </div>
                         </div>
@@ -224,7 +224,7 @@
                 <td data-value="{{ op.type }}">{{ op.type }}</td>
                 <td data-value="{{ op.category }}{% if op.subcategory %} / {{ op.subcategory }}{% endif %}">{{ op.category }}{% if op.subcategory %} / {{ op.subcategory }}{% endif %}</td>
                 <td class="fw-bold {{ 'text-success' if op.type == 'Доход' else 'text-danger' }}" data-value="{{ op.amount }}">
-                    {{ "{:,.0f}".format(op.amount).replace(",", " ") }} ₽
+                    {{ op.amount|money }} ₽
                 </td>
                 <td>{{ op.period }}</td>
                 <td>{{ op.comment or '-' }}</td>

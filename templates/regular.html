@@ -105,8 +105,8 @@
                                 </select>
                              </td>
                             <td class="view-mode">
-                                <span class="amount-view">{{ p.amount }}</span>
-                                <input type="number" name="amount_{{ p.id }}" value="{{ p.amount }}" step="0.01" class="form-control form-control-sm edit-mode" style="display:none;">
+                                <span class="amount-view">{{ p.amount|money }}</span>
+                                <input type="number" name="amount_{{ p.id }}" value="{{ p.amount // 100 }}" step="0.01" class="form-control form-control-sm edit-mode" style="display:none;">
                              </td>
                             <td class="view-mode">
                                 <span class="interval-view">
@@ -141,7 +141,7 @@
                     <div class="card border-primary">
                         <div class="card-body text-center py-2">
                             <h6 class="card-title mb-1">📊 Итого регулярных платежей</h6>
-                            <h4 class="mb-0 text-primary">{{ "{:,.0f}".format(regular_total).replace(",", " ") }} ₽</h4>
+                            <h4 class="mb-0 text-primary">{{ regular_total|money }} ₽</h4>
                         </div>
                     </div>
                 </div>

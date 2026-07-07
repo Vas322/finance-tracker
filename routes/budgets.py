@@ -18,11 +18,11 @@ def budgets():
             for key, value in request.form.items():
                 if key.startswith('budget_'):
                     category = key.replace('budget_', '', 1)
-                    amount = Decimal(value) if value else Decimal('0')
+                    amount = int(Decimal(value) * 100) if value else 0
                     if amount > 0:
                         conn.execute(
                             'INSERT INTO budgets (category, month, amount) VALUES (?, ?, ?)',
-                            (category, month, float(amount))
+                            (category, month, amount)
                         )
 
         flash('Бюджеты сохранены', 'success')
@@ -63,7 +63,7 @@ def budgets():
             for cat, amount in budgets_map.items():
                 conn.execute(
                     'INSERT OR IGNORE INTO budgets (category, month, amount) VALUES (?, ?, ?)',
-                    (cat, month, float(amount))
+                    (cat, month, amount)
                 )
             conn.commit()
 

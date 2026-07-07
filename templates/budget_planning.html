@@ -18,7 +18,7 @@
                         <table class="table table-sm table-borderless">
                             <tr>
                                 <td><strong>Сумма аванса:</strong></td>
-                                <td class="fw-bold">{{ "{:,.0f}".format(planning.advance).replace(",", " ") }} ₽</td>
+                                <td class="fw-bold">{{ planning.advance|money }} ₽</td>
                             </tr>
                             <tr>
                                 <td><strong>% от плановой зарплаты:</strong></td>
@@ -26,11 +26,11 @@
                             </tr>
                             <tr class="table-warning">
                                 <td><strong>💰 Нужно отложить на регулярные платежи:</strong></td>
-                                <td class="fw-bold">{{ "{:,.0f}".format(planning.need_to_save_from_advance).replace(",", " ") }} ₽</td>
+                                <td class="fw-bold">{{ planning.need_to_save_from_advance|money }} ₽</td>
                             </tr>
                             <tr class="table-success">
                                 <td><strong>✅ Остаётся на жизнь после аванса:</strong></td>
-                                <td class="fw-bold">{{ "{:,.0f}".format(planning.left_from_advance).replace(",", " ") }} ₽</td>
+                                <td class="fw-bold">{{ planning.left_from_advance|money }} ₽</td>
                             </tr>
                         </table>
                     </div>
@@ -46,7 +46,7 @@
                         <table class="table table-sm table-borderless">
                             <tr>
                                 <td><strong>Остаток зарплаты:</strong></td>
-                                <td class="fw-bold">{{ "{:,.0f}".format(planning.remaining_salary).replace(",", " ") }} ₽</td>
+                                <td class="fw-bold">{{ planning.remaining_salary|money }} ₽</td>
                             </tr>
                             <tr>
                                 <td><strong>% от плановой зарплаты:</strong></td>
@@ -54,11 +54,11 @@
                             </tr>
                             <tr class="table-warning">
                                 <td><strong>💰 Нужно отложить на регулярные платежи:</strong></td>
-                                <td class="fw-bold">{{ "{:,.0f}".format(planning.need_to_save_from_remaining).replace(",", " ") }} ₽</td>
+                                <td class="fw-bold">{{ planning.need_to_save_from_remaining|money }} ₽</td>
                             </tr>
                             <tr class="table-success">
                                 <td><strong>✅ Остаётся на жизнь после зарплаты:</strong></td>
-                                <td class="fw-bold">{{ "{:,.0f}".format(planning.left_from_remaining).replace(",", " ") }} ₽</td>
+                                <td class="fw-bold">{{ planning.left_from_remaining|money }} ₽</td>
                             </tr>
                         </table>
                     </div>
@@ -70,9 +70,9 @@
             <div class="col-md-12">
                 <div class="alert alert-info">
                     <strong>📌 Итого:</strong>
-                    Регулярных платежей за месяц: <strong>{{ "{:,.0f}".format(planning.regular_to_save).replace(",", " ") }} ₽</strong>
+                    Регулярных платежей за месяц: <strong>{{ planning.regular_to_save|money }} ₽</strong>
                     {% if planning.paid_regular > 0 %}
-                    <span class="text-success">(уже оплачено: {{ "{:,.0f}".format(planning.paid_regular).replace(",", " ") }} ₽, осталось: {{ "{:,.0f}".format(planning.regular_to_save - planning.paid_regular).replace(",", " ") }} ₽)</span>
+                    <span class="text-success">(уже оплачено: {{ planning.paid_regular|money }} ₽, осталось: {{ (planning.regular_to_save - planning.paid_regular)|money }} ₽)</span>
                     {% endif %}
                 </div>
             </div>

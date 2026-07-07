@@ -1,3 +1,4 @@
+import math
 import sqlite3
 from config import Config
 
@@ -19,15 +20,16 @@ def init_db():
                 type TEXT NOT NULL,
                 category TEXT NOT NULL,
                 subcategory TEXT,
-                amount REAL NOT NULL,
+                amount INTEGER NOT NULL,
                 comment TEXT,
+                regular_payment_id INTEGER DEFAULT NULL,
                 period TEXT
             )
         ''')
         conn.execute('''
             CREATE TABLE IF NOT EXISTS regular_payments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                amount REAL NOT NULL,
+                amount INTEGER NOT NULL,
                 day TEXT DEFAULT '2024-01-01',
                 category TEXT DEFAULT '',
                 subcategory TEXT DEFAULT '',
@@ -55,7 +57,7 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 period TEXT NOT NULL,
                 start_date TEXT NOT NULL,
-                balance REAL NOT NULL,
+                balance INTEGER NOT NULL,
                 UNIQUE(period, start_date)
             )
         ''')
@@ -71,7 +73,7 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 category TEXT NOT NULL,
                 month TEXT NOT NULL,
-                amount REAL NOT NULL,
+                amount INTEGER NOT NULL,
                 UNIQUE(category, month)
             )
         ''')
@@ -85,17 +87,40 @@ def init_db():
             )
         ''')
 
+    # Миграция существующих БД: добавление regular_payment_id
+    try:
+        conn.execute('ALTER TABLE operations ADD COLUMN regular_payment_id INTEGER DEFAULT NULL')
+    except Exception:
+        pass
+
     # Индексы для операций
     conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_date ON operations(date)')
     conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_type ON operations(type)')
     conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_category ON operations(category)')
     conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_period ON operations(period)')
 
+    migrate_amounts_to_cents()
+
     from seeds import seed_default_user, seed_planned_salary, seed_categories, seed_regular_payments
     seed_default_user()
     seed_planned_salary()
     seed_categories()
     seed_regular_payments()
+
+
+def migrate_amounts_to_cents():
+    with get_db() as conn:
+        # Проверка: уже мигрировано (есть операции с суммой > 1 млн копеек = 10 тыс руб)
+        row = conn.execute('SELECT COUNT(*) as cnt FROM operations WHERE amount > 1000000').fetchone()
+        if row and row['cnt'] > 0:
+            return
+
+        conn.execute('UPDATE operations SET amount = CAST(ROUND(amount * 100) AS INTEGER) WHERE amount IS NOT NULL')
+        conn.execute('UPDATE regular_payments SET amount = CAST(ROUND(amount * 100) AS INTEGER) WHERE amount IS NOT NULL')
+        conn.execute('UPDATE budgets SET amount = CAST(ROUND(amount * 100) AS INTEGER) WHERE amount IS NOT NULL')
+        conn.execute('UPDATE period_balance SET balance = CAST(ROUND(balance * 100) AS INTEGER) WHERE balance IS NOT NULL')
+        conn.commit()
+        conn.execute('VACUUM')
 
 
 def backup_db():
