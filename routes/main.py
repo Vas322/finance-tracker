@@ -11,6 +11,7 @@ from services.operation_service import get_operations_page
 from services.category_service import get_all_category_names, get_income_categories, get_expense_categories
 from services.vacation_service import get_upcoming_vacation
 from services.dashboard_service import compute_dashboard_stats
+from services.telegram_service import notify_traffic_change
 
 bp = Blueprint('main', __name__)
 
@@ -65,6 +66,26 @@ def index():
         today_light, today_text = "yellow", "⚠️ Осторожно: остаток меньше 5000 ₽"
     else:
         today_light, today_text = "green", "✅ Всё хорошо"
+
+    # --- Уведомление при ухудшении светофора ---
+    traffic_levels = {'green': 0, 'yellow': 1, 'red': 2}
+    new_level = traffic_levels[today_light]
+
+    with get_db() as conn:
+        row = conn.execute(
+            'SELECT value FROM settings WHERE key = "last_traffic_light"'
+        ).fetchone()
+
+    if row and row['value']:
+        old_level = int(row['value'])
+        if new_level > old_level:
+            notify_traffic_change(old_level, new_level, stats)
+
+    with get_db() as conn:
+        conn.execute(
+            'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+            ('last_traffic_light', str(new_level))
+        )
 
     income_cats = get_income_categories()
     expense_cats = get_expense_categories()

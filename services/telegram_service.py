@@ -201,6 +201,36 @@ def _get_expenses_today():
     return get_expenses_for_period(today, today)
 
 
+def notify_traffic_change(old_level: int, new_level: int, stats: dict) -> None:
+    token = Config.TELEGRAM_BOT_TOKEN
+    chat_id = Config.TELEGRAM_CHAT_ID
+    if not token or not chat_id:
+        return
+
+    colors = {0: ('🟢', '✅ Всё хорошо'), 1: ('🟡', '⚠️ Осторожно: остаток меньше 5 000 ₽'), 2: ('🔴', '🚨 КАССОВЫЙ РАЗРЫВ!')}
+    emoji, text = colors[new_level]
+    can_spend = int(stats.get('can_spend_today', 0))
+    daily_limit = int(stats.get('daily_limit', 0))
+    days = stats.get('days_to_income', 0)
+
+    message = (
+        f'🚦 <b>Статус светофора изменился!</b>\n\n'
+        f'{emoji} {text}\n'
+        f'💰 Можно потратить: {can_spend:,.0f} ₽\n'
+        f'📊 Лимит дня: {daily_limit:,.0f} ₽\n'
+        f'📅 До зарплаты: {days} дн.'
+    )
+
+    try:
+        _api_call('sendMessage', {
+            'chat_id': chat_id,
+            'text': message,
+            'parse_mode': 'HTML'
+        })
+    except Exception as e:
+        print(f'[Telegram] Ошибка отправки уведомления светофора: {e}')
+
+
 # ─── Budget Alert ───────────────────────────────────────────────
 
 def check_budget_alert(category: str, amount: float):
