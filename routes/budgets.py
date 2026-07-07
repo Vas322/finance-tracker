@@ -2,6 +2,7 @@ from decimal import Decimal
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database import get_db
 from datetime import date
+from services.regular_service import get_regular_totals_by_category
 
 bp = Blueprint('budgets', __name__)
 
@@ -40,6 +41,8 @@ def budgets():
         budgets_map = {r['category']: r['amount'] for r in budgets_raw}
 
         if not budgets_map:
+            regular_by_cat = get_regular_totals_by_category('month')
+
             year, m = map(int, month.split('-'))
             if m == 1:
                 prev_month = f'{year - 1:04d}-12'
@@ -49,15 +52,20 @@ def budgets():
             prev_raw = conn.execute(
                 'SELECT category, amount FROM budgets WHERE month = ?', (prev_month,)
             ).fetchall()
+            prev_map = {r['category']: r['amount'] for r in prev_raw}
 
-            if prev_raw:
-                for row in prev_raw:
-                    conn.execute(
-                        'INSERT OR IGNORE INTO budgets (category, month, amount) VALUES (?, ?, ?)',
-                        (row['category'], month, row['amount'])
-                    )
-                conn.commit()
-                budgets_map = {r['category']: r['amount'] for r in prev_raw}
+            for cat in expense_cats:
+                if cat in regular_by_cat:
+                    budgets_map[cat] = regular_by_cat[cat]
+                elif cat in prev_map:
+                    budgets_map[cat] = prev_map[cat]
+
+            for cat, amount in budgets_map.items():
+                conn.execute(
+                    'INSERT OR IGNORE INTO budgets (category, month, amount) VALUES (?, ?, ?)',
+                    (cat, month, float(amount))
+                )
+            conn.commit()
 
         start = month + '-01'
         if month[5:7] == '12':

@@ -161,6 +161,18 @@ def get_paid_regular_payments_in_period(start_date, end_date) -> float:
     return total
 
 
+def get_regular_totals_by_category(period_type='month') -> dict:
+    """Возвращает {category: monthly_amount} для всех регулярных платежей."""
+    totals = {}
+    for p in _get_all_payments():
+        cat = p['category']
+        if not cat:
+            continue
+        mult = _payment_mult(p['interval'], period_type)
+        totals[cat] = totals.get(cat, 0) + p['amount'] * mult
+    return totals
+
+
 def get_due_regular_payments(today: date):
     today_day = today.day
     due = []
