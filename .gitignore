@@ -16,3 +16,4 @@ instance/
 .env
 .flaskenv
 .telegram_update_id
+backups/
