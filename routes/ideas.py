@@ -35,7 +35,7 @@ def risk_color_filter(risk: str) -> str:
 
 
 @bp.app_template_filter('roi_color')
-def roi_color_filter(n) -> str:
+def roi_color_filter(n: int) -> str:
     try:
         n = int(n)
     except (ValueError, TypeError):
@@ -51,6 +51,8 @@ def roi_color_filter(n) -> str:
 
 @bp.app_template_filter('status_color')
 def status_color_filter(status: str) -> str:
+    if not status:
+        return 'secondary'
     if status.startswith('💡'):
         return 'info'
     elif status.startswith('✅'):
@@ -88,8 +90,8 @@ def development_create():
         problem = request.form.get('problem', '').strip()
         description = request.form.get('description', '').strip()
         benefit = request.form.get('benefit', '').strip()
-        roi = int(request.form.get('roi', 0))
-        complexity = int(request.form.get('complexity', 0))
+        roi = int(request.form.get('roi') or 0)
+        complexity = int(request.form.get('complexity') or 0)
         risk = request.form.get('risk', '').strip()
 
         if not title:
@@ -126,8 +128,8 @@ def development_edit(id: int):
         description = request.form.get('description', '').strip()
         benefit = request.form.get('benefit', '').strip()
         status = request.form.get('status', '💡 Предложена').strip()
-        roi = int(request.form.get('roi', 0))
-        complexity = int(request.form.get('complexity', 0))
+        roi = int(request.form.get('roi') or 0)
+        complexity = int(request.form.get('complexity') or 0)
         risk = request.form.get('risk', '').strip()
 
         if status not in STATUSES:

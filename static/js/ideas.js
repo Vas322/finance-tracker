@@ -54,7 +54,7 @@
         });
 
         visibleRows.sort(function(a, b) {
-            var valA, valB;
+            let valA, valB;
 
             switch (sortKey) {
                 case 'created':
