@@ -22,22 +22,22 @@ def get_idea(id: int) -> Optional[dict]:
     return dict(row) if row else None
 
 
-def create_idea(title: str, problem: str, description: str, benefit: str) -> None:
+def create_idea(title: str, problem: str, description: str, benefit: str, roi: int = 0, complexity: int = 0, risk: str = '') -> None:
     code = _generate_code()
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     with get_db() as conn:
         conn.execute(
-            'INSERT INTO ideas (code, title, problem, description, benefit, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (code, title, problem, description, benefit, now, now)
+            'INSERT INTO ideas (code, title, problem, description, benefit, roi, complexity, risk, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (code, title, problem, description, benefit, roi, complexity, risk, now, now)
         )
 
 
-def update_idea(id: int, title: str, problem: str, description: str, benefit: str, status: str) -> None:
+def update_idea(id: int, title: str, problem: str, description: str, benefit: str, status: str, roi: int = 0, complexity: int = 0, risk: str = '') -> None:
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     with get_db() as conn:
         conn.execute(
-            'UPDATE ideas SET title = ?, problem = ?, description = ?, benefit = ?, status = ?, updated_at = ? WHERE id = ?',
-            (title, problem, description, benefit, status, now, id)
+            'UPDATE ideas SET title = ?, problem = ?, description = ?, benefit = ?, roi = ?, complexity = ?, risk = ?, status = ?, updated_at = ? WHERE id = ?',
+            (title, problem, description, benefit, roi, complexity, risk, status, now, id)
         )
 
 

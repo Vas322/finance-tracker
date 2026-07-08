@@ -15,7 +15,7 @@
         <div class="row g-2 mb-4">
             {% for s in statuses %}
             <div class="col-md-2 col-4">
-                <div class="small-box bg-{{ 'success' if s.startswith('🎉') else 'danger' if s.startswith('❌') else 'info' if s.startswith('💡') else 'warning' if s.startswith('🚧') else 'secondary' if s.startswith('🧪') else 'primary' }} text-center py-2 rounded">
+                <div class="small-box bg-{{ s|status_color }} text-center py-2 rounded">
                     <div class="fs-4">{{ stats.get(s, 0) }}</div>
                     <div class="small">{{ s }}</div>
                 </div>
@@ -23,26 +23,73 @@
             {% endfor %}
         </div>
 
+        <!-- Поиск и фильтр -->
+        <div class="row g-2 mb-3">
+            <div class="col-md-6">
+                <input type="text" id="ideas-search" class="form-control" placeholder="🔍 Поиск по коду, названию, описанию, проблеме...">
+            </div>
+            <div class="col-md-3">
+                <select id="ideas-status-filter" class="form-select">
+                    <option value="">Все статусы</option>
+                    {% for s in statuses %}
+                    <option value="{{ s }}">{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select id="ideas-sort" class="form-select">
+                    <option value="created_desc">📅 Новые сверху</option>
+                    <option value="created_asc">📅 Старые сверху</option>
+                    <option value="updated_desc">🔄 Недавние изменения</option>
+                    <option value="roi_desc">📈 ROI по убыванию</option>
+                    <option value="roi_asc">📈 ROI по возрастанию</option>
+                    <option value="complexity_desc">🔧 Сложность по убыванию</option>
+                    <option value="complexity_asc">🔧 Сложность по возрастанию</option>
+                </select>
+            </div>
+        </div>
+
         <!-- Таблица идей -->
         <div class="table-responsive">
-            <table class="table table-sm table-hover">
+            <table class="table table-sm table-hover" id="ideas-table">
                 <thead class="table-light">
                     <tr>
                         <th>Код</th>
                         <th>Название</th>
                         <th>Проблема</th>
+                        <th>ROI</th>
                         <th>Статус</th>
+                        <th>Риск</th>
                         <th>Создана</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for idea in ideas %}
-                    <tr>
+                    <tr data-search="{{ idea.code }} {{ idea.title }} {{ idea.problem }} {{ idea.description }}"
+                        data-status="{{ idea.status }}"
+                        data-roi="{{ idea.roi }}"
+                        data-complexity="{{ idea.complexity }}"
+                        data-created="{{ idea.created_at }}"
+                        data-updated="{{ idea.updated_at }}">
                         <td><strong>{{ idea.code }}</strong></td>
                         <td>{{ idea.title }}</td>
                         <td class="text-muted small">{{ idea.problem[:80] ~ '...' if idea.problem|length > 80 else idea.problem }}</td>
-                        <td>{{ idea.status }}</td>
+                        <td class="text-{{ idea.roi|roi_color }}">
+                            {% if idea.roi and idea.roi > 0 %}
+                                {{ idea.roi|stars }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-{{ idea.status|status_color }}">{{ idea.status }}</span></td>
+                        <td>
+                            {% if idea.risk %}
+                            <span class="badge bg-{{ idea.risk|risk_color }}">{{ idea.risk|risk_label }}</span>
+                            {% else %}
+                            —
+                            {% endif %}
+                        </td>
                         <td class="small">{{ idea.created_at[:10] }}</td>
                         <td>
                             <a href="{{ url_for('ideas.development_card', id=idea.id) }}" class="btn btn-outline-info btn-sm" title="Просмотр">👁️</a>
@@ -55,8 +102,8 @@
                         </td>
                     </tr>
                     {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center">Нет идей. Создайте первую! 🚀</td>
+                    <tr id="no-ideas-row">
+                        <td colspan="8" class="text-center">Нет идей. Создайте первую! 🚀</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -64,4 +111,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/ideas.js') }}"></script>
 {% endblock %}

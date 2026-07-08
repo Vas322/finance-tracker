@@ -17,7 +17,7 @@
     </div>
     <div class="card-body">
         <div class="mb-3">
-            <span class="badge bg-secondary fs-6">{{ idea.status }}</span>
+            <span class="badge bg-{{ idea.status|status_color }} fs-6">{{ idea.status }}</span>
         </div>
 
         <div class="row">
@@ -38,12 +38,69 @@
             </div>
         </div>
 
-        <div class="row mt-4 text-muted small">
-            <div class="col-md-6">
-                <span>Создана: {{ idea.created_at }}</span>
+        <!-- ROI, Сложность, Риск -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card bg-light h-100">
+                    <div class="card-body text-center py-3">
+                        <h6 class="text-muted mb-2">ROI</h6>
+                        <span class="fs-5 text-{{ idea.roi|roi_color }}">
+                            {% if idea.roi and idea.roi > 0 %}
+                                {{ idea.roi|stars }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6 text-md-end">
-                <span>Изменена: {{ idea.updated_at }}</span>
+            <div class="col-md-4">
+                <div class="card bg-light h-100">
+                    <div class="card-body text-center py-3">
+                        <h6 class="text-muted mb-2">Сложность</h6>
+                        <span class="fs-5">
+                            {% if idea.complexity and idea.complexity > 0 %}
+                                {{ idea.complexity|stars }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light h-100">
+                    <div class="card-body text-center py-3">
+                        <h6 class="text-muted mb-2">Риск</h6>
+                        {% if idea.risk %}
+                            <span class="badge bg-{{ idea.risk|risk_color }} fs-5">{{ idea.risk|risk_label }}</span>
+                        {% else %}
+                            <span class="fs-5">—</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- История -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body py-2">
+                        <h6 class="text-muted mb-2">📜 История</h6>
+                        <div class="row small">
+                            <div class="col-md-4">
+                                🕐 <strong>Создана:</strong> {{ idea.created_at }}
+                            </div>
+                            <div class="col-md-4">
+                                🔄 <strong>Изменена:</strong> {{ idea.updated_at }}
+                            </div>
+                            <div class="col-md-4">
+                                📌 <strong>Статус:</strong> <span class="badge bg-{{ idea.status|status_color }}">{{ idea.status }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

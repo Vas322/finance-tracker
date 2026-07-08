@@ -94,6 +94,9 @@ def init_db():
                 problem TEXT NOT NULL DEFAULT '',
                 description TEXT NOT NULL DEFAULT '',
                 benefit TEXT NOT NULL DEFAULT '',
+                roi INTEGER NOT NULL DEFAULT 0,
+                complexity INTEGER NOT NULL DEFAULT 0,
+                risk TEXT NOT NULL DEFAULT '',
                 status TEXT NOT NULL DEFAULT '💡 Предложена',
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -105,6 +108,22 @@ def init_db():
         conn.execute('ALTER TABLE operations ADD COLUMN regular_payment_id INTEGER DEFAULT NULL')
     except Exception:
         pass
+
+    # Миграция существующих БД: добавление полей ROI, сложность, риск
+    try:
+        conn.execute("ALTER TABLE ideas ADD COLUMN roi INTEGER NOT NULL DEFAULT 0")
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE ideas ADD COLUMN complexity INTEGER NOT NULL DEFAULT 0")
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE ideas ADD COLUMN risk TEXT NOT NULL DEFAULT ''")
+    except Exception:
+        pass
+
+    migrate_idea_fields()
 
     # Индексы для операций
     conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_date ON operations(date)')
@@ -200,3 +219,49 @@ def create_user(username, password):
             return True
         except Exception:
             return False
+
+
+def migrate_idea_fields():
+    """Миграция ideas: старый текстовый формат → INTEGER для roi/complexity, TEXT enum для risk"""
+    with get_db() as conn:
+        migrated = conn.execute("SELECT value FROM settings WHERE key = 'ideas_migrated_v2'").fetchone()
+        if migrated and migrated['value'] == '1':
+            return
+
+        # Конвертация ROI: ★★★★★ → 5, ★★★★☆ → 4, ★★★☆☆ → 3, ★★☆☆☆ → 2, ★☆☆☆☆ → 1, иначе 0
+        conn.execute("""
+            UPDATE ideas SET roi = CASE
+                WHEN roi LIKE '★★★★★%' THEN 5
+                WHEN roi LIKE '★★★★☆%' THEN 4
+                WHEN roi LIKE '★★★☆☆%' THEN 3
+                WHEN roi LIKE '★★☆☆☆%' THEN 2
+                WHEN roi LIKE '★☆☆☆☆%' THEN 1
+                ELSE 0
+            END
+        """)
+
+        # Конвертация Сложности: ★★★★★ → 5, ★★★★☆ → 4, ★★★☆☆ → 3, ★★☆☆☆ → 2, ★☆☆☆☆ → 1, иначе 0
+        conn.execute("""
+            UPDATE ideas SET complexity = CASE
+                WHEN complexity LIKE '★★★★★%' THEN 5
+                WHEN complexity LIKE '★★★★☆%' THEN 4
+                WHEN complexity LIKE '★★★☆☆%' THEN 3
+                WHEN complexity LIKE '★★☆☆☆%' THEN 2
+                WHEN complexity LIKE '★☆☆☆☆%' THEN 1
+                ELSE 0
+            END
+        """)
+
+        # Конвертация Риска: текстовые строки → LOW/MEDIUM/HIGH
+        conn.execute("""
+            UPDATE ideas SET risk = CASE
+                WHEN risk LIKE '%Высокий%' THEN 'HIGH'
+                WHEN risk LIKE '%Средний%' THEN 'MEDIUM'
+                WHEN risk LIKE '%Низкий%' THEN 'LOW'
+                WHEN risk = 'LOW' OR risk = 'MEDIUM' OR risk = 'HIGH' THEN risk
+                ELSE ''
+            END
+        """)
+
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('ideas_migrated_v2', '1')")
+        conn.commit()

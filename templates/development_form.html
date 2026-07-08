@@ -38,8 +38,35 @@
                 <textarea name="benefit" class="form-control" rows="3">{{ idea.benefit if idea else '' }}</textarea>
             </div>
 
+            <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                    <label class="form-label">ROI</label>
+                    <select name="roi" class="form-select">
+                        {% for val, label in roi_labels.items() %}
+                        <option value="{{ val }}" {{ 'selected' if idea and idea.roi == val else '' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Сложность разработки</label>
+                    <select name="complexity" class="form-select">
+                        {% for val, label in complexity_labels.items() %}
+                        <option value="{{ val }}" {{ 'selected' if idea and idea.complexity == val else '' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Риск сломать приложение</label>
+                    <select name="risk" class="form-select">
+                        {% for val, label in risk_labels.items() %}
+                        <option value="{{ val }}" {{ 'selected' if idea and idea.risk == val else '' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
             {% if idea %}
-            <div class="mb-3">
+            <div class="mb-3 mt-3">
                 <label class="form-label">Статус</label>
                 <select name="status" class="form-select">
                     {% for s in statuses %}
@@ -49,7 +76,7 @@
             </div>
             {% endif %}
 
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 mt-3">
                 <button type="submit" class="btn btn-primary">{{ '💾 Сохранить' if idea else '➕ Создать' }}</button>
                 <a href="{{ url_for('ideas.development') }}" class="btn btn-secondary">Отмена</a>
             </div>
