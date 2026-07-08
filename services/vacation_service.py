@@ -100,3 +100,33 @@ def get_all_vacations():
                 'created_at': row['created_at']
             })
     return vacations
+
+
+def get_vacation_by_id(id: int) -> Optional[dict]:
+    with get_db() as conn:
+        row = conn.execute('SELECT * FROM vacations WHERE id = ?', (id,)).fetchone()
+    if not row:
+        return None
+    start_date = datetime.strptime(row['start_date'], '%Y-%m-%d').date()
+    end_date = datetime.strptime(row['end_date'], '%Y-%m-%d').date()
+    return {
+        'id': row['id'],
+        'start_date': start_date,
+        'end_date': end_date,
+        'days': get_vacation_days(start_date, end_date),
+        'status': row['status'],
+        'created_at': row['created_at']
+    }
+
+
+def update_vacation(id: int, start_date: date, end_date: date):
+    with get_db() as conn:
+        conn.execute(
+            'UPDATE vacations SET start_date = ?, end_date = ?, status = ? WHERE id = ?',
+            (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'), 'planned', id)
+        )
+
+
+def delete_vacation(id: int):
+    with get_db() as conn:
+        conn.execute('DELETE FROM vacations WHERE id = ?', (id,))

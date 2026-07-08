@@ -46,6 +46,7 @@
                         <th>Дата окончания</th>
                         <th>Дней</th>
                         <th>Статус</th>
+                        <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -65,10 +66,18 @@
                             <span class="badge bg-secondary">Отменён</span>
                             {% endif %}
                         </td>
+                        <td>
+                            <a href="{{ url_for('vacations.vacation_edit', id=v.id) }}" class="btn btn-outline-primary btn-sm">✏️</a>
+                            <form method="POST" action="{{ url_for('vacations.vacation_delete', id=v.id) }}" style="display:inline"
+                                  onsubmit="return confirm('Удалить отпуск с {{ v.start_date.strftime('%d.%m.%Y') }} по {{ v.end_date.strftime('%d.%m.%Y') }}?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">🗑️</button>
+                            </form>
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="4" class="text-center">Нет запланированных отпусков</td>
+                        <td colspan="5" class="text-center">Нет запланированных отпусков</td>
                     </tr>
                     {% endfor %}
                 </tbody>

@@ -10,7 +10,7 @@ def _generate_code() -> str:
     return f'P-{next_id:03d}'
 
 
-def get_all_ideas():
+def get_all_ideas() -> list:
     with get_db() as conn:
         rows = conn.execute('SELECT * FROM ideas ORDER BY created_at DESC').fetchall()
     return [dict(r) for r in rows]
@@ -22,7 +22,7 @@ def get_idea(id: int) -> Optional[dict]:
     return dict(row) if row else None
 
 
-def create_idea(title: str, problem: str, description: str, benefit: str):
+def create_idea(title: str, problem: str, description: str, benefit: str) -> None:
     code = _generate_code()
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     with get_db() as conn:
@@ -32,7 +32,7 @@ def create_idea(title: str, problem: str, description: str, benefit: str):
         )
 
 
-def update_idea(id: int, title: str, problem: str, description: str, benefit: str, status: str):
+def update_idea(id: int, title: str, problem: str, description: str, benefit: str, status: str) -> None:
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     with get_db() as conn:
         conn.execute(
@@ -41,7 +41,7 @@ def update_idea(id: int, title: str, problem: str, description: str, benefit: st
         )
 
 
-def delete_idea(id: int):
+def delete_idea(id: int) -> None:
     with get_db() as conn:
         conn.execute('DELETE FROM ideas WHERE id = ?', (id,))
 

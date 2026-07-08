@@ -64,6 +64,10 @@ def development_edit(id: int):
         benefit = request.form.get('benefit', '').strip()
         status = request.form.get('status', '💡 Предложена').strip()
 
+        if status not in STATUSES:
+            flash('Некорректный статус', 'error')
+            return render_template('development_form.html', idea=idea, statuses=STATUSES)
+
         if not title:
             flash('Название обязательно', 'error')
             return render_template('development_form.html', idea=idea, statuses=STATUSES)
@@ -86,19 +90,4 @@ def development_delete(id: int):
     return redirect(url_for('ideas.development'))
 
 
-@bp.route('/development/<int:id>/status', methods=['POST'])
-def development_status(id: int):
-    idea = get_idea(id)
-    if not idea:
-        flash('Идея не найдена', 'error')
-        return redirect(url_for('ideas.development'))
 
-    new_status = request.form.get('status', '').strip()
-    if new_status not in STATUSES:
-        flash('Некорректный статус', 'error')
-        return redirect(url_for('ideas.development'))
-
-    from services.idea_service import update_idea
-    update_idea(id, idea['title'], idea['problem'], idea['description'], idea['benefit'], new_status)
-    flash(f'Статус идеи {idea["code"]} изменён на {new_status}', 'success')
-    return redirect(url_for('ideas.development'))

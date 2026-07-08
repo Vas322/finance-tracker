@@ -325,6 +325,7 @@ def set_my_commands():
             {'command': 'status', 'description': 'Финансовый статус'},
             {'command': 'categories', 'description': 'Список категорий расходов'},
             {'command': 'backup', 'description': 'Создать бэкап на Яндекс.Диск'},
+            {'command': 'vacation', 'description': 'Статус отпусков в этом году'},
         ]
     })
 
@@ -374,8 +375,13 @@ def _polling_loop():
 def _process_update(update):
     cb = update.get('callback_query')
     if cb:
-        answer_callback_query(cb['id'], '⏳ Создаю бэкап...')
-        _handle_backup()
+        data = cb.get('data', '')
+        if data == 'backup':
+            answer_callback_query(cb['id'], '⏳ Создаю бэкап...')
+            _handle_backup()
+        elif data == 'vacation':
+            answer_callback_query(cb['id'], '🏖️ Загружаю статус отпусков...')
+            _handle_vacation()
         return
     msg = update.get('message') or update.get('edited_message')
     if not msg:
@@ -410,15 +416,17 @@ def _fuzzy_match(query: str, target: str) -> bool:
 
 def _handle_command(text: str):
     if text == '/start':
-        keyboard = {'inline_keyboard': [[
-            {'text': '📦 Создать бэкап', 'callback_data': 'backup'}
-        ]]}
+        keyboard = {'inline_keyboard': [
+            [{'text': '📦 Создать бэкап', 'callback_data': 'backup'},
+             {'text': '🏖️ Отпуска', 'callback_data': 'vacation'}]
+        ]}
         send_message(
             f'<b>👋 Привет! Я бот Finance Tracker</b>\n\n'
             f'Доступные команды:\n'
             f'/status — текущее финансовое состояние\n'
             f'/categories — все категории расходов\n'
-            f'/backup — создать бэкап на Яндекс.Диск\n\n'
+            f'/backup — создать бэкап на Яндекс.Диск\n'
+            f'/vacation — статус отпусков\n\n'
             f'<b>Добавить расход:</b>\n'
             f'Напиши категорию и сумму, например:\n'
             f'<code>такси 500</code>\n'
@@ -438,6 +446,8 @@ def _handle_command(text: str):
         _handle_categories()
     elif text == '/backup':
         _handle_backup()
+    elif text == '/vacation':
+        _handle_vacation()
 
 def _handle_categories():
     from database import get_db
@@ -520,6 +530,31 @@ def _handle_backup():
         send_message('\u2705 \u0411\u044d\u043a\u0430\u043f \u0441\u043e\u0437\u0434\u0430\u043d \u0438 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043d \u043d\u0430 \u042f\u043d\u0434\u0435\u043a\u0441.\u0414\u0438\u0441\u043a')
     except Exception as e:
         send_message(f'\u274c \u041e\u0448\u0438\u0431\u043a\u0430 \u043f\u0440\u0438 \u0441\u043e\u0437\u0434\u0430\u043d\u0438\u0438 \u0431\u044d\u043a\u0430\u043f\u0430: {e}')
+
+
+def _handle_vacation():
+    from datetime import date
+    from services.vacation_service import get_yearly_vacation_stats, get_upcoming_vacation
+
+    year = date.today().year
+    stats = get_yearly_vacation_stats(year)
+    upcoming = get_upcoming_vacation()
+
+    lines = [f'<b>🏖️ Отпуска в {year} году</b>\n']
+    lines.append(f'📅 Всего дней: {stats["all"]} дн.')
+    lines.append(f'✅ Использовано: {stats["used"]} дн.')
+    lines.append(f'📅 Осталось: {stats["remaining"]} дн.\n')
+
+    if upcoming:
+        start = upcoming['start_date'].strftime('%d.%m.%Y')
+        end = upcoming['end_date'].strftime('%d.%m.%Y')
+        days = upcoming['days']
+        lines.append(f'<b>📌 Ближайший отпуск:</b>')
+        lines.append(f'🗓 {start} — {end} ({days} дн.)')
+    else:
+        lines.append('📌 Нет запланированных отпусков')
+
+    send_message('\n'.join(lines))
 
 
 def _match_category(op_type: str, query: str):

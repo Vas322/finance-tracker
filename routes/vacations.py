@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from datetime import datetime
-from services.vacation_service import add_vacation, get_all_vacations, get_yearly_vacation_stats
+from services.vacation_service import add_vacation, get_all_vacations, get_yearly_vacation_stats, get_vacation_by_id, update_vacation, delete_vacation
 
 bp = Blueprint('vacations', __name__)
 
@@ -26,3 +26,39 @@ def vacations():
     current_year = datetime.now().year
     yearly_stats = get_yearly_vacation_stats(current_year)
     return render_template('vacations.html', vacations=all_vacations, yearly_stats=yearly_stats, current_year=current_year)
+
+
+@bp.route('/vacations/<int:id>/edit', methods=['GET', 'POST'])
+def vacation_edit(id: int):
+    vacation = get_vacation_by_id(id)
+    if not vacation:
+        flash('Отпуск не найден', 'error')
+        return redirect(url_for('vacations.vacations'))
+
+    if request.method == 'POST':
+        start_str = request.form['start_date']
+        end_str = request.form['end_date']
+
+        start_date = datetime.strptime(start_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_str, '%Y-%m-%d').date()
+
+        if end_date < start_date:
+            flash('Дата окончания не может быть раньше даты начала', 'error')
+            return render_template('vacation_edit.html', vacation=vacation)
+
+        update_vacation(id, start_date, end_date)
+        flash(f'Отпуск обновлён: с {start_str} по {end_str}', 'success')
+        return redirect(url_for('vacations.vacations'))
+
+    return render_template('vacation_edit.html', vacation=vacation)
+
+
+@bp.route('/vacations/<int:id>/delete', methods=['POST'])
+def vacation_delete(id: int):
+    vacation = get_vacation_by_id(id)
+    if not vacation:
+        flash('Отпуск не найден', 'error')
+    else:
+        delete_vacation(id)
+        flash(f'Отпуск с {vacation["start_date"].strftime("%d.%m.%Y")} по {vacation["end_date"].strftime("%d.%m.%Y")} удалён', 'success')
+    return redirect(url_for('vacations.vacations'))

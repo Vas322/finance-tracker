@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование отпуска{% endblock %}
+
+{% block content %}
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h4 class="card-title mb-0">✏️ Редактирование отпуска</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('vacations.vacation_edit', id=vacation.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Дата начала</label>
+                    <input type="date" name="start_date" class="form-control"
+                           value="{{ vacation.start_date.strftime('%Y-%m-%d') }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Дата окончания</label>
+                    <input type="date" name="end_date" class="form-control"
+                           value="{{ vacation.end_date.strftime('%Y-%m-%d') }}" required>
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+                    <a href="{{ url_for('vacations.vacations') }}" class="btn btn-secondary">Отмена</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
