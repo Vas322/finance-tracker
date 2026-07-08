@@ -86,6 +86,19 @@ def init_db():
                 created_at TEXT DEFAULT (datetime('now'))
             )
         ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS ideas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT NOT NULL UNIQUE,
+                title TEXT NOT NULL,
+                problem TEXT NOT NULL DEFAULT '',
+                description TEXT NOT NULL DEFAULT '',
+                benefit TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT '💡 Предложена',
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        ''')
 
     # Миграция существующих БД: добавление regular_payment_id
     try:
@@ -110,15 +123,27 @@ def init_db():
 
 def migrate_amounts_to_cents():
     with get_db() as conn:
-        # Проверка: уже мигрировано (есть операции с суммой > 1 млн копеек = 10 тыс руб)
-        row = conn.execute('SELECT COUNT(*) as cnt FROM operations WHERE amount > 1000000').fetchone()
-        if row and row['cnt'] > 0:
+        # Проверка: уже мигрировано (флаг в settings)
+        migrated = conn.execute("SELECT value FROM settings WHERE key = 'migrated_to_cents'").fetchone()
+        if migrated and migrated['value'] == '1':
             return
 
-        conn.execute('UPDATE operations SET amount = CAST(ROUND(amount * 100) AS INTEGER) WHERE amount IS NOT NULL')
-        conn.execute('UPDATE regular_payments SET amount = CAST(ROUND(amount * 100) AS INTEGER) WHERE amount IS NOT NULL')
-        conn.execute('UPDATE budgets SET amount = CAST(ROUND(amount * 100) AS INTEGER) WHERE amount IS NOT NULL')
-        conn.execute('UPDATE period_balance SET balance = CAST(ROUND(balance * 100) AS INTEGER) WHERE balance IS NOT NULL')
+        # Если есть суммы > 1 000 000 000 — значит была двойная миграция (×10 000 от рублей)
+        # Откатываем лишнюю ×100: делим всё на 100 → получаем копейки
+        repair_row = conn.execute("SELECT COUNT(*) as cnt FROM operations WHERE ABS(amount) > 1000000000").fetchone()
+        if repair_row and repair_row['cnt'] > 0:
+            conn.execute('UPDATE operations SET amount = CAST(ROUND(amount / 100.0) AS INTEGER) WHERE amount IS NOT NULL')
+            conn.execute('UPDATE regular_payments SET amount = CAST(ROUND(amount / 100.0) AS INTEGER) WHERE amount IS NOT NULL')
+            conn.execute('UPDATE budgets SET amount = CAST(ROUND(amount / 100.0) AS INTEGER) WHERE amount IS NOT NULL')
+            conn.execute('UPDATE period_balance SET balance = CAST(ROUND(balance / 100.0) AS INTEGER) WHERE balance IS NOT NULL')
+        else:
+            # Миграция рублей → копейки
+            conn.execute('UPDATE operations SET amount = CAST(ROUND(amount * 100) AS INTEGER) WHERE amount IS NOT NULL')
+            conn.execute('UPDATE regular_payments SET amount = CAST(ROUND(amount * 100) AS INTEGER) WHERE amount IS NOT NULL')
+            conn.execute('UPDATE budgets SET amount = CAST(ROUND(amount * 100) AS INTEGER) WHERE amount IS NOT NULL')
+            conn.execute('UPDATE period_balance SET balance = CAST(ROUND(balance * 100) AS INTEGER) WHERE balance IS NOT NULL')
+
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('migrated_to_cents', '1')")
         conn.commit()
         conn.execute('VACUUM')
 

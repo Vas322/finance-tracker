@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}{{ idea.code }} — {{ idea.title }}{% endblock %}
+
+{% block content %}
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h4 class="card-title mb-0">{{ idea.code }}: {{ idea.title }}</h4>
+        <div class="card-tools">
+            <a href="{{ url_for('ideas.development_edit', id=idea.id) }}" class="btn btn-outline-primary btn-sm">✏️ Редактировать</a>
+            <form method="POST" action="{{ url_for('ideas.development_delete', id=idea.id) }}" style="display:inline"
+                  onsubmit="return confirm('Удалить идею {{ idea.code }}?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Удалить</button>
+            </form>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <span class="badge bg-secondary fs-6">{{ idea.status }}</span>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <h5>❓ Проблема</h5>
+                <p>{{ idea.problem or '—' }}</p>
+            </div>
+            <div class="col-md-6">
+                <h5>💡 Описание идеи</h5>
+                <p>{{ idea.description or '—' }}</p>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <h5>🎯 Польза для пользователя</h5>
+                <p>{{ idea.benefit or '—' }}</p>
+            </div>
+        </div>
+
+        <div class="row mt-4 text-muted small">
+            <div class="col-md-6">
+                <span>Создана: {{ idea.created_at }}</span>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <span>Изменена: {{ idea.updated_at }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer">
+        <a href="{{ url_for('ideas.development') }}" class="btn btn-secondary">← К списку</a>
+    </div>
+</div>
+{% endblock %}

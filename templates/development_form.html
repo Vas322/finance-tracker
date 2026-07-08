@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{{ '✏️ Редактирование' if idea else '➕ Новая идея' }} — Развитие продукта{% endblock %}
+
+{% block content %}
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h4 class="card-title mb-0">{{ '✏️ Редактирование идеи' if idea else '➕ Новая идея' }}</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('ideas.development_edit', id=idea.id) if idea else url_for('ideas.development_create') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            {% if idea %}
+            <div class="mb-3">
+                <label class="form-label">Код</label>
+                <input type="text" class="form-control" value="{{ idea.code }}" disabled>
+            </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label">Название <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" value="{{ idea.title if idea else '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Проблема, которую решает идея</label>
+                <textarea name="problem" class="form-control" rows="3">{{ idea.problem if idea else '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Описание идеи</label>
+                <textarea name="description" class="form-control" rows="4">{{ idea.description if idea else '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Польза для пользователя</label>
+                <textarea name="benefit" class="form-control" rows="3">{{ idea.benefit if idea else '' }}</textarea>
+            </div>
+
+            {% if idea %}
+            <div class="mb-3">
+                <label class="form-label">Статус</label>
+                <select name="status" class="form-select">
+                    {% for s in statuses %}
+                    <option value="{{ s }}" {{ 'selected' if idea.status == s else '' }}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">{{ '💾 Сохранить' if idea else '➕ Создать' }}</button>
+                <a href="{{ url_for('ideas.development') }}" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

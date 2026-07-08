@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}🚀 Развитие продукта{% endblock %}
+
+{% block content %}
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h4 class="card-title mb-0">🚀 Развитие продукта</h4>
+        <div class="card-tools">
+            <a href="{{ url_for('ideas.development_create') }}" class="btn btn-primary btn-sm">➕ Новая идея</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Статистика по статусам -->
+        <div class="row g-2 mb-4">
+            {% for s in statuses %}
+            <div class="col-md-2 col-4">
+                <div class="small-box bg-{{ 'success' if s.startswith('🎉') else 'danger' if s.startswith('❌') else 'info' if s.startswith('💡') else 'warning' if s.startswith('🚧') else 'secondary' if s.startswith('🧪') else 'primary' }} text-center py-2 rounded">
+                    <div class="fs-4">{{ stats.get(s, 0) }}</div>
+                    <div class="small">{{ s }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Таблица идей -->
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Код</th>
+                        <th>Название</th>
+                        <th>Проблема</th>
+                        <th>Статус</th>
+                        <th>Создана</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for idea in ideas %}
+                    <tr>
+                        <td><strong>{{ idea.code }}</strong></td>
+                        <td>{{ idea.title }}</td>
+                        <td class="text-muted small">{{ idea.problem[:80] ~ '...' if idea.problem|length > 80 else idea.problem }}</td>
+                        <td>{{ idea.status }}</td>
+                        <td class="small">{{ idea.created_at[:10] }}</td>
+                        <td>
+                            <a href="{{ url_for('ideas.development_card', id=idea.id) }}" class="btn btn-outline-info btn-sm" title="Просмотр">👁️</a>
+                            <a href="{{ url_for('ideas.development_edit', id=idea.id) }}" class="btn btn-outline-primary btn-sm" title="Редактировать">✏️</a>
+                            <form method="POST" action="{{ url_for('ideas.development_delete', id=idea.id) }}" style="display:inline"
+                                  onsubmit="return confirm('Удалить идею {{ idea.code }}?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Удалить">🗑️</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">Нет идей. Создайте первую! 🚀</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

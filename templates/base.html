@@ -100,6 +100,14 @@
                             <p>Отпуска</p>
                         </a>
                     </li>
+                    {% if session.get('username') == 'admin' %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('ideas.development') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('ideas.') %}active{% endif %}">
+                            <i class="nav-icon bi bi-rocket-takeoff"></i>
+                            <p>🚀 Развитие</p>
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
             </nav>
         </div>
@@ -141,7 +149,7 @@
     <!-- Footer -->
     <footer class="app-footer">
         <div class="float-end d-none d-sm-inline">
-            <b>Версия</b> 2.0
+            <b>Версия</b> 3.0
         </div>
         <strong>&copy; 2026 Финансовый трекер</strong>
     </footer>
