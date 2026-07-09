@@ -17,3 +17,4 @@ instance/
 .flaskenv
 .telegram_update_id
 backups/
+tests/temp/

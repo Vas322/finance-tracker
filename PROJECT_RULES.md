@@ -66,22 +66,23 @@ Last updated: 2026-07-09
 - Если меняется бизнес-логика — обновить тесты.
 - QA и Fixer работают ТОЛЬКО с временной копией БД.
 - Запрещено напрямую изменять production-файл `finance.db`.
-- Для тестов всегда создавать копию в системной TEMP-директории.
+- Для тестов всегда создавать копию в `tests/temp/`.
 - После завершения тестов удалять временную БД.
 - Никогда не полагаться на ручной backup/restore `finance.db`.
 - Для создания временной БД использовать шаблон:
 
 ```python
-import tempfile, os, shutil
-src = 'finance.db'
-tmp_db = os.path.join(tempfile.gettempdir(), 'finance_test_%d.db' % id(src))
-shutil.copy2(src, tmp_db)
+import os, shutil
+os.makedirs('tests/temp', exist_ok=True)
+tmp_db = os.path.join('tests/temp', 'finance_test.db')
+shutil.copy2('finance.db', tmp_db)
 try:
     import database
     database.DB_PATH = tmp_db
     # ... тесты ...
 finally:
-    os.remove(tmp_db)
+    if os.path.exists(tmp_db):
+        os.remove(tmp_db)
 ```
 
 ## Performance
@@ -108,7 +109,7 @@ finally:
 ## Temporary Files
 
 - Не создавать временные скрипты и файлы в корне проекта.
-- Для временных инструментов использовать системную TEMP-директорию.
+- Для временных инструментов использовать `tests/temp/`.
 - После завершения задачи удалять все созданные временные файлы.
 - Файлы вида `analyze*.py`, `check_*.py`, `dump_*.py`, `fix_*.py`, `revert_*.py`, `verify_*.py` и подобные одноразовые скрипты не должны оставаться в проекте.
 
