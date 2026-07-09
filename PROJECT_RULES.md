@@ -1,7 +1,7 @@
 # PROJECT_RULES.md
 
-Version: 1.0
-Last updated: 2026-07-07
+Version: 2.0
+Last updated: 2026-07-09
 
 ## Stack
 
@@ -64,6 +64,25 @@ Last updated: 2026-07-07
 ## Tests
 
 - Если меняется бизнес-логика — обновить тесты.
+- QA и Fixer работают ТОЛЬКО с временной копией БД.
+- Запрещено напрямую изменять production-файл `finance.db`.
+- Для тестов всегда создавать копию в системной TEMP-директории.
+- После завершения тестов удалять временную БД.
+- Никогда не полагаться на ручной backup/restore `finance.db`.
+- Для создания временной БД использовать шаблон:
+
+```python
+import tempfile, os, shutil
+src = 'finance.db'
+tmp_db = os.path.join(tempfile.gettempdir(), 'finance_test_%d.db' % id(src))
+shutil.copy2(src, tmp_db)
+try:
+    import database
+    database.DB_PATH = tmp_db
+    # ... тесты ...
+finally:
+    os.remove(tmp_db)
+```
 
 ## Performance
 

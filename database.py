@@ -263,5 +263,21 @@ def migrate_idea_fields():
             END
         """)
 
+        # Исправление типа колонок: TEXT → INTEGER для существующих БД
+        try:
+            col_info = conn.execute("PRAGMA table_info('ideas')").fetchall()
+            col_types = {c['name']: c['type'] for c in col_info}
+
+            for col_name in ('roi', 'complexity'):
+                if col_types.get(col_name, '').upper() == 'TEXT':
+                    new_name = col_name + '_int'
+                    conn.execute(f"ALTER TABLE ideas ADD COLUMN {new_name} INTEGER DEFAULT 0")
+                    conn.execute(f"UPDATE ideas SET {new_name} = CAST({col_name} AS INTEGER)")
+                    conn.execute(f"ALTER TABLE ideas DROP COLUMN {col_name}")
+                    conn.execute(f"ALTER TABLE ideas RENAME COLUMN {new_name} TO {col_name}")
+        except Exception:
+            # Не все версии SQLite поддерживают DROP COLUMN; это не критично для новых БД
+            pass
+
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('ideas_migrated_v2', '1')")
         conn.commit()
