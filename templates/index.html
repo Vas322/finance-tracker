@@ -199,6 +199,23 @@
     </form>
 </div>
 
+<!-- БЫСТРЫЕ ШАБЛОНЫ -->
+<div class="card card-primary card-outline mb-4" id="quick-templates-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">⚡ Быстрые шаблоны</h5>
+        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#templateModal" id="add-template-btn">
+            <i class="bi bi-plus"></i> Добавить
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="templates-grid" class="d-flex flex-wrap gap-2">
+        </div>
+        <div id="templates-empty" class="text-center text-muted d-none">
+            Нет шаблонов. <a href="#" data-bs-toggle="modal" data-bs-target="#templateModal">Создать первый</a>
+        </div>
+    </div>
+</div>
+
 <!-- Таблица операций -->
 <div class="card card-primary card-outline">
     <div class="card-header">
@@ -378,6 +395,52 @@
     window.expenseCategories = {{ expense_categories|tojson }};
 </script>
 <script src="{{ url_for('static', filename='js/operations.js') }}"></script>
+
+<!-- Модальное окно шаблона -->
+<div class="modal fade" id="templateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="templateModalTitle">➕ Новый шаблон</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="templateForm">
+                <div class="modal-body">
+                    <input type="hidden" id="tpl_id">
+                    <div class="mb-2">
+                        <label class="form-label small">Название</label>
+                        <input type="text" id="tpl_name" class="form-control form-control-sm" required maxlength="50" placeholder="Например: Кофе">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Категория</label>
+                        <select id="tpl_category" class="form-select form-select-sm" required>
+                            <option value="">-- Выберите --</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Подкатегория</label>
+                        <select id="tpl_subcategory" class="form-select form-select-sm">
+                            <option value="">-- Не выбрана --</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Сумма (₽)</label>
+                        <input type="number" id="tpl_amount" step="0.01" min="0" class="form-control form-control-sm" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger btn-sm d-none" id="tpl-delete-btn">🗑️ Удалить</button>
+                    <div class="ms-auto">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary btn-sm">💾 Сохранить</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/quick_templates.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const table = document.getElementById('operations-table');
