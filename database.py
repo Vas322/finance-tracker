@@ -102,6 +102,16 @@ def init_db():
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             )
         ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS quick_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                category TEXT NOT NULL,
+                subcategory TEXT DEFAULT '',
+                amount INTEGER NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0
+            )
+        ''')
 
     # Миграция существующих БД: добавление regular_payment_id
     try:
