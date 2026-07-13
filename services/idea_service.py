@@ -3,6 +3,20 @@ from typing import Optional
 from database import get_db
 
 
+def _ensure_int_fields(idea: dict) -> dict:
+    """Преобразует roi и complexity в int, если они пришли как str из TEXT-колонок"""
+    if idea:
+        try:
+            idea['roi'] = int(idea['roi'])
+        except (ValueError, TypeError):
+            idea['roi'] = 0
+        try:
+            idea['complexity'] = int(idea['complexity'])
+        except (ValueError, TypeError):
+            idea['complexity'] = 0
+    return idea
+
+
 def _generate_code() -> str:
     with get_db() as conn:
         row = conn.execute('SELECT MAX(id) as max_id FROM ideas').fetchone()
@@ -13,13 +27,13 @@ def _generate_code() -> str:
 def get_all_ideas() -> list:
     with get_db() as conn:
         rows = conn.execute('SELECT * FROM ideas ORDER BY created_at DESC').fetchall()
-    return [dict(r) for r in rows]
+    return [_ensure_int_fields(dict(r)) for r in rows]
 
 
 def get_idea(id: int) -> Optional[dict]:
     with get_db() as conn:
         row = conn.execute('SELECT * FROM ideas WHERE id = ?', (id,)).fetchone()
-    return dict(row) if row else None
+    return _ensure_int_fields(dict(row)) if row else None
 
 
 def create_idea(title: str, problem: str, description: str, benefit: str, roi: int = 0, complexity: int = 0, risk: str = '') -> None:

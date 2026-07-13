@@ -36,3 +36,21 @@ def get_period_dates(today: date):
             period_start = date(today.year, today.month - 1, 25) if today.month > 1 else date(today.year - 1, 12, 25)
             period_end = date(today.year, today.month, 9)
     return period_start, period_end
+
+
+def get_previous_period_dates(today: date) -> tuple[date, date]:
+    if 10 <= today.day <= 24:
+        # Current period is 10-24, previous was 25-09 (from previous month)
+        prev_start = date(today.year, today.month - 1, 25) if today.month > 1 else date(today.year - 1, 12, 25)
+        prev_end = date(today.year, today.month, 9)
+    else:
+        # Current period is 25-09
+        if today.day >= 25:
+            # Current period is 25-09, previous was 10-24 of the same month
+            prev_start = date(today.year, today.month, 10)
+            prev_end = date(today.year, today.month, 24)
+        else:
+            # Current period is 25-09 (because day is <= 9), previous was 10-24 previous month
+            prev_start = date(today.year, today.month - 1, 10) if today.month > 1 else date(today.year - 1, 12, 10)
+            prev_end = date(today.year, today.month - 1, 24) if today.month > 1 else date(today.year - 1, 12, 24)
+    return prev_start, prev_end
