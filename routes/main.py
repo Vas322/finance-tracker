@@ -6,7 +6,7 @@ from config import ADVANCE_DAY
 
 from services.regular_service import (
     apply_regular_payments,
-    get_regular_payments_after_date, get_due_regular_payments,
+    get_regular_payments_until_date, get_due_regular_payments,
 )
 from services.balance_service import update_current_period_balance
 from services.operation_service import get_operations_page
@@ -51,7 +51,7 @@ def index():
         period_start, period_end = 25, 9
 
     upcoming_vacation = get_upcoming_vacation()
-    regular_after_income = get_regular_payments_after_date(today, next_income)
+    regular_until_income = get_regular_payments_until_date(today, next_income)
     confirmed = session.get('confirmed_payments', {})
     this_month = today.strftime('%Y-%m')
     due_payments = [p for p in get_due_regular_payments(today) if confirmed.get(str(p['id'])) != this_month]
@@ -99,7 +99,7 @@ def index():
                            total_expense_without_regulars=stats['total_expense_without_regulars'],
                            balance=stats['income_this_period'] - stats['expenses_this_period'],
                            expected_income=expected_income,
-                           regular_after_income=regular_after_income,
+                            regular_until_income=regular_until_income,
                            can_spend_today=can_spend_today,
                            days_to_income=days_to_income,
                            next_income=next_income,
