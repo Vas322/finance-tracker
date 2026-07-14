@@ -2,6 +2,7 @@ from decimal import Decimal
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from database import get_db
 from datetime import date
+from config import ADVANCE_DAY
 
 from services.regular_service import (
     apply_regular_payments,
@@ -56,10 +57,10 @@ def index():
     due_payments = [p for p in get_due_regular_payments(today) if confirmed.get(str(p['id'])) != this_month]
     all_categories = get_all_category_names()
 
-    if real_advance > 0:
-        salary_remainder_note = f"(Аванс: {real_advance//100:,.0f} ₽)".replace(",", " ")
+    if next_income.day == ADVANCE_DAY:
+        salary_remainder_note = f"(Аванс: {expected_income//100:,.0f} ₽)".replace(",", " ")
     else:
-        salary_remainder_note = "⚠️ Аванс ещё не внесён"
+        salary_remainder_note = f"(Зарплата: {expected_income//100:,.0f} ₽)".replace(",", " ")
 
     if can_spend_today < 0:
         today_light, today_text = "red", "⚠️ КАССОВЫЙ РАЗРЫВ!"

@@ -16,8 +16,8 @@ def compute_dashboard_stats(today=None):
     expenses_this_period = get_expenses_for_period(period_start_date, period_end_date)
     income_this_period = get_income_for_period(period_start_date, period_end_date)
 
-    from services.period_service import get_next_income_date
-    next_income = get_next_income_date(today)
+    from services.period_service import calculate_next_income
+    expected_income, next_income = calculate_next_income(today, planned_salary)
     days_to_income = (next_income - today).days
 
     with get_db() as conn:
@@ -35,7 +35,6 @@ def compute_dashboard_stats(today=None):
         regular_reserve = 0
     can_spend_today = period_balance + income_this_period - expenses_this_period - regular_reserve
 
-    expected_income = planned_salary - real_advance if real_advance > 0 else planned_salary
     cash_on_hand = period_balance + income_this_period - expenses_this_period
     unpaid_regular_month = regular_total_month - paid_regular
 
