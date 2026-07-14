@@ -16,13 +16,13 @@ def compute_dashboard_stats(today=None):
     expenses_this_period = get_expenses_for_period(period_start_date, period_end_date)
     income_this_period = get_income_for_period(period_start_date, period_end_date)
 
-    from services.period_service import calculate_next_income
-    expected_income, next_income = calculate_next_income(today, planned_salary)
-    days_to_income = (next_income - today).days
-
     with get_db() as conn:
         row = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
     planned_salary = int(float(row['value']) * 100) if row else Config.DEFAULT_PLANNED_SALARY
+
+    from services.period_service import calculate_next_income
+    expected_income, next_income = calculate_next_income(today, planned_salary)
+    days_to_income = (next_income - today).days
 
     real_advance = get_latest_advance()
     regular_total_month = get_regular_total(period_type='month')
