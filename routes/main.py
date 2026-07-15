@@ -6,8 +6,9 @@ from config import ADVANCE_DAY
 
 from services.regular_service import (
     apply_regular_payments,
-    get_regular_payments_until_date, get_due_regular_payments,
+    get_due_regular_payments, get_paid_regulars_in_period,
 )
+from services.period_service import get_regular_cycle_start
 from services.balance_service import update_current_period_balance
 from services.operation_service import get_operations_page
 from services.category_service import get_all_category_names, get_income_categories, get_expense_categories
@@ -51,10 +52,18 @@ def index():
         period_start, period_end = 25, 9
 
     upcoming_vacation = get_upcoming_vacation()
-    regular_until_income = get_regular_payments_until_date(today, next_income)
-    confirmed = session.get('confirmed_payments', {})
-    this_month = today.strftime('%Y-%m')
-    due_payments = [p for p in get_due_regular_payments(today) if confirmed.get(str(p['id'])) != this_month]
+    cycle_start = get_regular_cycle_start(today)
+    paid_this_cycle = get_paid_regulars_in_period(cycle_start, today)
+    regular_until_income = max(0, stats['regular_total_month'] - paid_this_cycle)
+    due_payments = get_due_regular_payments(today)
+    with get_db() as conn:
+        existing_ids = {
+            r['regular_payment_id'] for r in conn.execute(
+                'SELECT DISTINCT regular_payment_id FROM operations WHERE date = ? AND regular_payment_id IS NOT NULL',
+                (today.strftime('%Y-%m-%d'),)
+            ).fetchall()
+        }
+    due_payments = [p for p in due_payments if p['id'] not in existing_ids]
     all_categories = get_all_category_names()
 
     if next_income.day == ADVANCE_DAY:
@@ -97,7 +106,7 @@ def index():
                            total_income=stats['income_this_period'],
                            total_expense=stats['expenses_this_period'],
                            total_expense_without_regulars=stats['total_expense_without_regulars'],
-                           balance=stats['income_this_period'] - stats['expenses_this_period'],
+                           balance=stats['cash_on_hand'],
                            expected_income=expected_income,
                             regular_until_income=regular_until_income,
                            can_spend_today=can_spend_today,

@@ -56,6 +56,17 @@ def get_previous_period_dates(today: date) -> tuple[date, date]:
     return prev_start, prev_end
 
 
+def get_regular_cycle_start(today: date) -> date:
+    if today.day >= 25:
+        return date(today.year, today.month, 25)
+    prev = today.month - 1
+    y = today.year
+    if prev == 0:
+        prev = 12
+        y -= 1
+    return date(y, prev, 25)
+
+
 def get_salary_period(today: date) -> tuple[date, date]:
     """Зарплатный месяц: с SALARY_DAY месяца M до SALARY_DAY-1 месяца M+1."""
     if today.day >= SALARY_DAY:

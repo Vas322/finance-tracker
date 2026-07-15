@@ -1,7 +1,6 @@
 from datetime import date
 from database import get_db, get_period_balance, set_period_balance
 from services.period_service import get_period_dates, get_period, get_previous_period_dates
-from services.regular_service import get_regular_total, get_paid_regular_payments_in_period
 
 
 def get_expenses_for_period(start_date: date, end_date: date) -> int:
@@ -32,38 +31,18 @@ def update_period_balance(today: date):
         prev_start, prev_end = get_previous_period_dates(today)
         
         with get_db() as conn:
-            # Get previous period balance
             prev_period_name = get_period(prev_start.strftime('%Y-%m-%d'))
             prev_balance_result = conn.execute(
                 'SELECT balance FROM period_balance WHERE period = ? AND start_date = ?',
                 (prev_period_name, prev_start.strftime('%Y-%m-%d'))
             ).fetchone()
             prev_balance = prev_balance_result['balance'] if prev_balance_result else 0
-            
-            # Calculate income and expenses for previous period
+
             prev_income = get_income_for_period(prev_start, prev_end)
             prev_expenses = get_expenses_for_period(prev_start, prev_end)
-            
-            # Get planned_salary from settings
-            planned_salary_result = conn.execute(
-                'SELECT value FROM settings WHERE key = ?', ('planned_salary',)
-            ).fetchone()
-            planned_salary = int(float(planned_salary_result['value']) * 100) if planned_salary_result else 0
-            
-            # Get regular_total_month
-            regular_total_month = get_regular_total('month')
-            prev_paid_regular = get_paid_regular_payments_in_period(prev_start, prev_end)
-            prev_remaining_regulars = max(0, regular_total_month - prev_paid_regular)
-            
-            # Calculate regular_reserve (только для неоплаченных регулярных платежей)
-            prev_regular_reserve = 0
-            if planned_salary > 0 and prev_income > 0:
-                prev_regular_reserve = int(prev_remaining_regulars * (prev_income / planned_salary))
-            
-            # Calculate closing balance
-            closing_balance = prev_balance + prev_income - prev_expenses - prev_regular_reserve
-            
-            # Save new period balance
+
+            closing_balance = prev_balance + prev_income - prev_expenses
+
             set_period_balance(period_name, period_start.strftime('%Y-%m-%d'), closing_balance)
             return closing_balance
     return existing

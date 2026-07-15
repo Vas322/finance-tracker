@@ -148,6 +148,33 @@ def get_paid_regular_payments_in_period(start_date, end_date) -> float:
     return total
 
 
+def get_paid_regulars_in_period(start_date, end_date) -> int:
+    """Сумма оплаченных регулярных платежей за период.
+       - по regular_payment_id (авто и через кнопку) — всегда учитываются
+       - ручные операции, где (категория, подкатегория, сумма) совпадает с regular_payments
+    """
+    payments = _get_all_payments()
+    paid_ids = _get_paid_ids(start_date, end_date)
+
+    total = 0
+    for p in payments:
+        if p['id'] in paid_ids:
+            total += p['amount']
+
+    patterns = {(p['category'], p['subcategory'] or '', int(p['amount'])) for p in payments if p['category']}
+    if patterns:
+        with get_db() as conn:
+            rows = conn.execute(
+                "SELECT category, COALESCE(subcategory, '') as subcat, amount FROM operations "
+                "WHERE type='Расход' AND date >= ? AND date <= ? AND regular_payment_id IS NULL",
+                (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
+            ).fetchall()
+        for r in rows:
+            if (r['category'], r['subcat'], int(r['amount'])) in patterns:
+                total += r['amount']
+    return total
+
+
 def get_regular_totals_by_category(period_type='month') -> dict:
     """Возвращает {category: monthly_amount} для всех регулярных платежей."""
     totals = {}

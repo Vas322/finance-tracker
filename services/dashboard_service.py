@@ -1,9 +1,9 @@
 from datetime import date
-from database import get_db
+from database import get_db, get_period_balance
 from config import Config
-from services.period_service import get_period_dates
+from services.period_service import get_period_dates, get_period, get_regular_cycle_start
 from services.balance_service import get_expenses_for_period, get_income_for_period, update_period_balance
-from services.regular_service import get_regular_total, get_paid_regular_payments_this_month
+from services.regular_service import get_regular_total, get_paid_regular_payments_this_month, get_paid_regulars_in_period
 from services.operation_service import get_latest_advance
 
 
@@ -29,13 +29,21 @@ def compute_dashboard_stats(today=None):
     paid_regular = get_paid_regular_payments_this_month()
     remaining_regulars = max(0, regular_total_month - paid_regular)
 
-    if planned_salary > 0 and income_this_period > 0:
-        regular_reserve = remaining_regulars * (income_this_period / planned_salary)
-    else:
-        regular_reserve = 0
-    can_spend_today = period_balance + income_this_period - expenses_this_period - regular_reserve
+    # Расчёт от начала цикла регулярного резерва (25-го числа)
+    cycle_start = get_regular_cycle_start(today)
+    income_since_cycle = get_income_for_period(cycle_start, today)
+    expenses_since_cycle = get_expenses_for_period(cycle_start, today)
+    regulars_paid_since_cycle = get_paid_regulars_in_period(cycle_start, today)
 
-    cash_on_hand = period_balance + income_this_period - expenses_this_period
+    cycle_start_period = get_period(cycle_start.strftime('%Y-%m-%d'))
+    cycle_start_balance = get_period_balance(cycle_start_period, cycle_start.strftime('%Y-%m-%d')) or 0
+
+    ratio = regular_total_month / planned_salary if planned_salary > 0 else 0
+    daily_ratio = 1 - ratio
+    regular_reserve = int(income_since_cycle * ratio - regulars_paid_since_cycle)
+
+    cash_on_hand = cycle_start_balance + income_since_cycle - expenses_since_cycle
+    can_spend_today = cash_on_hand - regular_reserve
     unpaid_regular_month = regular_total_month - paid_regular
 
     # Расходы без регулярных за текущий период
