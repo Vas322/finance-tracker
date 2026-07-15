@@ -1,7 +1,7 @@
 from datetime import date
 from database import get_db, get_period_balance, set_period_balance
 from services.period_service import get_period_dates, get_period, get_previous_period_dates
-from services.regular_service import get_regular_total
+from services.regular_service import get_regular_total, get_paid_regular_payments_in_period
 
 
 def get_expenses_for_period(start_date: date, end_date: date) -> int:
@@ -52,11 +52,13 @@ def update_period_balance(today: date):
             
             # Get regular_total_month
             regular_total_month = get_regular_total('month')
+            prev_paid_regular = get_paid_regular_payments_in_period(prev_start, prev_end)
+            prev_remaining_regulars = max(0, regular_total_month - prev_paid_regular)
             
-            # Calculate regular_reserve
+            # Calculate regular_reserve (только для неоплаченных регулярных платежей)
             prev_regular_reserve = 0
             if planned_salary > 0 and prev_income > 0:
-                prev_regular_reserve = int(regular_total_month * (prev_income / planned_salary))
+                prev_regular_reserve = int(prev_remaining_regulars * (prev_income / planned_salary))
             
             # Calculate closing balance
             closing_balance = prev_balance + prev_income - prev_expenses - prev_regular_reserve

@@ -30,7 +30,7 @@ def compute_dashboard_stats(today=None):
     remaining_regulars = max(0, regular_total_month - paid_regular)
 
     if planned_salary > 0 and income_this_period > 0:
-        regular_reserve = regular_total_month * (income_this_period / planned_salary)
+        regular_reserve = remaining_regulars * (income_this_period / planned_salary)
     else:
         regular_reserve = 0
     can_spend_today = period_balance + income_this_period - expenses_this_period - regular_reserve
