@@ -103,6 +103,15 @@ def init_db():
             )
         ''')
         conn.execute('''
+            CREATE TABLE IF NOT EXISTS regular_skips (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                regular_payment_id INTEGER NOT NULL,
+                cycle_start TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now')),
+                UNIQUE(regular_payment_id, cycle_start)
+            )
+        ''')
+        conn.execute('''
             CREATE TABLE IF NOT EXISTS quick_templates (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,

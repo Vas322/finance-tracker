@@ -18,11 +18,19 @@
     <div class="mt-2">
         {% for p in due_payments %}
         <div class="d-flex align-items-center justify-content-between mb-1 p-1 border-bottom border-warning border-opacity-25">
-            <span>{{ p.category }}{% if p.subcategory %} / {{ p.subcategory }}{% endif %} —</span>
-            <form method="POST" action="{{ url_for('main.apply_single_regular', payment_id=p.id) }}" style="display:inline" class="d-flex align-items-center gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="number" name="amount" class="form-control form-control-sm" style="width: 120px" value="{{ p.amount // 100 }}" step="0.01" required>
-                <button type="submit" class="btn btn-success btn-sm py-0">✅ Применить</button>
-            </form>
+            <span>
+                {% if p.payment_date and p.payment_date < today %}🔴 {% elif p.payment_date and p.payment_date == today %}🟠 {% endif %}
+                {{ p.category }}{% if p.subcategory %} / {{ p.subcategory }}{% endif %} — {{ p.amount|money }} ₽
+            </span>
+            <div class="d-flex gap-1">
+                <form method="POST" action="{{ url_for('main.apply_single_regular', payment_id=p.id) }}" style="display:inline" class="d-flex align-items-center gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="number" name="amount" class="form-control form-control-sm" style="width: 120px" value="{{ p.amount // 100 }}" step="0.01" required>
+                    <button type="submit" class="btn btn-success btn-sm py-0">✅ Применить</button>
+                </form>
+                <form method="POST" action="{{ url_for('main.skip_regular', payment_id=p.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-secondary btn-sm py-0">❌ Отменить в цикле</button>
+                </form>
+            </div>
         </div>
         {% endfor %}
     </div>
@@ -115,10 +123,28 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <div class="card h-100">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">📋 Предстоящие платежи</h5>
-                                <h3 class="text-danger">{{ regular_until_income|money }} ₽</h3>
-                                <small>До получения зарплаты</small>
+                            <div class="card-body">
+                                <h5 class="card-title text-center">📋 Осталось оплатить</h5>
+                                <h3 class="text-danger text-center">{{ regular_until_income|money }} ₽</h3>
+                                {% for r in upcoming_regulars[:5] %}
+                                <div class="d-flex justify-content-between align-items-center small border-bottom py-1">
+                                    <span>
+                                        {% if r.date and r.date < today %}
+                                        🔴
+                                        {% elif r.date and r.date == today %}
+                                        🟠
+                                        {% else %}
+                                        ⚪
+                                        {% endif %}
+                                        {% if r.date %}{{ r.date.strftime('%d.%m') }}{% else %}день {{ r.day }}{% endif %} {{ r.category }}{% if r.subcategory %} / {{ r.subcategory }}{% endif %}
+                                    </span>
+                                    <span class="fw-bold">{{ r.amount|money }} ₽</span>
+                                </div>
+                                {% endfor %}
+                                {% if upcoming_regulars|length > 5 %}
+                                <a href="{{ url_for('regular.cycle') }}" class="d-block text-end mt-2">Показать все →</a>
+                                {% endif %}
+                                <div class="text-center mt-2"><small class="text-muted">До получения зарплаты</small></div>
                             </div>
                         </div>
                     </div>
@@ -432,6 +458,7 @@
     </div>
 </div>
 
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/quick_templates.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {

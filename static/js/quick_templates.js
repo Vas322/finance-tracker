@@ -4,6 +4,7 @@
     let templates = [];
     let debounceTimer = null;
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
     const grid = document.getElementById('templates-grid');
     const empty = document.getElementById('templates-empty');
     const form = document.getElementById('templateForm');
@@ -66,7 +67,7 @@
                     debounceTimer = setTimeout(function() { debounceTimer = null; }, 1000);
                     
                     btn.disabled = true;
-                    fetch('/quick_add/' + tpl.id, { method: 'POST' })
+                    fetch('/quick_add/' + tpl.id, { method: 'POST', headers: { 'X-CSRFToken': csrfToken } })
                         .then(function(r) { return r.json(); })
                         .then(function(data) {
                             if (data.ok) {
@@ -162,13 +163,17 @@
 
             fetch(url, {
                 method: method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                 body: JSON.stringify(data)
             })
             .then(r => r.json())
-            .then(function() {
+            .then(function(resp) {
+                if (resp.error) { alert(resp.error); return; }
                 bootstrap.Modal.getInstance(modal).hide();
                 loadTemplates();
+            })
+            .catch(function() {
+                alert('Ошибка сети');
             });
         });
     }
@@ -204,10 +209,13 @@
         const id = document.getElementById('tpl_id').value;
         if (!id) return;
         if (!confirm('Удалить шаблон?')) return;
-        fetch('/api/templates/' + id, { method: 'DELETE' })
+        fetch('/api/templates/' + id, { method: 'DELETE', headers: { 'X-CSRFToken': csrfToken } })
             .then(function() {
                 bootstrap.Modal.getInstance(modal).hide();
                 loadTemplates();
+            })
+            .catch(function() {
+                alert('Ошибка сети');
             });
     });
 

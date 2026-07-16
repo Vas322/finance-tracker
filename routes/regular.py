@@ -104,3 +104,11 @@ def regular():
     return render_template('regular.html', payments=payments, expense_categories=expense_cats,
                            filter_type=filter_type, now=now,
                            regular_total=sum(p['amount'] for p in payments))
+
+
+@bp.route('/regular/cycle')
+def cycle():
+    from services.regular_service import get_cycle_regulars_list
+    today = date.today()
+    regulars = get_cycle_regulars_list(today)
+    return render_template('regular_cycle.html', regulars=regulars)

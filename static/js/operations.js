@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ==================== РЕДАКТИРОВАНИЕ ОПЕРАЦИЙ ====================
 document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
     const editModal = document.getElementById('editModal');
     if (!editModal) return;
 
@@ -128,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const response = await fetch('/edit_operation', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                     body: JSON.stringify(data)
                 });
 

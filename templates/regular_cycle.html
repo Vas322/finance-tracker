@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Регулярные платежи — цикл{% endblock %}
+
+{% block content %}
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h4 class="card-title mb-0">📋 Регулярные платежи текущего цикла</h4>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 40px">Статус</th>
+                    <th>Дата</th>
+                    <th>Название</th>
+                    <th class="text-end">Сумма</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in regulars %}
+                <tr class="{{ 'table-success' if r.paid }}{{ 'table-secondary' if r.skipped }}">
+                    <td class="text-center">
+                        {% if r.paid %}✓
+                        {% elif r.skipped %}⨯
+                        {% else %}○{% endif %}
+                    </td>
+                    <td>{% if r.date %}{{ r.date.strftime('%d.%m') }}{% else %}день {{ r.day }}{% endif %}</td>
+                    <td>{{ r.category }}{% if r.subcategory %} / {{ r.subcategory }}{% endif %}</td>
+                    <td class="text-end fw-bold">{{ r.amount|money }} ₽</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

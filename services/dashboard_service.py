@@ -3,7 +3,7 @@ from database import get_db, get_period_balance
 from config import Config
 from services.period_service import get_period_dates, get_period, get_regular_cycle_start
 from services.balance_service import get_expenses_for_period, get_income_for_period, update_period_balance
-from services.regular_service import get_regular_total, get_paid_regular_payments_this_month, get_paid_regulars_in_period
+from services.regular_service import get_regular_total, get_paid_regular_payments_this_month, get_paid_regulars_in_period, get_skipped_total
 from services.operation_service import get_latest_advance
 
 
@@ -40,7 +40,8 @@ def compute_dashboard_stats(today=None):
 
     ratio = regular_total_month / planned_salary if planned_salary > 0 else 0
     daily_ratio = 1 - ratio
-    regular_reserve = int(income_since_cycle * ratio - regulars_paid_since_cycle)
+    skipped_since_cycle = get_skipped_total(cycle_start)
+    regular_reserve = int(income_since_cycle * ratio - regulars_paid_since_cycle - skipped_since_cycle)
 
     cash_on_hand = cycle_start_balance + income_since_cycle - expenses_since_cycle
     can_spend_today = cash_on_hand - regular_reserve

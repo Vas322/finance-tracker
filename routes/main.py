@@ -7,6 +7,7 @@ from config import ADVANCE_DAY
 from services.regular_service import (
     apply_regular_payments,
     get_due_regular_payments, get_paid_regulars_in_period,
+    get_cycle_regulars_list, get_skipped_total, skip_regular_payment,
 )
 from services.period_service import get_regular_cycle_start
 from services.balance_service import update_current_period_balance
@@ -54,16 +55,11 @@ def index():
     upcoming_vacation = get_upcoming_vacation()
     cycle_start = get_regular_cycle_start(today)
     paid_this_cycle = get_paid_regulars_in_period(cycle_start, today)
-    regular_until_income = max(0, stats['regular_total_month'] - paid_this_cycle)
+    skipped_this_cycle = get_skipped_total(cycle_start)
+    regular_until_income = max(0, stats['regular_total_month'] - paid_this_cycle - skipped_this_cycle)
+    cycle_regulars_all = get_cycle_regulars_list(today)
+    upcoming_regulars = [r for r in cycle_regulars_all if not r['paid'] and not r['skipped']]
     due_payments = get_due_regular_payments(today)
-    with get_db() as conn:
-        existing_ids = {
-            r['regular_payment_id'] for r in conn.execute(
-                'SELECT DISTINCT regular_payment_id FROM operations WHERE date = ? AND regular_payment_id IS NOT NULL',
-                (today.strftime('%Y-%m-%d'),)
-            ).fetchall()
-        }
-    due_payments = [p for p in due_payments if p['id'] not in existing_ids]
     all_categories = get_all_category_names()
 
     if next_income.day == ADVANCE_DAY:
@@ -112,6 +108,7 @@ def index():
                            can_spend_today=can_spend_today,
                            days_to_income=days_to_income,
                            next_income=next_income,
+                           today=today,
                            today_light=today_light,
                            today_text=today_text,
                            daily_limit=daily_limit,
@@ -119,8 +116,9 @@ def index():
                            salary_remainder_note=salary_remainder_note,
                            income_categories=income_cats,
                            expense_categories=expense_cats,
-                           due_payments=due_payments,
-                           upcoming_vacation=upcoming_vacation,
+                            due_payments=due_payments,
+                            upcoming_vacation=upcoming_vacation,
+                            upcoming_regulars=upcoming_regulars,
                            page=page, total_pages=total_pages)
 
 
@@ -148,10 +146,16 @@ def apply_single_regular(payment_id):
                 (today_str, 'Расход', p['category'], p['subcategory'], amount,
                  f'Авто: {p["interval"]}', period, payment_id)
             )
-            confirmed = session.get('confirmed_payments', {})
-            confirmed[str(payment_id)] = today.strftime('%Y-%m')
-            session['confirmed_payments'] = confirmed
             flash(f'Платёж "{p["category"]}" — {amount//100:,.0f} ₽ применён', 'success')
+    return redirect(url_for('main.index'))
+
+
+@bp.route('/skip_regular/<int:payment_id>', methods=['POST'])
+def skip_regular(payment_id):
+    today = date.today()
+    cycle_start = get_regular_cycle_start(today)
+    skip_regular_payment(payment_id, cycle_start)
+    flash('Платёж отменён в текущем цикле', 'info')
     return redirect(url_for('main.index'))
 
 
