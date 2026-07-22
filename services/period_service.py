@@ -18,7 +18,7 @@ def get_period(date_str: str) -> str:
     sd = get_salary_day()
     ad = get_advance_day()
     day = datetime.strptime(date_str, '%Y-%m-%d').day
-    return f"{sd}-{ad-1}" if sd <= day <= ad-1 else f"{ad}-{sd-1}"
+    return f"{sd:02d}-{ad-1:02d}" if sd <= day <= ad-1 else f"{ad:02d}-{sd-1:02d}"
 
 
 def get_next_income_date(today: date) -> date:
