@@ -3,95 +3,190 @@
 {% block title %}Аналитика{% endblock %}
 
 {% block content %}
-<div class="card card-secondary card-outline mb-4">
-    <div class="card-header">
-        <h4 class="card-title mb-0">📈 Доходы / Расходы по месяцам</h4>
+<!-- Период-фильтр -->
+<form method="GET" action="{{ url_for('analytics.analytics') }}" class="row g-2 align-items-end mb-4">
+    <div class="col-md-3">
+        <label class="form-label small fw-bold">Период</label>
+        <select name="period" class="form-select form-select-sm" onchange="toggleCustomFields(this.value); if (this.value != 'custom') this.form.submit()">
+            <option value="current_cycle" {{ 'selected' if request.args.get('period', 'current_cycle') == 'current_cycle' }}>Текущий цикл ({{ period.label }})</option>
+            <option value="last_cycle" {{ 'selected' if request.args.get('period') == 'last_cycle' }}>Прошлый цикл</option>
+            <option value="salary_month" {{ 'selected' if request.args.get('period') == 'salary_month' }}>Зарплатный месяц</option>
+            <option value="custom" {{ 'selected' if request.args.get('period') == 'custom' }}>Произвольно</option>
+        </select>
     </div>
-    <div class="card-body">
-        <canvas id="trendChart" style="max-height: 300px;"></canvas>
+    <div class="col-md-2" id="date_from_group" style="{{ 'display:none' if request.args.get('period') != 'custom' }}">
+        <label class="form-label small fw-bold">От</label>
+        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request.args.get('date_from', '') }}">
+    </div>
+    <div class="col-md-2" id="date_to_group" style="{{ 'display:none' if request.args.get('period') != 'custom' }}">
+        <label class="form-label small fw-bold">До</label>
+        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request.args.get('date_to', '') }}">
+    </div>
+    <div class="col-md-2" id="custom_submit" style="{{ 'display:none' if request.args.get('period') != 'custom' }}">
+        <button type="submit" class="btn btn-sm btn-primary">Применить</button>
+    </div>
+</form>
+
+{% if not has_operations %}
+<div class="card card-outline card-secondary">
+    <div class="card-body text-center py-5">
+        <p class="fs-4 mb-2">📭 За выбранный период операций нет</p>
+        <p class="text-muted">Попробуйте выбрать другой финансовый цикл.</p>
     </div>
 </div>
+{% else %}
 
-<div class="card card-primary card-outline">
-    <div class="card-header">
-        <h4 class="card-title mb-0">📊 Расходы по категориям</h4>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card card-info card-outline mb-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Диаграмма</h5>
-                    </div>
-                    <div class="card-body text-center">
-                        <canvas id="expenseChart" style="max-height: 300px;"></canvas>
-                    </div>
+<!-- Финансовый снимок -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-{{ 'success' if summary.delta >= 0 else 'danger' }}">
+            <div class="card-body">
+                <p class="fs-5 fw-bold mb-2">{{ summary.verdict }}</p>
+                <div class="d-flex justify-content-between small">
+                    <span>Доходы</span><span class="fw-bold text-success">{{ summary.income|money }} ₽</span>
                 </div>
+                <div class="d-flex justify-content-between small">
+                    <span>Расходы</span><span class="fw-bold text-danger">{{ summary.expense|money }} ₽</span>
+                </div>
+                <hr class="my-1">
+                <div class="d-flex justify-content-between small">
+                    <span>Дельта</span><span class="fw-bold {{ 'text-success' if summary.delta >= 0 else 'text-danger' }}">{{ summary.delta|money }} ₽</span>
+                </div>
+                {% if summary.coverage is not none %}
+                <div class="d-flex justify-content-between small">
+                    <span>Покрытие</span>
+                    <span class="fw-bold {% if summary.coverage >= 100 %}text-success{% else %}text-danger{% endif %}">
+                        {{ summary.coverage }}%
+                    </span>
+                </div>
+                {% endif %}
             </div>
-            <div class="col-md-6">
-                <div class="card card-success card-outline mb-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Детализация</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Категория</th>
-                                        <th>Сумма (₽)</th>
-                                        <th>Доля</th>
-                                        <th>Бюджет / Остаток</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in expense_by_category %}
-                                    {% set budget = item.get('budget', 0) %}
-                                    <tr>
-                                        <td>{{ item.category }}</td>
-                                        <td>{{ item.total|money }} ₽</td>
-                                        <td>{{ "{:.1f}".format(item.total / total_expense * 100) if total_expense > 0 else 0 }}%</td>
-                                        <td>
-                                            {% if budget > 0 %}
-                                            {% set pct = (item.total / budget * 100) %}
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="small">{{ budget|money }} ₽</span>
-                                                <div class="progress flex-grow-1" style="height:16px;min-width:80px;">
-                                                    <div class="progress-bar {{ 'bg-danger' if pct > 100 else 'bg-success' }}"
-                                                         role="progressbar" style="width: {{ pct if pct <= 100 else 100 }}%;">
-                                                        {{ '%.0f'|format(pct) }}%
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <small class="{{ 'text-danger' if item.total > budget else 'text-success' }}">
-                                                {{ (budget - item.total)|money }} ₽
-                                            </small>
-                                            {% else %}
-                                            <span class="text-muted small">—</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="4" class="text-center">Нет данных о расходах</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="mt-3 alert alert-info">
-                            <strong>Всего расходов:</strong> {{ total_expense|money }} ₽
-                        </div>
-                    </div>
-                </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-info">
+            <div class="card-body">
+                <p class="fs-5 fw-bold mb-2">📊 Средний расход в день</p>
+                <p class="display-6 text-info fw-bold">{{ summary.avg_daily|money }} ₽</p>
+                {% if summary.avg_daily_label %}
+                <p class="mb-0"><span class="fw-bold {{ 'text-danger' if ('выше' in summary.avg_daily_label) else 'text-success' }} small">{{ summary.avg_daily_label }}</span></p>
+                {% if summary.is_in_progress and summary.avg_daily_change and summary.avg_daily_change|abs > 100 %}
+                <p class="mb-0"><small class="text-muted">текущий цикл ещё не завершён, сравнение предварительное</small></p>
+                {% endif %}
+                {% endif %}
+                <small class="text-muted">За {{ period.label }}</small>
+            </div>
+        </div>
+    </div>
+    <!-- 2. Вместо "Период" — полезная метрика -->
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-warning">
+            <div class="card-body">
+                <p class="fs-5 fw-bold mb-2">📅 До следующего дохода</p>
+                <p class="display-6 text-warning fw-bold">{{ days_to_income }} дн.</p>
+                <small class="text-muted">{{ op_count }} операций за период</small>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Динамика -->
+<div class="card card-secondary card-outline mb-4">
+    <div class="card-header">
+        <h4 class="card-title mb-0">📈 Динамика за 6 циклов</h4>
+    </div>
+    <div class="card-body">
+        {% if trend.trend_verdict %}
+        <p class="mb-2 fw-semibold">{{ trend.trend_verdict }}</p>
+        {% endif %}
+        <!-- 1. График компактнее -->
+        <canvas id="trendChart" style="max-height: 160px;"></canvas>
+        {% if trend.periods %}
+        {% set last = trend.periods[-1] %}
+        <!-- 6. Компактная подпись: одной строкой цифры, второй проценты -->
+        <div class="mt-2 small d-flex justify-content-center gap-4">
+            <span class="text-success fw-bold">Доходы {{ last.income|money }} ₽</span>
+            <span class="text-danger fw-bold">Расходы {{ last.expense|money }} ₽</span>
+            <span class="fw-bold {{ 'text-success' if last.balance >= 0 else 'text-danger' }}">Баланс {{ last.balance|money }} ₽</span>
+        </div>
+        <div class="mt-1 small d-flex justify-content-center gap-4">
+            {% if trend_expense_pct is not none %}
+            <span class="{{ 'text-danger' if trend_expense_pct > 0 else 'text-success' }}">
+                {{ '↑' if trend_expense_pct > 0 else '↓' }} Расходы {{ 'выросли' if trend_expense_pct > 0 else 'снизились' }} на {{ trend_expense_pct|abs }}%
+            </span>
+            {% endif %}
+            {% if trend_income_pct is not none %}
+            <span class="{{ 'text-success' if trend_income_pct > 0 else 'text-danger' }}">
+                {{ '↑' if trend_income_pct > 0 else '↓' }} Доходы {{ 'выросли' if trend_income_pct > 0 else 'снизились' }} на {{ trend_income_pct|abs }}%
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Категории расходов -->
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h4 class="card-title mb-0">{% if has_problem_categories %}🔍 Есть категории, требующие внимания{% else %}📂 Категории расходов{% endif %}</h4>
+    </div>
+    <div class="card-body">
+        {% if achievement_text %}
+        <p class="mb-3 small fw-semibold">{{ achievement_text }}</p>
+        {% endif %}
+        {% if categories %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Категория</th>
+                        <th class="text-end">Сумма (₽)</th>
+                        <th class="text-end">Δ к прошлому</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in categories %}
+                    {% set row_url = url_for('main.index', category=item.category, date_from=period.start.isoformat(), date_to=period.end.isoformat()) %}
+                    <!-- 4+5. Пустой статус если нет изменений; кликабельные строки и суммы -->
+                    <tr class="{{ 'text-muted' if not item.verdict }}" style="cursor:pointer;" onclick="window.location='{{ row_url }}'">
+                        <td><a href="{{ row_url }}" class="{{ 'text-reset' if not item.verdict else '' }} text-decoration-none">{{ item.category }}</a></td>
+                        <td class="text-end"><a href="{{ row_url }}" class="text-reset text-decoration-none">{{ item.amount|money }} ₽</a></td>
+                        <td class="text-end">
+                            {% if item.pct_change is not none %}
+                            <span class="{{ 'text-danger' if item.pct_change > 0 else 'text-success' }}">
+                                {{ '%+d'|format(item.pct_change) }}%
+                            </span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.verdict }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-3 small d-flex gap-3 flex-wrap">
+            {% if attention_count %}<span><span class="text-danger fw-bold">Требует внимания:</span> {{ attention_count }}</span>{% endif %}
+            {% if improved_count %}<span><span class="text-success fw-bold">Улучшились:</span> {{ improved_count }}</span>{% endif %}
+            {% if stable_count %}<span><span class="text-muted fw-bold">Без изменений:</span> {{ stable_count }}</span>{% endif %}
+        </div>
+        {% else %}
+        <p class="text-muted text-center mb-0">Нет расходов в выбранном периоде</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <script>
-    window.expenseData = {{ expense_by_category|tojson }};
-    window.monthlyData = {{ monthly_data|tojson }};
+    window.trendData = {{ trend.periods|tojson }};
+    function toggleCustomFields(val) {
+        var show = val === 'custom';
+        document.getElementById('date_from_group').style.display = show ? '' : 'none';
+        document.getElementById('date_to_group').style.display = show ? '' : 'none';
+        document.getElementById('custom_submit').style.display = show ? '' : 'none';
+    }
 </script>
 {% endblock %}
 

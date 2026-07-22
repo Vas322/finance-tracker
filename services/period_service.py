@@ -67,6 +67,11 @@ def get_regular_cycle_start(today: date) -> date:
     return date(y, prev, 25)
 
 
+def get_previous_cycle(cursor: date) -> tuple[date, date]:
+    """Предыдущий полный финансовый цикл (10-24 / 25-09) относительно cursor."""
+    return get_previous_period_dates(cursor)
+
+
 def get_salary_period(today: date) -> tuple[date, date]:
     """Зарплатный месяц: с SALARY_DAY месяца M до SALARY_DAY-1 месяца M+1."""
     if today.day >= SALARY_DAY:
