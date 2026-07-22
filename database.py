@@ -144,6 +144,12 @@ def init_db():
 
     migrate_idea_fields()
 
+    # Миграция: добавление email в users
+    try:
+        conn.execute('ALTER TABLE users ADD COLUMN email TEXT')
+    except Exception:
+        pass
+
     # Индексы для операций
     conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_date ON operations(date)')
     conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_type ON operations(type)')
@@ -224,7 +230,7 @@ def set_period_balance(period, start_date, balance):
 
 def get_user(username):
     with get_db() as conn:
-        return conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        return conn.execute('SELECT * FROM users WHERE LOWER(username) = LOWER(?)', (username,)).fetchone()
 
 
 def create_user(username, password):
@@ -238,6 +244,25 @@ def create_user(username, password):
             return True
         except Exception:
             return False
+
+
+def get_user_by_email(email):
+    with get_db() as conn:
+        return conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+
+
+def update_user_email(username, email):
+    with get_db() as conn:
+        conn.execute('UPDATE users SET email = ? WHERE username = ?', (email, username))
+
+
+def update_user_password(username, password):
+    from werkzeug.security import generate_password_hash
+    with get_db() as conn:
+        conn.execute(
+            'UPDATE users SET password_hash = ? WHERE username = ?',
+            (generate_password_hash(password), username)
+        )
 
 
 def migrate_idea_fields():

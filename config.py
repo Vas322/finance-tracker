@@ -14,6 +14,11 @@ class Config:
     TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
     TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
     YANDEX_DISK_TOKEN = os.environ.get('YANDEX_DISK_TOKEN', '')
+    SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.yandex.ru')
+    SMTP_PORT = int(os.environ.get('SMTP_PORT', '465'))
+    SMTP_USER = os.environ.get('SMTP_USER', '')
+    SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+    MAIL_FROM = os.environ.get('MAIL_FROM', '')
 
 
 SALARY_DAY = Config.SALARY_DAY

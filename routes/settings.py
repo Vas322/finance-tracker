@@ -1,5 +1,5 @@
-from flask import Blueprint, request, redirect, url_for, flash, render_template
-from database import get_db
+from flask import Blueprint, request, redirect, url_for, flash, render_template, session
+from database import get_db, update_user_email, get_user
 from config import Config
 from datetime import date
 from services.period_service import get_period, get_period_dates
@@ -16,10 +16,12 @@ def income_settings():
 
     with get_db() as conn:
         planned_salary = conn.execute('SELECT value FROM settings WHERE key = "planned_salary"').fetchone()
+        user = get_user(session.get('username', ''))
 
     return render_template('income_settings.html',
                            planned_salary=float(planned_salary['value']) if planned_salary else Config.DEFAULT_PLANNED_SALARY / 100,
-                           period_balance=period_balance)
+                           period_balance=period_balance,
+                           user_email=user['email'] if user else '')
 
 
 @bp.route('/save_income_settings', methods=['POST'])
@@ -30,6 +32,18 @@ def save_income_settings():
         conn.execute('UPDATE settings SET value = ? WHERE key = "planned_salary"', (planned_salary,))
 
     flash('Настройки доходов сохранены', 'success')
+    return redirect(url_for('settings.income_settings'))
+
+
+@bp.route('/save_email', methods=['POST'])
+def save_email():
+    email = request.form.get('email', '').strip().lower()
+    username = session.get('username', '')
+    if username:
+        update_user_email(username, email)
+        flash('Email сохранён', 'success')
+    else:
+        flash('Ошибка: пользователь не найден', 'error')
     return redirect(url_for('settings.income_settings'))
 
 
