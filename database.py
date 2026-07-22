@@ -150,6 +150,14 @@ def init_db():
     except Exception:
         pass
 
+    # Миграция: начальные значения salary_day / advance_day
+    row = conn.execute("SELECT value FROM settings WHERE key = 'salary_day'").fetchone()
+    if not row:
+        conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('salary_day', '10')")
+    row = conn.execute("SELECT value FROM settings WHERE key = 'advance_day'").fetchone()
+    if not row:
+        conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('advance_day', '25')")
+
     # Индексы для операций
     conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_date ON operations(date)')
     conn.execute('CREATE INDEX IF NOT EXISTS idx_operations_type ON operations(type)')

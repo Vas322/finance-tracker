@@ -2,15 +2,13 @@ from decimal import Decimal
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from database import get_db
 from datetime import date
-from config import ADVANCE_DAY
 
 from services.regular_service import (
     apply_regular_payments,
     get_due_regular_payments, get_paid_regulars_in_period,
     get_cycle_regulars_list, get_skipped_total, skip_regular_payment,
 )
-from services.period_service import get_regular_cycle_start
-from services.balance_service import update_current_period_balance
+from services.period_service import get_regular_cycle_start, get_advance_day
 from services.operation_service import get_operations_page
 from services.category_service import get_all_category_names, get_income_categories, get_expense_categories
 from services.vacation_service import get_upcoming_vacation
@@ -62,7 +60,7 @@ def index():
     due_payments = get_due_regular_payments(today)
     all_categories = get_all_category_names()
 
-    if next_income.day == ADVANCE_DAY:
+    if next_income.day == get_advance_day():
         salary_remainder_note = f"(Аванс: {expected_income//100:,.0f} ₽)".replace(",", " ")
     else:
         salary_remainder_note = f"(Зарплата: {expected_income//100:,.0f} ₽)".replace(",", " ")
@@ -159,10 +157,4 @@ def skip_regular(payment_id):
     return redirect(url_for('main.index'))
 
 
-@bp.route('/update_money', methods=['POST'])
-def update_money():
-    new_amount = int(Decimal(request.form['current_money']) * 100)
-    today = date.today()
-    update_current_period_balance(today, new_amount)
-    flash(f'Начальный остаток: {new_amount//100:,.0f} ₽', 'success')
-    return redirect(url_for('main.index'))
+

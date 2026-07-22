@@ -29,9 +29,9 @@
             </ul>
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <span class="nav-link">
+                    <a href="{{ url_for('settings.profile') }}" class="nav-link">
                         <i class="bi bi-person-circle"></i> {{ session.get('username', 'пользователь') }}
-                    </span>
+                    </a>
                 </li>
                 <li class="nav-item">
                     <a href="{{ url_for('auth.logout') }}" class="nav-link">
@@ -68,12 +68,6 @@
                         <a href="{{ url_for('categories.categories') }}" class="nav-link {% if request.endpoint == 'categories.categories' %}active{% endif %}">
                             <i class="nav-icon bi bi-folder"></i>
                             <p>Категории</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('settings.income_settings') }}" class="nav-link {% if request.endpoint == 'settings.income_settings' %}active{% endif %}">
-                            <i class="nav-icon bi bi-wallet2"></i>
-                            <p>Доходы</p>
                         </a>
                     </li>
                     <li class="nav-item">

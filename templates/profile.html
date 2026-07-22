@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h4 class="card-title mb-0">{{ session.get('username', 'пользователь') }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('settings.profile') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Плановая зарплата (₽)</label>
+                            <input type="number" name="planned_salary" step="0.01" value="{{ planned_salary }}" class="form-control" required>
+                            <div class="form-text">Сумма за полный месяц (аванс + зарплата).</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">День зарплаты</label>
+                            <input type="number" name="salary_day" min="1" max="31" value="{{ salary_day }}" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">День аванса</label>
+                            <input type="number" name="advance_day" min="1" max="31" value="{{ advance_day }}" class="form-control">
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email для восстановления</label>
+                            <input type="email" name="email" class="form-control" placeholder="your@email.com" value="{{ user_email }}">
+                            <div class="form-text">На этот email придёт ссылка для сброса пароля.</div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">Начальный остаток на период: <strong>{{ period_balance|money }} ₽</strong></span>
+                        <button type="button" onclick="showMoneyModal()" class="btn btn-sm btn-outline-secondary">✏️ Изменить остаток</button>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="submit" class="btn btn-primary px-4">Сохранить настройки</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-outline card-warning">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Смена пароля</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Ссылка придёт на email ({{ user_email or 'не указан' }}).</p>
+                <form method="POST" action="{{ url_for('settings.send_reset_link') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-warning w-100">Отправить ссылку</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card card-outline card-info mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Подсказки</h5>
+            </div>
+            <div class="card-body small">
+                <ul class="mb-0 ps-3">
+                    <li><strong>Плановая зарплата</strong> — для расчёта ожидаемого остатка.</li>
+                    <li><strong>Дни зарплаты/аванса</strong> — границы финансовых периодов. По умолч. 10 и 25.</li>
+                    <li><strong>Email</strong> — для восстановления доступа.</li>
+                    <li><strong>Остаток</strong> — деньги на начало периода. Можно изменить вручную.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для начального остатка -->
+<div class="modal fade" id="moneyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Редактировать начальный остаток</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="moneyForm" method="POST" action="{{ url_for('settings.update_money') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <label class="form-label">Сумма (₽)</label>
+                    <input type="number" name="current_money" step="0.01" value="{{ period_balance // 100 }}"
+                           class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
