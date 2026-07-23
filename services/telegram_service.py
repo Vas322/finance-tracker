@@ -165,25 +165,33 @@ def send_daily_digest():
 
     today_str = stats['today'].strftime('%d.%m.%Y')
     can_str = "{:,.0f}".format(stats['can_spend_today'] // 100).replace(",", " ")
-    month_str = "{:,.0f}".format(stats['available_for_month'] // 100).replace(",", " ")
     limit_str = "{:,.0f}".format(stats['daily_limit'] // 100).replace(",", " ")
-    bal_str = "{:,.0f}".format(stats['period_balance'] // 100).replace(",", " ")
     income_str = stats['next_income'].strftime('%d.%m')
+    income_amount_str = "{:,.0f}".format(stats['expected_income'] // 100).replace(",", " ")
 
     lines = [
         f'<b>☀️ Доброе утро!</b>',
         f'📅 {today_str}\n',
-        f'{light(stats["can_spend_today"])} Сегодня: {can_str} ₽',
-        f'{light(stats["available_for_month"])} До зарплаты: {month_str} ₽',
+        f'{light(stats["can_spend_today"])} Сегодня доступно: {can_str} ₽',
         f'📊 Лимит на день: {limit_str} ₽',
-        f'💰 Остаток периода: {bal_str} ₽',
-        f'📆 Следующий доход: {income_str} (через {stats["days_to_income"]} дн.)\n',
     ]
 
     if today_payments:
-        lines.append('<b>📢 Платежи сегодня:</b>')
-        lines.append(_format_payments(today_payments))
-        lines.append('')
+        for p in today_payments:
+            sub = f' ({p["subcategory"]})' if p['subcategory'] else ''
+            amt = "{:,.0f}".format(p["amount"] // 100).replace(",", " ")
+            lines.append(f'💳 Сегодня платёж: {p["category"]}{sub} — {amt} ₽')
+
+    from services.vacation_service import get_upcoming_vacation
+    vacation = get_upcoming_vacation()
+    if vacation and vacation['status'] == 'planned':
+        days_until = (vacation['start_date'] - stats['today']).days
+        if 0 < days_until <= 5:
+            lines.append(f'🏖 До отпуска: {days_until} дн.')
+        elif days_until == 0:
+            lines.append(f'🏖 Отпуск начинается сегодня!')
+
+    lines.append(f'📆 Следующий доход: {income_str} — {income_amount_str} ₽ (через {stats["days_to_income"]} дн.)\n')
 
     today_exp = "{:,.0f}".format(
         _get_expenses_today() // 100

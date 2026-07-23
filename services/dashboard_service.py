@@ -59,16 +59,8 @@ def compute_dashboard_stats(today=None):
             )
         ''', (period_start_date.strftime('%Y-%m-%d'), period_end_date.strftime('%Y-%m-%d'))).fetchone()[0]
 
-    with get_db() as conn:
-        remaining_received = conn.execute('''
-            SELECT COALESCE(SUM(amount), 0) FROM operations
-            WHERE type = 'Доход' AND category = 'Зарплата'
-              AND (subcategory != 'Аванс' OR subcategory IS NULL)
-              AND date >= ? AND date <= ?
-        ''', (period_start_date.strftime('%Y-%m-%d'), period_end_date.strftime('%Y-%m-%d'))).fetchone()[0]
-
-    future_income = max(0, expected_income - remaining_received)
-    available_for_month = cash_on_hand + future_income - unpaid_regular_month
+    future_income = 0
+    available_for_month = cash_on_hand - unpaid_regular_month
     daily_limit = can_spend_today / days_to_income if days_to_income > 0 else can_spend_today
 
     return {
@@ -89,10 +81,10 @@ def compute_dashboard_stats(today=None):
         'can_spend_today': can_spend_today,
         'expected_income': expected_income,
         'cash_on_hand': cash_on_hand,
-        'future_income': future_income,
+        'future_income': 0,
         'available_for_month': available_for_month,
         'daily_limit': daily_limit,
         'unpaid_regular_month': unpaid_regular_month,
-        'remaining_received': remaining_received,
+        'remaining_received': 0,
         'total_expense_without_regulars': total_expense_without_regulars,
     }

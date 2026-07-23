@@ -65,11 +65,6 @@ from database import init_db
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
-def check_regular_payments():
-    from services.telegram_service import notify_due_today
-    notify_due_today()
-
-
 def notify_upcoming_payments():
     from services.telegram_service import notify_tomorrow
     notify_tomorrow()
@@ -102,7 +97,6 @@ if __name__ == '__main__':
         scheduler = BackgroundScheduler()
         scheduler.add_job(backup_db, 'cron', hour='6,18', minute=0)
         scheduler.add_job(run_backup, 'cron', hour=0, minute=0)
-        scheduler.add_job(check_regular_payments, 'cron', hour='10', minute=0)
         scheduler.add_job(notify_upcoming_payments, 'cron', hour='21', minute=0)
         scheduler.add_job(daily_digest, 'cron', hour='9', minute=0)
         scheduler.start()
