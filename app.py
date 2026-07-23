@@ -61,8 +61,7 @@ def create_app() -> Flask:
 
 app = create_app()
 
-from database import init_db, backup_db
-from services.backup_service import run_backup
+from database import init_db
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
@@ -81,20 +80,35 @@ def daily_digest():
     send_daily_digest()
 
 
-backup_db()  # local_db_backup
 init_db()
 
 if __name__ == '__main__':
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(backup_db, 'cron', hour='6,18', minute=0)
-    scheduler.add_job(run_backup, 'cron', hour=0, minute=0)
-    scheduler.add_job(check_regular_payments, 'cron', hour='10', minute=0)
-    scheduler.add_job(notify_upcoming_payments, 'cron', hour='21', minute=0)
-    scheduler.add_job(daily_digest, 'cron', hour='9', minute=0)
-    scheduler.start()
+    import socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(('127.0.0.1', 5000))
+        sock.close()
+    except OSError:
+        print('[!] Порт 5000 уже занят — приложение уже запущено?')
+        print('    Завершите старый процесс (Ctrl+C) и попробуйте снова.')
+        import sys
+        sys.exit(1)
 
-    from services.telegram_service import start_polling
-    start_polling()
+    enable_bot = os.environ.get('ENABLE_TELEGRAM_BOT', 'false') == 'true'
+    if enable_bot:
+        from services.backup_service import run_backup
+        from database import backup_db
+
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(backup_db, 'cron', hour='6,18', minute=0)
+        scheduler.add_job(run_backup, 'cron', hour=0, minute=0)
+        scheduler.add_job(check_regular_payments, 'cron', hour='10', minute=0)
+        scheduler.add_job(notify_upcoming_payments, 'cron', hour='21', minute=0)
+        scheduler.add_job(daily_digest, 'cron', hour='9', minute=0)
+        scheduler.start()
+
+        from services.telegram_service import start_polling
+        start_polling()
 
     app.run(debug=os.environ.get('FLASK_DEBUG', '0') == '1', use_reloader=False)
 
