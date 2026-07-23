@@ -69,7 +69,7 @@
         <div class="card h-100">
             <div class="card-body">
                 <h5 class="card-title text-center">💰 Доходы</h5>
-                <small class="text-muted d-block">за {{ income_period_start.strftime('%d.%m') }} — {{ income_period_end.strftime('%d.%m') }}</small>
+                <div class="small text-muted">📅 за {{ income_period_start.strftime('%d.%m') }} — {{ income_period_end.strftime('%d.%m') }}</div>
                 <div class="mt-2 small">
                     <div>💳 Аванс: <b>{{ income_advance|money }} ₽</b></div>
                     <div>🏦 Зарплата: <b>{{ income_salary|money }} ₽</b></div>
