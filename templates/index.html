@@ -69,7 +69,16 @@
         <div class="card h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">💰 Доходы</h5>
-                <h3 class="text-success">{{ total_income|money }} ₽</h3>
+                <small class="text-muted">за {{ income_period_start.strftime('%d.%m') }} — {{ income_period_end.strftime('%d.%m') }}</small>
+                <div class="mt-2 small text-start d-inline-block">
+                    <div>💳 Аванс: <b>{{ income_advance|money }} ₽</b></div>
+                    <div>🏦 Зарплата: <b>{{ income_salary|money }} ₽</b></div>
+                    {% if income_other > 0 %}
+                    <div>📥 Прочее: <b>{{ income_other|money }} ₽</b></div>
+                    {% endif %}
+                    <hr class="my-1">
+                    <div>📈 Итого: <b class="text-success">{{ income_total|money }} ₽</b></div>
+                </div>
             </div>
         </div>
     </div>

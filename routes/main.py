@@ -8,7 +8,7 @@ from services.regular_service import (
     get_due_regular_payments, get_paid_regulars_in_period,
     get_cycle_regulars_list, get_skipped_total, skip_regular_payment,
 )
-from services.period_service import get_regular_cycle_start, get_advance_day
+from services.period_service import get_regular_cycle_start, get_advance_day, get_salary_period
 from services.operation_service import get_operations_page
 from services.category_service import get_all_category_names, get_income_categories, get_expense_categories
 from services.vacation_service import get_upcoming_vacation
@@ -36,6 +36,21 @@ def index():
     )
 
     stats = compute_dashboard_stats(today)
+
+    income_period_start, income_period_end = get_salary_period(today)
+    with get_db() as conn:
+        row = conn.execute('''
+            SELECT
+                COALESCE(SUM(CASE WHEN subcategory = 'Аванс' THEN amount ELSE 0 END), 0) as advance,
+                COALESCE(SUM(CASE WHEN category = 'Зарплата' AND (subcategory IS NULL OR subcategory != 'Аванс') THEN amount ELSE 0 END), 0) as salary,
+                COALESCE(SUM(CASE WHEN category != 'Зарплата' THEN amount ELSE 0 END), 0) as other
+            FROM operations
+            WHERE type = 'Доход' AND date >= ? AND date <= ?
+        ''', (income_period_start.strftime('%Y-%m-%d'), income_period_end.strftime('%Y-%m-%d'))).fetchone()
+    income_advance = row['advance']
+    income_salary = row['salary']
+    income_other = row['other']
+    income_total = income_advance + income_salary + income_other
 
     planned_salary = stats['planned_salary']
     real_advance = stats['real_advance']
@@ -98,6 +113,12 @@ def index():
     return render_template('index.html',
                            operations=operations,
                            total_income=stats['income_this_period'],
+                           income_period_start=income_period_start,
+                           income_period_end=income_period_end,
+                           income_advance=income_advance,
+                           income_salary=income_salary,
+                           income_other=income_other,
+                           income_total=income_total,
                            total_expense=stats['expenses_this_period'],
                            total_expense_without_regulars=stats['total_expense_without_regulars'],
                            balance=stats['cash_on_hand'],
