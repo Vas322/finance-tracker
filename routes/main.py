@@ -1,14 +1,14 @@
 from decimal import Decimal
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from database import get_db
-from datetime import date
+from datetime import date, datetime
 
 from services.regular_service import (
     apply_regular_payments,
     get_due_regular_payments, get_paid_regulars_in_period,
     get_cycle_regulars_list, get_skipped_total, skip_regular_payment,
 )
-from services.period_service import get_regular_cycle_start, get_advance_day, get_salary_period
+from services.period_service import get_regular_cycle_start, get_advance_day
 from services.operation_service import get_operations_page
 from services.category_service import get_all_category_names, get_income_categories, get_expense_categories
 from services.vacation_service import get_upcoming_vacation
@@ -37,7 +37,24 @@ def index():
 
     stats = compute_dashboard_stats(today)
 
-    income_period_start, income_period_end = get_salary_period(today)
+    with get_db() as conn:
+        last_advance = conn.execute('''
+            SELECT date FROM operations
+            WHERE type = 'Доход' AND category = 'Зарплата' AND subcategory = 'Аванс'
+            ORDER BY date DESC LIMIT 1
+        ''').fetchone()
+    if last_advance:
+        adv = get_advance_day()
+        ad = datetime.strptime(last_advance['date'], '%Y-%m-%d').date()
+        if ad.month == 12:
+            income_period_end = date(ad.year + 1, 1, adv - 1)
+        else:
+            income_period_end = date(ad.year, ad.month + 1, adv - 1)
+        income_period_start = ad
+    else:
+        income_period_start = today.replace(day=1)
+        income_period_end = today
+
     with get_db() as conn:
         row = conn.execute('''
             SELECT
@@ -51,6 +68,13 @@ def index():
     income_salary = row['salary']
     income_other = row['other']
     income_total = income_advance + income_salary + income_other
+
+    with get_db() as conn:
+        adv_date = conn.execute("SELECT date FROM operations WHERE type='Доход' AND category='Зарплата' AND subcategory='Аванс' ORDER BY date DESC LIMIT 1").fetchone()
+        sal_date = conn.execute("SELECT date FROM operations WHERE type='Доход' AND category='Зарплата' AND (subcategory IS NULL OR subcategory != 'Аванс') ORDER BY date DESC LIMIT 1").fetchone()
+    income_advance_date = datetime.strptime(adv_date['date'], '%Y-%m-%d').date() if adv_date else None
+    income_salary_date = datetime.strptime(sal_date['date'], '%Y-%m-%d').date() if sal_date else None
+    income_planned = stats['planned_salary']
 
     planned_salary = stats['planned_salary']
     real_advance = stats['real_advance']
@@ -115,10 +139,13 @@ def index():
                            total_income=stats['income_this_period'],
                            income_period_start=income_period_start,
                            income_period_end=income_period_end,
-                           income_advance=income_advance,
-                           income_salary=income_salary,
-                           income_other=income_other,
-                           income_total=income_total,
+                            income_advance=income_advance,
+                            income_advance_date=income_advance_date,
+                            income_salary=income_salary,
+                            income_salary_date=income_salary_date,
+                            income_other=income_other,
+                            income_total=income_total,
+                            income_planned=income_planned,
                            total_expense=stats['expenses_this_period'],
                            total_expense_without_regulars=stats['total_expense_without_regulars'],
                            balance=stats['cash_on_hand'],

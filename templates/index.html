@@ -68,35 +68,39 @@
     <div class="col-md-4 mb-3">
         <div class="card h-100">
             <div class="card-body">
-                <h5 class="card-title text-center">💰 Доходы</h5>
-                <div class="small text-muted">📅 за {{ income_period_start.strftime('%d.%m') }} — {{ income_period_end.strftime('%d.%m') }}</div>
-                <div class="mt-2 small">
-                    <div>💳 Аванс: <b>{{ income_advance|money }} ₽</b></div>
-                    <div>🏦 Зарплата: <b>{{ income_salary|money }} ₽</b></div>
+                <h5 class="card-title">💰 Доходы</h5>
+                {% set pct = (income_total * 100 // income_planned) if income_planned > 0 else 0 %}
+                <h3 class="text-center text-{{ 'success' if pct >= 100 else 'warning' if pct >= 50 else 'danger' }}">
+                    Получено: {{ income_total|money }} ₽ из {{ income_planned|money }} ₽
+                    {%- if pct >= 100 %} ✅{% elif pct >= 50 %} 🟡{% else %} 🔴{% endif %}
+                </h3>
+                <div class="small text-center">
+                    <div>💳 Аванс: <b>{{ income_advance|money }} ₽</b>{% if income_advance_date %} <span class="text-muted">({{ income_advance_date.strftime('%d.%m') }})</span>{% endif %}</div>
+                    <div>🏦 Зарплата: <b>{{ income_salary|money }} ₽</b>{% if income_salary_date %} <span class="text-muted">({{ income_salary_date.strftime('%d.%m') }})</span>{% endif %}</div>
                     {% if income_other > 0 %}
                     <div>📥 Прочее: <b>{{ income_other|money }} ₽</b></div>
                     {% endif %}
-                    <hr class="my-1">
-                    <div>📈 Итого: <b class="text-success">{{ income_total|money }} ₽</b></div>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
         <div class="card h-100">
-            <div class="card-body text-center">
+            <div class="card-body">
                 <h5 class="card-title">💸 Расходы</h5>
-                <h3 class="text-danger">{{ total_expense|money }} ₽</h3>
-                <small class="text-muted">в т.ч. регулярные: {{ (total_expense - total_expense_without_regulars)|money }} ₽</small>
-                <br><small class="text-success">без регулярных: {{ total_expense_without_regulars|money }} ₽</small>
+                <h3 class="text-center text-danger">{{ total_expense|money }} ₽</h3>
+                <div class="small">
+                    <span class="text-muted">в т.ч. регулярные: {{ (total_expense - total_expense_without_regulars)|money }} ₽</span>
+                    <br><span class="text-success">без регулярных: {{ total_expense_without_regulars|money }} ₽</span>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
         <div class="card h-100">
-            <div class="card-body text-center">
+            <div class="card-body">
                 <h5 class="card-title">⚖️ Баланс</h5>
-                <h3 class="text-info">{{ balance|money }} ₽</h3>
+                <h3 class="text-center text-info">{{ balance|money }} ₽</h3>
             </div>
         </div>
     </div>
