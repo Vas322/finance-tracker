@@ -89,7 +89,7 @@
             <div class="card-body">
                 <h5 class="card-title">💸 Расходы</h5>
                 <h3 class="text-center text-danger">{{ total_expense|money }} ₽</h3>
-                <div class="small">
+                <div class="small text-center">
                     <span class="text-muted">в т.ч. регулярные: {{ (total_expense - total_expense_without_regulars)|money }} ₽</span>
                     <br><span class="text-success">без регулярных: {{ total_expense_without_regulars|money }} ₽</span>
                 </div>
