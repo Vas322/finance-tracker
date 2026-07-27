@@ -1,5 +1,5 @@
 from collections import Counter
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Optional
 from database import get_db
 from services.period_service import get_regular_cycle_start
@@ -216,9 +216,25 @@ def get_regular_totals_by_category(period_type='month') -> dict:
     return totals
 
 
+def _resolve_effective_date(today: date, payment_day_str: str) -> Optional[date]:
+    """Ближайшая дата платежа ≤ today — сначала текущий цикл, затем предыдущий."""
+    date_in_cycle = _payment_date_in_cycle(today, payment_day_str)
+    if date_in_cycle is not None and date_in_cycle <= today:
+        return date_in_cycle
+    cycle_start = get_regular_cycle_start(today)
+    prev_cycle_start = get_regular_cycle_start(cycle_start - timedelta(days=1))
+    prev_date = _payment_date_in_cycle(prev_cycle_start, payment_day_str)
+    if prev_date is not None and prev_date <= today:
+        return prev_date
+    return date_in_cycle
+
+
 def get_due_regular_payments(today: date):
-    cycle_regulars = get_cycle_regulars_list(today)
-    handled_ids = {r['id'] for r in cycle_regulars if r['paid'] or r['skipped']}
+    cycle_start = get_regular_cycle_start(today)
+    prev_cycle_start = get_regular_cycle_start(cycle_start - timedelta(days=1))
+    paid_ids = _get_paid_ids(prev_cycle_start, today)
+    skipped_ids = _get_skipped_ids(cycle_start) | _get_skipped_ids(prev_cycle_start)
+    handled_ids = paid_ids | skipped_ids
     due = []
     with get_db() as conn:
         payments = conn.execute('SELECT * FROM regular_payments').fetchall()
@@ -227,8 +243,8 @@ def get_due_regular_payments(today: date):
                 continue
             if p['id'] in handled_ids:
                 continue
-            payment_date_in_cycle = _payment_date_in_cycle(today, p['day'])
-            if payment_date_in_cycle is None or payment_date_in_cycle > today:
+            payment_date = _resolve_effective_date(today, p['day'])
+            if payment_date is None or payment_date > today:
                 continue
             due.append({
                 'id': p['id'],
@@ -236,7 +252,7 @@ def get_due_regular_payments(today: date):
                 'subcategory': p['subcategory'] or '',
                 'amount': p['amount'],
                 'interval': p['interval'],
-                'payment_date': payment_date_in_cycle,
+                'payment_date': payment_date,
             })
     return due
 

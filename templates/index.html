@@ -43,11 +43,16 @@
     <div class="col-md-6 mb-3">
         <div class="card h-100 border-{{ 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' }}">
             <div class="card-body text-center">
-                <h5 class="card-title mb-1">🚦 Сегодня</h5>
-                <h2 class="mb-0 text-{{ 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' }}">
-                    {{ today_text }}
+                <h5 class="card-title mb-1">🚦 Сегодня · <span class="text-{{ 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' }}">{{ today_text }}</span></h5>
+                <h2 class="mb-0 text-primary">
+                    {{ available_for_month|money }} ₽
                 </h2>
-                <small class="text-muted">Можно потратить: {{ can_spend_today|money }} ₽</small>
+                <small class="text-muted mb-1 d-block">✨ Можно потратить</small>
+                <div class="small text-muted">
+                    💰 На руках: <b>{{ cash_on_hand|money }} ₽</b>
+                    <span class="mx-1">·</span>
+                    📋 Регулярные: <b class="text-danger-50">–{{ unpaid_regular_month|money }} ₽</b>
+                </div>
             </div>
         </div>
     </div>

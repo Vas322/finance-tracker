@@ -45,7 +45,7 @@ def compute_dashboard_stats(today=None):
 
     cash_on_hand = cycle_start_balance + income_since_cycle - expenses_since_cycle
     can_spend_today = cash_on_hand - regular_reserve
-    unpaid_regular_month = regular_total_month - paid_regular
+    unpaid_regular_month = max(0, regular_total_month - paid_regular - skipped_since_cycle)
 
     # Расходы без регулярных за текущий период
     with get_db() as conn:
