@@ -18,3 +18,4 @@ instance/
 .telegram_update_id
 backups/
 tests/temp/
+.opencode/
