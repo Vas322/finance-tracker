@@ -38,147 +38,160 @@
 </div>
 {% endif %}
 
-<!-- БЛОК 1: Состояние счёта -->
+<!-- БЛОК 1: Состояние счёта (small-box) -->
+{% set today_color = 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' %}
 <div class="row">
-    <div class="col-md-6 mb-3">
-        <div class="card h-100 border-{{ 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' }}">
-            <div class="card-body text-center">
-                <h5 class="card-title mb-1">🚦 Сегодня · <span class="text-{{ 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' }}">{{ today_text }}</span></h5>
-                <h2 class="mb-0 text-info">
-                    {{ can_spend_today|money }} ₽
-                </h2>
-                <small class="text-muted mb-1 d-block">✨ Можно потратить</small>
-                <div class="small text-muted">
-                    💰 На руках: <b>{{ cash_on_hand|money }} ₽</b>
-                    <span class="mx-1">·</span>
-                    📋 Резерв: <b class="text-danger-50">{{ regular_reserve|money }} ₽</b>
+    <div class="col-md-6 mb-3 d-flex">
+        <div class="small-box text-bg-{{ today_color }} h-100 w-100">
+            <div class="inner">
+                <h3>{{ can_spend_today|money }} ₽</h3>
+                <p>Можно потратить · {{ today_text }}</p>
+                <div class="text-white-50 small">
+                    На руках: {{ cash_on_hand|money }} ₽ · Резерв: {{ regular_reserve|money }} ₽
                 </div>
             </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+            </svg>
         </div>
     </div>
-    <div class="col-md-6 mb-3">
-        <div class="card h-100 border-info">
-            <div class="card-body text-center">
-                <h5 class="card-title mb-1">📅 Средний лимит на день</h5>
-                <h2 class="mb-0 text-info">
-                    {{ daily_limit|money }} ₽
-                </h2>
-                <small class="text-muted">До {{ next_income.strftime('%d.%m.%Y') }} осталось {{ days_to_income }} дн.</small>
+    <div class="col-md-6 mb-3 d-flex">
+        <div class="small-box text-bg-primary h-100 w-100">
+            <div class="inner">
+                <h3>{{ daily_limit|money }} ₽</h3>
+                <p>Средний лимит на день</p>
+                <div class="text-white-50 small">
+                    До {{ next_income.strftime('%d.%m.%Y') }} осталось {{ days_to_income }} дн.
+                </div>
             </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+            </svg>
         </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">💰 Доходы</h5>
+    <div class="col-md-4 mb-3 d-flex">
+        <div class="small-box text-bg-success h-100 w-100">
+            <div class="inner">
                 {% set pct = (income_total * 100 // income_planned) if income_planned > 0 else 0 %}
-                <h3 class="text-center text-{{ 'success' if pct >= 100 else 'warning' if pct >= 50 else 'danger' }}">
-                    Получено: {{ income_total|money }} ₽ из {{ income_planned|money }} ₽
-                    {%- if pct >= 100 %} ✅{% elif pct >= 50 %} 🟡{% else %} 🔴{% endif %}
-                </h3>
-                <div class="small text-center">
-                    <div>💳 Аванс: <b>{{ income_advance|money }} ₽</b>{% if income_advance_date %} <span class="text-muted">({{ income_advance_date.strftime('%d.%m') }})</span>{% endif %}</div>
+                <h3>{{ income_total|money }} ₽ <sup class="fs-5">из {{ income_planned|money }} ₽</sup></h3>
+                <p>Доходы</p>
+                <div class="text-white-50 small">
+                    <div>Аванс: {{ income_advance|money }} ₽{% if income_advance_date %} ({{ income_advance_date.strftime('%d.%m') }}){% endif %}</div>
                     {% if expected_salary_amount %}
-                    <div>🏦 Ожидаемая зарплата: <b>{{ expected_salary_amount|money }} ₽</b> <span class="text-muted">({{ expected_salary_date.strftime('%d.%m') }})</span></div>
+                    <div>Ожидаемая зарплата: {{ expected_salary_amount|money }} ₽ ({{ expected_salary_date.strftime('%d.%m') }})</div>
                     {% else %}
-                    <div>🏦 Зарплата: <b>{{ income_salary|money }} ₽</b>{% if income_salary_date %} <span class="text-muted">({{ income_salary_date.strftime('%d.%m') }})</span>{% endif %}</div>
+                    <div>Зарплата: {{ income_salary|money }} ₽{% if income_salary_date %} ({{ income_salary_date.strftime('%d.%m') }}){% endif %}</div>
                     {% endif %}
                     {% if income_other > 0 %}
-                    <div>📥 Прочее: <b>{{ income_other|money }} ₽</b></div>
+                    <div>Прочее: {{ income_other|money }} ₽</div>
                     {% endif %}
                 </div>
             </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+            </svg>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">💸 Расходы</h5>
-                <h3 class="text-center text-danger">{{ total_expense|money }} ₽</h3>
-                <div class="small text-center">
-                    <span class="text-muted">в т.ч. регулярные: {{ (total_expense - total_expense_without_regulars)|money }} ₽</span>
-                    <br><span class="text-success">без регулярных: {{ total_expense_without_regulars|money }} ₽</span>
+    <div class="col-md-4 mb-3 d-flex">
+        <div class="small-box text-bg-danger h-100 w-100">
+            <div class="inner">
+                <h3>{{ total_expense|money }} ₽</h3>
+                <p>Расходы</p>
+                <div class="text-white-50 small">
+                    в т.ч. регулярные: {{ (total_expense - total_expense_without_regulars)|money }} ₽<br>
+                    без регулярных: {{ total_expense_without_regulars|money }} ₽
                 </div>
             </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+            </svg>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">⚖️ Баланс</h5>
-                <h3 class="text-center text-info">{{ balance|money }} ₽</h3>
+    <div class="col-md-4 mb-3 d-flex">
+        <div class="small-box text-bg-warning h-100 w-100">
+            <div class="inner">
+                <h3>{{ balance|money }} ₽</h3>
+                <p>Баланс</p>
+                <div class="text-dark text-opacity-75 small">
+                    Остаток на руках после всех обязательных платежей
+                </div>
             </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+            </svg>
         </div>
     </div>
 </div>
 
-<!-- БЛОК 2: Планирование (аккордеон) -->
-<div class="card card-primary card-outline mb-4">
-    <div class="card-header" id="planning-heading">
-        <h5 class="mb-0">
-            <button class="btn btn-link text-decoration-none p-0" data-bs-toggle="collapse" data-bs-target="#planning-collapse" aria-expanded="false">
-                📋 Планирование
-            </button>
-        </h5>
-    </div>
-    <div id="planning-collapse" class="collapse">
-        <div class="card-body">
-            <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">📅 Ожидаемое поступление</h5>
-                                <h3 class="text-primary">{{ expected_income|money }} ₽</h3>
-                                <small>До {{ next_income.strftime('%d.%m.%Y') }} ({{ days_to_income }} дней)</small>
-                                <small class="d-block text-muted">{{ salary_remainder_note }}</small>
-                                {% if upcoming_vacation %}
-                                <small class="d-block text-info">
-                                    🏖️ Отпуск с {{ upcoming_vacation.start_date.strftime('%d.%m.%Y') }}
-                                    по {{ upcoming_vacation.end_date.strftime('%d.%m.%Y') }}
-                                </small>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <h5 class="card-title text-center">📋 Осталось оплатить</h5>
-                                <h3 class="text-danger text-center">{{ regular_until_income|money }} ₽</h3>
-                                {% for r in upcoming_regulars[:5] %}
-                                <div class="d-flex justify-content-between align-items-center small border-bottom py-1">
-                                    <span>
-                                        {% if r.date and r.date < today %}
-                                        🔴
-                                        {% elif r.date and r.date == today %}
-                                        🟠
-                                        {% else %}
-                                        ⚪
-                                        {% endif %}
-                                        {% if r.date %}{{ r.date.strftime('%d.%m') }}{% else %}день {{ r.day }}{% endif %} {{ r.category }}{% if r.subcategory %} / {{ r.subcategory }}{% endif %}
-                                    </span>
-                                    <span class="fw-bold">{{ r.amount|money }} ₽</span>
-                                </div>
-                                {% endfor %}
-                                {% if upcoming_regulars|length > 5 %}
-                                <a href="{{ url_for('regular.cycle') }}" class="d-block text-end mt-2">Показать все →</a>
-                                {% endif %}
-                                <div class="text-center mt-2"><small class="text-muted">До получения зарплаты</small></div>
-                            </div>
-                        </div>
-                    </div>
+<!-- БЛОК 2: Планирование -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3 mb-md-0 d-flex">
+        <div class="small-box text-bg-primary h-100 w-100">
+            <div class="inner">
+                <h3>{{ expected_income|money }} ₽</h3>
+                <p>Ожидаемое поступление</p>
+                <div class="text-white-50 small">
+                    До {{ next_income.strftime('%d.%m.%Y') }} ({{ days_to_income }} дн.){% if salary_remainder_note %}<br>{{ salary_remainder_note }}{% endif %}
+                </div>
+                {% if upcoming_vacation %}
+                <div class="text-warning small mt-1">
+                    Отпуск с {{ upcoming_vacation.start_date.strftime('%d.%m.%Y') }}
+                    по {{ upcoming_vacation.end_date.strftime('%d.%m.%Y') }}
+                </div>
+                {% endif %}
             </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+            </svg>
         </div>
     </div>
-</div>
-
-<!-- Фильтры -->
-<div class="card card-primary card-outline mb-4">
+    <div class="col-md-6 d-flex">
+        <div class="small-box text-bg-warning h-100 w-100">
+            <div class="inner">
+                <h3>{{ regular_until_income|money }} ₽</h3>
+                <p>Осталось оплатить</p>
+                <div class="small" style="color: rgba(0,0,0,.65)">
+                    <div class="row g-1">
+                        <div class="col-6">
+                            {% for r in upcoming_regulars[:3] %}
+                            <div class="d-flex justify-content-between border-bottom border-dark border-opacity-10 py-1">
+                                <span>
+                                    {% if r.date and r.date < today %}🔴 {% elif r.date and r.date == today %}🟠 {% endif %}
+                                    {% if r.date %}{{ r.date.strftime('%d.%m') }}{% else %}день {{ r.day }}{% endif %} {{ r.category }}{% if r.subcategory %} / {{ r.subcategory }}{% endif %}
+                                </span>
+                                <span class="fw-bold">{{ r.amount|money }} ₽</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-6 border-start border-dark border-opacity-10 ps-2">
+                            {% for r in upcoming_regulars[3:5] %}
+                            <div class="d-flex justify-content-between border-bottom border-dark border-opacity-10 py-1">
+                                <span>
+                                    {% if r.date and r.date < today %}🔴 {% elif r.date and r.date == today %}🟠 {% endif %}
+                                    {% if r.date %}{{ r.date.strftime('%d.%m') }}{% else %}день {{ r.day }}{% endif %} {{ r.category }}{% if r.subcategory %} / {{ r.subcategory }}{% endif %}
+                                </span>
+                                <span class="fw-bold">{{ r.amount|money }} ₽</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% if upcoming_regulars|length > 5 %}
+                    <div class="mt-1"><a href="{{ url_for('regular.cycle') }}" class="text-dark text-opacity-75">Показать все →</a></div>
+                    {% endif %}
+                </div>
+            </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+            </svg>
+        </div>
+    </div>
+</div><!-- Фильтры -->
+<div class="card card-primary mb-4">
     <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-funnel me-2"></i> Фильтры</h5>
+        <h5 class="card-title"><i class="bi bi-funnel me-2"></i> Фильтры</h5>
     </div>
     <div class="card-body">
         <form method="GET" action="{{ url_for('main.index') }}" class="row g-2">
@@ -240,9 +253,9 @@
 </div>
 
 <!-- БЫСТРЫЕ ШАБЛОНЫ -->
-<div class="card card-primary card-outline mb-4" id="quick-templates-card">
+<div class="card card-primary mb-4" id="quick-templates-card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">⚡ Быстрые шаблоны</h5>
+        <h5 class="card-title mb-0"><i class="bi bi-lightning-charge me-1"></i> Быстрые шаблоны</h5>
         <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#templateModal" id="add-template-btn">
             <i class="bi bi-plus"></i> Добавить
         </button>
@@ -257,13 +270,14 @@
 </div>
 
 <!-- Таблица операций -->
-<div class="card card-primary card-outline">
+<div class="card card-primary">
     <div class="card-header">
-        <h5 class="card-title mb-0">📋 Последние операции</h5>
+        <h5 class="card-title mb-0"><i class="bi bi-table me-1"></i> Последние операции</h5>
     </div>
-    <div class="table-responsive">
-        <table class="table table-sm table-hover" id="operations-table">
-            <thead class="table-light">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle" id="operations-table">
+            <thead>
             <tr>
                 <th class="sortable" data-sort="date"><i class="bi bi-calendar-event me-1"></i> Дата</th>
                 <th class="sortable" data-sort="type"><i class="bi bi-tag me-1"></i> Тип</th>
@@ -271,7 +285,7 @@
                 <th class="sortable" data-sort="amount"><i class="bi bi-currency-ruble me-1"></i> Сумма</th>
                 <th><i class="bi bi-graph-up me-1"></i> Период</th>
                 <th><i class="bi bi-chat me-1"></i> Комментарий</th>
-                <th><i class="bi bi-gear me-1"></i> Действия</th>
+                <th class="text-end"><i class="bi bi-gear me-1"></i> Действия</th>
             </tr>
             </thead>
             <tbody>
@@ -288,24 +302,24 @@
                 <td>
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-primary edit-btn" data-id="{{ op.id }}" title="Редактировать">
-                            ✏️
+                            <i class="bi bi-pencil"></i>
                         </button>
                         <a href="{{ url_for('operations.delete', id=op.id) }}" class="btn btn-outline-danger" title="Удалить"
-                           onclick="return confirm('Удалить операцию?')">🗑️</a>
+                           onclick="return confirm('Удалить операцию?')"><i class="bi bi-trash"></i></a>
                     </div>
                 </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="7" class="text-center">Нет операций. Добавьте первую!</td>
+                <td colspan="7" class="text-center text-muted py-4"><i class="bi bi-inbox me-1"></i> Нет операций. Добавьте первую!</td>
                 {% endfor %}
             </tbody>
         </table>
+            </div>
     </div>
     {% if total_pages > 1 %}
-    <div class="card-footer d-flex justify-content-center">
-        <nav>
-            <ul class="pagination pagination-sm mb-0">
+    <div class="card-footer clearfix">
+        <ul class="pagination pagination-sm m-0 float-end">
                 <li class="page-item {{ 'disabled' if page <= 1 }}">
                     <a class="page-link" href="{{ url_for('main.index', page=page-1, period=request.args.get('period', ''), type=request.args.get('type', ''), category=request.args.get('category', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}">«</a>
                 </li>
@@ -318,7 +332,6 @@
                     <a class="page-link" href="{{ url_for('main.index', page=page+1, period=request.args.get('period', ''), type=request.args.get('type', ''), category=request.args.get('category', ''), date_from=request.args.get('date_from', ''), date_to=request.args.get('date_to', '')) }}">»</a>
                 </li>
             </ul>
-        </nav>
     </div>
     {% endif %}
 </div>
@@ -328,7 +341,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">✏️ Редактировать операцию</h5>
+                <h5 class="modal-title"><i class="bi bi-pencil me-1"></i> Редактировать операцию</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="editForm">
