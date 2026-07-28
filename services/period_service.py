@@ -139,3 +139,19 @@ def calculate_next_income(today: date, planned_salary_cents: int) -> tuple[int, 
             next_date = date(period_start.year, period_start.month + 1, sd)
 
     return amount, next_date
+
+
+def get_expected_salary_date(last_advance_date: date) -> date:
+    """Последний рабочий день перед salary_day месяца, следующего за авансом."""
+    sd = get_salary_day()
+    month = last_advance_date.month + 1
+    year = last_advance_date.year
+    if month > 12:
+        month = 1
+        year += 1
+    target = date(year, month, sd)
+    import holidays
+    ru_holidays = holidays.country_holidays('RU')
+    while target.weekday() >= 5 or target in ru_holidays:
+        target -= timedelta(days=1)
+    return target

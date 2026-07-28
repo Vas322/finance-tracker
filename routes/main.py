@@ -8,7 +8,7 @@ from services.regular_service import (
     get_due_regular_payments, get_paid_regulars_in_period,
     get_cycle_regulars_list, get_skipped_total, skip_regular_payment,
 )
-from services.period_service import get_regular_cycle_start, get_advance_day
+from services.period_service import get_regular_cycle_start, get_advance_day, get_expected_salary_date
 from services.operation_service import get_operations_page
 from services.category_service import get_all_category_names, get_income_categories, get_expense_categories
 from services.vacation_service import get_upcoming_vacation
@@ -73,7 +73,14 @@ def index():
         adv_date = conn.execute("SELECT date FROM operations WHERE type='Доход' AND category='Зарплата' AND subcategory='Аванс' ORDER BY date DESC LIMIT 1").fetchone()
         sal_date = conn.execute("SELECT date FROM operations WHERE type='Доход' AND category='Зарплата' AND (subcategory IS NULL OR subcategory != 'Аванс') ORDER BY date DESC LIMIT 1").fetchone()
     income_advance_date = datetime.strptime(adv_date['date'], '%Y-%m-%d').date() if adv_date else None
-    income_salary_date = datetime.strptime(sal_date['date'], '%Y-%m-%d').date() if sal_date else None
+    income_salary_date = None
+    expected_salary_amount = None
+    expected_salary_date = None
+    if income_salary > 0:
+        income_salary_date = datetime.strptime(sal_date['date'], '%Y-%m-%d').date() if sal_date else None
+    elif income_advance_date:
+        expected_salary_amount = stats['planned_salary'] - income_advance
+        expected_salary_date = get_expected_salary_date(income_advance_date)
     income_planned = stats['planned_salary']
 
     planned_salary = stats['planned_salary']
@@ -141,8 +148,10 @@ def index():
                            income_period_end=income_period_end,
                             income_advance=income_advance,
                             income_advance_date=income_advance_date,
-                            income_salary=income_salary,
-                            income_salary_date=income_salary_date,
+                             income_salary=income_salary,
+                             income_salary_date=income_salary_date,
+                             expected_salary_amount=expected_salary_amount,
+                             expected_salary_date=expected_salary_date,
                             income_other=income_other,
                             income_total=income_total,
                             income_planned=income_planned,
@@ -151,9 +160,12 @@ def index():
                            balance=stats['cash_on_hand'],
                            expected_income=expected_income,
                             regular_until_income=regular_until_income,
-                            available_for_month=stats['available_for_month'],
-                            unpaid_regular_month=stats['unpaid_regular_month'],
-                            cash_on_hand=stats['cash_on_hand'],
+                             available_for_month=stats['available_for_month'],
+                             unpaid_regular_month=stats['unpaid_regular_month'],
+                             cash_on_hand=stats['cash_on_hand'],
+                              regular_total_month=stats['regular_total_month'],
+                              paid_regular=stats['paid_regular'],
+                              regular_reserve=stats['regular_reserve'],
                             can_spend_today=can_spend_today,
                            days_to_income=days_to_income,
                            next_income=next_income,

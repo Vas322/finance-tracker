@@ -1,10 +1,10 @@
-from datetime import date
+from datetime import date, timedelta
 from database import get_db, get_period_balance
 from config import Config
 from services.period_service import get_period_dates, get_period, get_regular_cycle_start
 from services.balance_service import get_expenses_for_period, get_income_for_period, update_period_balance
 from services.regular_service import get_regular_total, get_paid_regular_payments_this_month, get_paid_regulars_in_period, get_skipped_total
-from services.operation_service import get_latest_advance
+from services.operation_service import get_latest_advance, get_latest_advance_date
 
 
 def compute_dashboard_stats(today=None):
@@ -31,21 +31,31 @@ def compute_dashboard_stats(today=None):
 
     # Расчёт от начала цикла регулярного резерва (25-го числа)
     cycle_start = get_regular_cycle_start(today)
-    income_since_cycle = get_income_for_period(cycle_start, today)
     expenses_since_cycle = get_expenses_for_period(cycle_start, today)
     regulars_paid_since_cycle = get_paid_regulars_in_period(cycle_start, today)
 
     cycle_start_period = get_period(cycle_start.strftime('%Y-%m-%d'))
     cycle_start_balance = get_period_balance(cycle_start_period, cycle_start.strftime('%Y-%m-%d')) or 0
 
+    # Старт для расчёта дохода под резерв — по реальной дате последнего аванса
+    advance_date = get_latest_advance_date()
+    income_start = cycle_start
+    if advance_date and advance_date < cycle_start:
+        prev_cycle_start = get_regular_cycle_start(cycle_start - timedelta(days=1))
+        if advance_date >= prev_cycle_start:
+            income_start = advance_date
+
+    income_since_cycle = get_income_for_period(cycle_start, today)
+    income_for_reserve = get_income_for_period(income_start, today)
+
     ratio = regular_total_month / planned_salary if planned_salary > 0 else 0
     daily_ratio = 1 - ratio
     skipped_since_cycle = get_skipped_total(cycle_start)
-    regular_reserve = int(income_since_cycle * ratio - regulars_paid_since_cycle - skipped_since_cycle)
+    regular_reserve = int(income_for_reserve * ratio - regulars_paid_since_cycle - skipped_since_cycle)
 
     cash_on_hand = cycle_start_balance + income_since_cycle - expenses_since_cycle
     can_spend_today = cash_on_hand - regular_reserve
-    unpaid_regular_month = max(0, regular_total_month - paid_regular - skipped_since_cycle)
+    unpaid_regular_month = max(0, regular_total_month - paid_regular)
 
     # Расходы без регулярных за текущий период
     with get_db() as conn:

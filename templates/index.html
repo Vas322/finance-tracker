@@ -44,14 +44,14 @@
         <div class="card h-100 border-{{ 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' }}">
             <div class="card-body text-center">
                 <h5 class="card-title mb-1">🚦 Сегодня · <span class="text-{{ 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' }}">{{ today_text }}</span></h5>
-                <h2 class="mb-0 text-primary">
-                    {{ available_for_month|money }} ₽
+                <h2 class="mb-0 text-info">
+                    {{ can_spend_today|money }} ₽
                 </h2>
                 <small class="text-muted mb-1 d-block">✨ Можно потратить</small>
                 <div class="small text-muted">
                     💰 На руках: <b>{{ cash_on_hand|money }} ₽</b>
                     <span class="mx-1">·</span>
-                    📋 Регулярные: <b class="text-danger-50">–{{ unpaid_regular_month|money }} ₽</b>
+                    📋 Резерв: <b class="text-danger-50">{{ regular_reserve|money }} ₽</b>
                 </div>
             </div>
         </div>
@@ -81,7 +81,11 @@
                 </h3>
                 <div class="small text-center">
                     <div>💳 Аванс: <b>{{ income_advance|money }} ₽</b>{% if income_advance_date %} <span class="text-muted">({{ income_advance_date.strftime('%d.%m') }})</span>{% endif %}</div>
+                    {% if expected_salary_amount %}
+                    <div>🏦 Ожидаемая зарплата: <b>{{ expected_salary_amount|money }} ₽</b> <span class="text-muted">({{ expected_salary_date.strftime('%d.%m') }})</span></div>
+                    {% else %}
                     <div>🏦 Зарплата: <b>{{ income_salary|money }} ₽</b>{% if income_salary_date %} <span class="text-muted">({{ income_salary_date.strftime('%d.%m') }})</span>{% endif %}</div>
+                    {% endif %}
                     {% if income_other > 0 %}
                     <div>📥 Прочее: <b>{{ income_other|money }} ₽</b></div>
                     {% endif %}

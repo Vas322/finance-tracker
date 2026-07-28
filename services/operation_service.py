@@ -1,3 +1,5 @@
+from datetime import date, datetime
+from typing import Optional
 from database import get_db
 from config import Config
 
@@ -70,6 +72,19 @@ def get_latest_advance():
             ORDER BY date DESC LIMIT 1
         ''').fetchone()
     return advance_row['amount'] if advance_row else 0
+
+
+def get_latest_advance_date() -> Optional[date]:
+    """Дата последнего аванса."""
+    with get_db() as conn:
+        row = conn.execute('''
+            SELECT date FROM operations
+            WHERE type = 'Доход' AND category = 'Зарплата' AND subcategory = 'Аванс'
+            ORDER BY date DESC LIMIT 1
+        ''').fetchone()
+    if row:
+        return datetime.strptime(row['date'], '%Y-%m-%d').date()
+    return None
 
 
 def get_planned_salary():
