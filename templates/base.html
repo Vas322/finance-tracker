@@ -22,6 +22,14 @@
     .card.card-primary .card-header .card-title { font-size: 0.95rem; }
     .card.card-primary .card-body { padding: 0.6rem 0.75rem; }
     .card.card-primary .card-body .form-label { font-size: 0.75rem; margin-bottom: 0.1rem; }
+    .app-sidebar .sidebar-brand { padding: 0.4rem 0.75rem; }
+    .app-sidebar .sidebar-brand .brand-image { width: 26px; height: 26px; float: none; display: inline-block; vertical-align: middle; margin-right: 0.35rem; }
+    .app-sidebar .sidebar-brand .brand-text { font-size: 0.9rem; }
+    .app-sidebar .sidebar-menu .nav-link { padding: 0.35rem 0.75rem; font-size: 0.82rem; }
+    .app-sidebar .sidebar-menu .nav-link .nav-icon { font-size: 0.95rem; margin-right: 0.45rem; }
+    .app-sidebar .nav-header { font-size: 0.6rem; padding: 0.4rem 0.75rem 0.15rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.55; }
+    .app-content-header { padding: 0.6rem 0; }
+    .app-content-header h3 { font-size: 1.1rem; margin-bottom: 0; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -57,7 +65,8 @@
     <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
         <div class="sidebar-brand">
             <a href="{{ url_for('main.index') }}" class="brand-link">
-                <span class="brand-text fw-light">💰 Финансовый трекер</span>
+                <i class="bi bi-wallet2 brand-image opacity-75"></i>
+                <span class="brand-text fw-light">Финансовый трекер</span>
             </a>
         </div>
         <div class="sidebar-wrapper">
@@ -73,12 +82,6 @@
                         <a href="{{ url_for('regular.regular') }}" class="nav-link {% if request.endpoint == 'regular.regular' %}active{% endif %}">
                             <i class="nav-icon bi bi-calendar-event"></i>
                             <p>Регулярные платежи</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('categories.categories') }}" class="nav-link {% if request.endpoint == 'categories.categories' %}active{% endif %}">
-                            <i class="nav-icon bi bi-folder"></i>
-                            <p>Категории</p>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -99,17 +102,31 @@
                             <p>Планирование</p>
                         </a>
                     </li>
+                    <li class="nav-header">Управление</li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('categories.categories') }}" class="nav-link {% if request.endpoint == 'categories.categories' %}active{% endif %}">
+                            <i class="nav-icon bi bi-folder"></i>
+                            <p>Категории</p>
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a href="{{ url_for('vacations.vacations') }}" class="nav-link {% if request.endpoint == 'vacations.vacations' %}active{% endif %}">
                             <i class="nav-icon bi bi-sun"></i>
                             <p>Отпуска</p>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('settings.income_settings') }}" class="nav-link {% if request.endpoint == 'settings.income_settings' %}active{% endif %}">
+                            <i class="nav-icon bi bi-gear"></i>
+                            <p>Настройки</p>
+                        </a>
+                    </li>
                     {% if session.get('username') == 'admin' %}
+                    <li class="nav-header">Администрирование</li>
                     <li class="nav-item">
                         <a href="{{ url_for('ideas.development') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('ideas.') %}active{% endif %}">
                             <i class="nav-icon bi bi-rocket-takeoff"></i>
-                            <p>🚀 Развитие</p>
+                            <p>Развитие</p>
                         </a>
                     </li>
                     {% endif %}
