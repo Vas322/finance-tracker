@@ -3,15 +3,15 @@
 {% block title %}Управление отпусками{% endblock %}
 
 {% block content %}
-<div class="card card-primary card-outline">
+<div class="card card-primary">
     <div class="card-header">
-        <h4 class="card-title mb-0">🏖️ Управление отпусками</h4>
+        <h4 class="card-title mb-0"><i class="bi bi-umbrella-beach me-1"></i> Управление отпусками</h4>
     </div>
     <div class="card-body">
         <!-- Форма добавления отпуска -->
         <div class="card card-success card-outline mb-4">
             <div class="card-header">
-                <h5 class="card-title mb-0">➕ Добавить отпуск</h5>
+                <h5 class="card-title mb-0"><i class="bi bi-plus me-1"></i> Добавить отпуск</h5>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('vacations.vacations') }}" class="row g-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -24,7 +24,7 @@
                         <input type="date" name="end_date" class="form-control form-control-sm" required>
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-success btn-sm">✅ Добавить</button>
+                        <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-plus me-1"></i> Добавить</button>
                     </div>
                 </form>
             </div>
@@ -32,15 +32,15 @@
 
         <!-- Итого за год -->
         <div class="alert alert-info py-2 mb-3 d-flex justify-content-between">
-            <span><strong>📅 Всего дней отпуска в {{ current_year }} году:</strong> {{ yearly_stats.all }} дн.</span>
-            <span><strong>✅ Использовано:</strong> {{ yearly_stats.used }} дн.</span>
-            <span><strong>📅 Осталось:</strong> {{ yearly_stats.remaining }} дн.</span>
+            <span><i class="bi bi-calendar me-1"></i> <strong>Всего дней отпуска в {{ current_year }} году:</strong> {{ yearly_stats.all }} дн.</span>
+            <span><i class="bi bi-check-circle me-1"></i> <strong>Использовано:</strong> {{ yearly_stats.used }} дн.</span>
+            <span><i class="bi bi-calendar me-1"></i> <strong>Осталось:</strong> {{ yearly_stats.remaining }} дн.</span>
         </div>
 
         <!-- Таблица отпусков -->
         <div class="table-responsive">
             <table class="table table-sm table-hover">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>Дата начала</th>
                         <th>Дата окончания</th>
@@ -67,11 +67,11 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{{ url_for('vacations.vacation_edit', id=v.id) }}" class="btn btn-outline-primary btn-sm">✏️</a>
+                            <a href="{{ url_for('vacations.vacation_edit', id=v.id) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i></a>
                             <form method="POST" action="{{ url_for('vacations.vacation_delete', id=v.id) }}" style="display:inline"
                                   onsubmit="return confirm('Удалить отпуск с {{ v.start_date.strftime('%d.%m.%Y') }} по {{ v.end_date.strftime('%d.%m.%Y') }}?')">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-outline-danger btn-sm">🗑️</button>
+                                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
                     </tr>

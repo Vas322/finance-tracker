@@ -3,15 +3,15 @@
 {% block title %}Управление категориями{% endblock %}
 
 {% block content %}
-<div class="card card-primary card-outline">
+<div class="card card-primary">
     <div class="card-header">
-        <h4 class="card-title mb-0">📁 Управление категориями</h4>
+        <h4 class="card-title mb-0"><i class="bi bi-folder me-1"></i> Управление категориями</h4>
     </div>
     <div class="card-body">
         <!-- Форма добавления основной категории -->
         <div class="card card-success card-outline mb-4">
             <div class="card-header">
-                <h5 class="card-title mb-0">➕ Добавить основную категорию</h5>
+                <h5 class="card-title mb-0"><i class="bi bi-plus me-1"></i> Добавить основную категорию</h5>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('categories.add_category') }}" class="row g-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -36,7 +36,7 @@
         <!-- Таблица категорий с inline-редактированием -->
         <div class="table-responsive">
             <table class="table table-sm table-hover">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>Тип</th>
                         <th>Категория</th>
@@ -75,10 +75,10 @@
                          </td>
 
                         <td>
-                            <button class="btn btn-sm btn-outline-primary edit-row-btn" data-id="{{ cat.id }}" title="Редактировать">✏️</button>
-                            <button class="btn btn-sm btn-success save-row-btn" data-id="{{ cat.id }}" style="display:none;">💾</button>
-                            <button class="btn btn-sm btn-secondary cancel-row-btn" data-id="{{ cat.id }}" style="display:none;">✖️</button>
-                            <a href="{{ url_for('categories.delete_category', id=cat.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить категорию и все подкатегории?')">🗑️</a>
+                            <button class="btn btn-sm btn-outline-primary edit-row-btn" data-id="{{ cat.id }}" title="Редактировать"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-success save-row-btn" data-id="{{ cat.id }}" style="display:none;"><i class="bi bi-floppy"></i></button>
+                            <button class="btn btn-sm btn-secondary cancel-row-btn" data-id="{{ cat.id }}" style="display:none;"><i class="bi bi-x-lg"></i></button>
+                            <a href="{{ url_for('categories.delete_category', id=cat.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить категорию и все подкатегории?')"><i class="bi bi-trash"></i></a>
                          </td>
                     </tr>
                     {% else %}

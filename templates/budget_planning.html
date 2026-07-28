@@ -3,16 +3,16 @@
 {% block title %}Планирование бюджета{% endblock %}
 
 {% block content %}
-<div class="card card-primary card-outline">
+<div class="card card-primary">
     <div class="card-header">
-        <h4 class="card-title mb-0">📊 Планирование бюджета на {{ month_name }}</h4>
+        <h4 class="card-title mb-0"><i class="bi bi-bar-chart me-1"></i> Планирование бюджета на {{ month_name }}</h4>
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
                 <div class="card card-success card-outline mb-3">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">📅 Поступление аванса (25 число)</h5>
+                        <h5 class="card-title mb-0"><i class="bi bi-calendar-event me-1"></i> Поступление аванса (25 число)</h5>
                     </div>
                     <div class="card-body">
                         <table class="table table-sm table-borderless">
@@ -40,7 +40,7 @@
             <div class="col-md-6">
                 <div class="card card-info card-outline mb-3">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">📅 Поступление зарплаты (10 число)</h5>
+                        <h5 class="card-title mb-0"><i class="bi bi-calendar-event me-1"></i> Поступление зарплаты (10 число)</h5>
                     </div>
                     <div class="card-body">
                         <table class="table table-sm table-borderless">
@@ -69,7 +69,7 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="alert alert-info">
-                    <strong>📌 Итого:</strong>
+                    <strong><i class="bi bi-pin-angle me-1"></i> Итого:</strong>
                     Регулярных платежей за месяц: <strong>{{ planning.regular_to_save|money }} ₽</strong>
                     {% if planning.paid_regular > 0 %}
                     <span class="text-success">(уже оплачено: {{ planning.paid_regular|money }} ₽, осталось: {{ (planning.regular_to_save - planning.paid_regular)|money }} ₽)</span>
@@ -82,7 +82,7 @@
             <div class="col-md-12">
                 <div class="card card-secondary card-outline">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">💡 Как это работает</h5>
+                        <h5 class="card-title mb-0"><i class="bi bi-lightbulb me-1"></i> Как это работает</h5>
                     </div>
                     <div class="card-body">
                         <p>Система автоматически распределяет ваши регулярные платежи пропорционально между авансом и зарплатой:</p>

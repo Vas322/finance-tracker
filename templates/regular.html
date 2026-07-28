@@ -3,25 +3,25 @@
 {% block title %}Регулярные платежи{% endblock %}
 
 {% block content %}
-<div class="card card-primary card-outline">
+<div class="card card-primary">
     <div class="card-header">
-        <h4 class="card-title mb-0">💰 Регулярные платежи (расходы)</h4>
+        <h4 class="card-title mb-0"><i class="bi bi-currency-ruble me-1"></i> Регулярные платежи (расходы)</h4>
     </div>
     <div class="card-body">
         <!-- Кнопки фильтра -->
         <div class="mb-3 d-flex gap-2">
             <a href="{{ url_for('regular.regular', filter='all') }}" class="btn btn-sm {% if filter_type == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
-                📋 Все платежи
+                <i class="bi bi-list-check me-1"></i> Все платежи
             </a>
             <a href="{{ url_for('regular.regular', filter='current') }}" class="btn btn-sm {% if filter_type == 'current' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
-                📅 Текущий период ({% if 10 <= now.day <= 24 %}10-24{% else %}25-09{% endif %})
+                <i class="bi bi-calendar-range me-1"></i> Текущий период ({% if 10 <= now.day <= 24 %}10-24{% else %}25-09{% endif %})
             </a>
         </div>
 
         <!-- Форма добавления -->
         <div class="card card-success card-outline mb-4">
             <div class="card-header">
-                <h5 class="card-title mb-0">➕ Добавить регулярный платёж</h5>
+                <h5 class="card-title mb-0"><i class="bi bi-plus me-1"></i> Добавить регулярный платёж</h5>
             </div>
             <div class="card-body">
                 <form method="POST" class="row g-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -61,7 +61,7 @@
                         <input type="text" name="add_comment" class="form-control form-control-sm" placeholder="Описание">
                     </div>
                     <div class="col-12 mt-2">
-                        <button type="submit" class="btn btn-success btn-sm">➕ Добавить</button>
+                        <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-plus me-1"></i> Добавить</button>
                     </div>
                 </form>
             </div>
@@ -71,7 +71,7 @@
         <form method="POST" id="mainForm"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="table-responsive">
                 <table class="table table-sm table-hover">
-                    <thead class="table-light">
+                    <thead>
                         <tr>
                             <th>Дата</th>
                             <th>Категория</th>
@@ -126,10 +126,10 @@
                                 <input type="text" name="comment_{{ p.id }}" value="{{ p.comment or '' }}" class="form-control form-control-sm edit-mode" style="display:none;">
                              </td>
                             <td>
-                                <button type="button" class="btn btn-sm btn-outline-primary edit-row-btn" data-id="{{ p.id }}" title="Редактировать">✏️</button>
-                                <button type="submit" name="delete_id" value="{{ p.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить?')" title="Удалить">🗑️</button>
-                                <button type="button" class="btn btn-sm btn-success save-row-btn" data-id="{{ p.id }}" style="display:none;">💾</button>
-                                <button type="button" class="btn btn-sm btn-secondary cancel-row-btn" data-id="{{ p.id }}" style="display:none;">✖️</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary edit-row-btn" data-id="{{ p.id }}" title="Редактировать"><i class="bi bi-pencil"></i></button>
+                                <button type="submit" name="delete_id" value="{{ p.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить?')" title="Удалить"><i class="bi bi-trash"></i></button>
+                                <button type="button" class="btn btn-sm btn-success save-row-btn" data-id="{{ p.id }}" style="display:none;"><i class="bi bi-floppy"></i></button>
+                                <button type="button" class="btn btn-sm btn-secondary cancel-row-btn" data-id="{{ p.id }}" style="display:none;"><i class="bi bi-x-lg"></i></button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -140,14 +140,14 @@
                 <div class="col-md-3">
                     <div class="card border-primary">
                         <div class="card-body text-center py-2">
-                            <h6 class="card-title mb-1">📊 Итого регулярных платежей</h6>
+                            <h6 class="card-title mb-1"><i class="bi bi-bar-chart me-1"></i> Итого регулярных платежей</h6>
                             <h4 class="mb-0 text-primary">{{ regular_total|money }} ₽</h4>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="mt-3">
-                <button type="submit" class="btn btn-primary btn-sm" id="saveAllBtn">💾 Сохранить все изменения</button>
+                <button type="submit" class="btn btn-primary btn-sm" id="saveAllBtn"><i class="bi bi-floppy me-1"></i> Сохранить все изменения</button>
             </div>
         </form>
     </div>

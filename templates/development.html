@@ -3,9 +3,9 @@
 {% block title %}🚀 Развитие продукта{% endblock %}
 
 {% block content %}
-<div class="card card-primary card-outline">
+<div class="card card-primary">
     <div class="card-header">
-        <h4 class="card-title mb-0">🚀 Развитие продукта</h4>
+        <h4 class="card-title mb-0"><i class="bi bi-rocket-takeoff me-1"></i> Развитие продукта</h4>
         <div class="card-tools">
             <a href="{{ url_for('ideas.development_create') }}" class="btn btn-primary btn-sm">➕ Новая идея</a>
         </div>
@@ -26,7 +26,10 @@
         <!-- Поиск и фильтр -->
         <div class="row g-2 mb-3">
             <div class="col-md-6">
-                <input type="text" id="ideas-search" class="form-control" placeholder="🔍 Поиск по коду, названию, описанию, проблеме...">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+                    <input type="text" id="ideas-search" class="form-control" placeholder="Поиск по коду, названию, описанию, проблеме...">
+                </div>
             </div>
             <div class="col-md-3">
                 <select id="ideas-status-filter" class="form-select">
@@ -52,7 +55,7 @@
         <!-- Таблица идей -->
         <div class="table-responsive">
             <table class="table table-sm table-hover" id="ideas-table">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>Код</th>
                         <th>Название</th>
@@ -92,12 +95,12 @@
                         </td>
                         <td class="small">{{ idea.created_at[:10] }}</td>
                         <td>
-                            <a href="{{ url_for('ideas.development_card', id=idea.id) }}" class="btn btn-outline-info btn-sm" title="Просмотр">👁️</a>
-                            <a href="{{ url_for('ideas.development_edit', id=idea.id) }}" class="btn btn-outline-primary btn-sm" title="Редактировать">✏️</a>
+                            <a href="{{ url_for('ideas.development_card', id=idea.id) }}" class="btn btn-outline-info btn-sm" title="Просмотр"><i class="bi bi-eye"></i></a>
+                            <a href="{{ url_for('ideas.development_edit', id=idea.id) }}" class="btn btn-outline-primary btn-sm" title="Редактировать"><i class="bi bi-pencil"></i></a>
                             <form method="POST" action="{{ url_for('ideas.development_delete', id=idea.id) }}" style="display:inline"
                                   onsubmit="return confirm('Удалить идею {{ idea.code }}?')">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Удалить">🗑️</button>
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Удалить"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
                     </tr>

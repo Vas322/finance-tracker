@@ -3,9 +3,9 @@
 {% block title %}{{ '✏️ Редактирование' if idea else '➕ Новая идея' }} — Развитие продукта{% endblock %}
 
 {% block content %}
-<div class="card card-primary card-outline">
+<div class="card card-primary">
     <div class="card-header">
-        <h4 class="card-title mb-0">{{ '✏️ Редактирование идеи' if idea else '➕ Новая идея' }}</h4>
+        <h4 class="card-title mb-0"><i class="bi {{ 'bi-pencil' if idea else 'bi-plus' }} me-1"></i> {{ 'Редактирование идеи' if idea else 'Новая идея' }}</h4>
     </div>
     <div class="card-body">
         <form method="POST" action="{{ url_for('ideas.development_edit', id=idea.id) if idea else url_for('ideas.development_create') }}">
@@ -77,7 +77,7 @@
             {% endif %}
 
             <div class="d-flex gap-2 mt-3">
-                <button type="submit" class="btn btn-primary">{{ '💾 Сохранить' if idea else '➕ Создать' }}</button>
+                <button type="submit" class="btn btn-primary"><i class="bi {{ 'bi-floppy' if idea else 'bi-plus' }} me-1"></i> {{ 'Сохранить' if idea else 'Создать' }}</button>
                 <a href="{{ url_for('ideas.development') }}" class="btn btn-secondary">Отмена</a>
             </div>
         </form>

@@ -6,46 +6,62 @@
 {% set total_pct = (total_spent / total_budget * 100) if total_budget > 0 else 0 %}
 
 <div class="row mb-4">
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="text-muted small">Общий бюджет</div>
-            <div class="stat-value text-warning">{{ total_budget|money }} ₽</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="text-muted small">Потрачено</div>
-            <div class="stat-value text-danger">{{ total_spent|money }} ₽</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="text-muted small">Остаток</div>
-            <div class="stat-value {{ 'text-success' if total_budget > 0 and total_spent <= total_budget else 'text-danger' }}">
-                {{ (total_budget - total_spent)|money }} ₽
+    <div class="col-md-3 mb-3 d-flex">
+        <div class="small-box text-bg-primary h-100 w-100">
+            <div class="inner">
+                <h3>{{ total_budget|money }} ₽</h3>
+                <p>Общий бюджет</p>
             </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+            </svg>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="text-muted small">Прогресс</div>
-            <div class="progress mt-2" style="height:24px;">
-                {% if total_budget > 0 %}
-                <div class="progress-bar {{ 'bg-danger' if total_pct > 100 else 'bg-success' }}"
-                     role="progressbar" style="width: {{ total_pct if total_pct <= 100 else 100 }}%;">
-                    {{ '%.0f'|format(total_pct) }}%
+    <div class="col-md-3 mb-3 d-flex">
+        <div class="small-box text-bg-danger h-100 w-100">
+            <div class="inner">
+                <h3>{{ total_spent|money }} ₽</h3>
+                <p>Потрачено</p>
+            </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+            </svg>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3 d-flex">
+        <div class="small-box text-bg-success h-100 w-100">
+            <div class="inner">
+                <h3>{{ (total_budget - total_spent)|money }} ₽</h3>
+                <p>Остаток</p>
+            </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3 d-flex">
+        <div class="small-box text-bg-warning h-100 w-100">
+            <div class="inner">
+                <h3>{{ '%.0f'|format(total_pct) }}%</h3>
+                <p>Прогресс</p>
+                <div class="text-dark text-opacity-75 small">
+                    <div class="progress" style="height:6px;">
+                        {% if total_budget > 0 %}
+                        <div class="progress-bar bg-light" role="progressbar" style="width: {{ total_pct if total_pct <= 100 else 100 }}%;"></div>
+                        {% endif %}
+                    </div>
                 </div>
-                {% else %}
-                <div class="progress-bar bg-secondary" style="width:100%;">бюджет не задан</div>
-                {% endif %}
             </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+            </svg>
         </div>
     </div>
 </div>
 
-<div class="card card-warning card-outline">
+<div class="card card-primary">
     <div class="card-header">
-        <h4 class="card-title mb-0">💰 Бюджеты по категориям</h4>
+        <h4 class="card-title mb-0"><i class="bi bi-wallet2 me-1"></i> Бюджеты по категориям</h4>
     </div>
     <div class="card-body">
         <form method="get" class="row g-2 mb-4">
@@ -58,7 +74,7 @@
             <input type="hidden" name="month" value="{{ month }}">
             <div class="table-responsive">
                 <table class="table table-hover">
-                    <thead class="table-light">
+                    <thead>
                         <tr>
                             <th>Категория</th>
                             <th>Бюджет (₽)</th>

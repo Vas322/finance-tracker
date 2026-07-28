@@ -3,9 +3,9 @@
 {% block title %}Редактирование отпуска{% endblock %}
 
 {% block content %}
-<div class="card card-primary card-outline">
+<div class="card card-primary">
     <div class="card-header">
-        <h4 class="card-title mb-0">✏️ Редактирование отпуска</h4>
+        <h4 class="card-title mb-0"><i class="bi bi-pencil me-1"></i> Редактирование отпуска</h4>
     </div>
     <div class="card-body">
         <form method="POST" action="{{ url_for('vacations.vacation_edit', id=vacation.id) }}">
@@ -22,7 +22,7 @@
                            value="{{ vacation.end_date.strftime('%Y-%m-%d') }}" required>
                 </div>
                 <div class="col-md-4 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-floppy me-1"></i> Сохранить</button>
                     <a href="{{ url_for('vacations.vacations') }}" class="btn btn-secondary">Отмена</a>
                 </div>
             </div>

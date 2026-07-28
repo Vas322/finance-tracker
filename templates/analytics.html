@@ -30,7 +30,7 @@
 {% if not has_operations %}
 <div class="card card-outline card-secondary">
     <div class="card-body text-center py-5">
-        <p class="fs-4 mb-2">📭 За выбранный период операций нет</p>
+        <p class="fs-4 mb-2"><i class="bi bi-inbox me-1"></i> За выбранный период операций нет</p>
         <p class="text-muted">Попробуйте выбрать другой финансовый цикл.</p>
     </div>
 </div>
@@ -66,7 +66,7 @@
     <div class="col-md-4 mb-3">
         <div class="card h-100 border-info">
             <div class="card-body">
-                <p class="fs-5 fw-bold mb-2">📊 Средний расход в день</p>
+                <p class="fs-5 fw-bold mb-2"><i class="bi bi-bar-chart me-1"></i> Средний расход в день</p>
                 <p class="display-6 text-info fw-bold">{{ summary.avg_daily|money }} ₽</p>
                 {% if summary.avg_daily_label %}
                 <p class="mb-0"><span class="fw-bold {{ 'text-danger' if ('выше' in summary.avg_daily_label) else 'text-success' }} small">{{ summary.avg_daily_label }}</span></p>
@@ -82,7 +82,7 @@
     <div class="col-md-4 mb-3">
         <div class="card h-100 border-warning">
             <div class="card-body">
-                <p class="fs-5 fw-bold mb-2">📅 До следующего дохода</p>
+                <p class="fs-5 fw-bold mb-2"><i class="bi bi-calendar-event me-1"></i> До следующего дохода</p>
                 <p class="display-6 text-warning fw-bold">{{ days_to_income }} дн.</p>
                 <small class="text-muted">{{ op_count }} операций за период</small>
             </div>
@@ -91,9 +91,9 @@
 </div>
 
 <!-- Динамика -->
-<div class="card card-secondary card-outline mb-4">
+<div class="card card-primary mb-4">
     <div class="card-header">
-        <h4 class="card-title mb-0">📈 Динамика за 6 циклов</h4>
+        <h4 class="card-title mb-0"><i class="bi bi-graph-up me-1"></i> Динамика за 6 циклов</h4>
     </div>
     <div class="card-body">
         {% if trend.trend_verdict %}
@@ -126,9 +126,9 @@
 </div>
 
 <!-- Категории расходов -->
-<div class="card card-primary card-outline">
+<div class="card card-primary">
     <div class="card-header">
-        <h4 class="card-title mb-0">{% if has_problem_categories %}🔍 Есть категории, требующие внимания{% else %}📂 Категории расходов{% endif %}</h4>
+        <h4 class="card-title mb-0"><i class="bi {{ 'bi-search' if has_problem_categories else 'bi-folder' }} me-1"></i> {% if has_problem_categories %}Есть категории, требующие внимания{% else %}Категории расходов{% endif %}</h4>
     </div>
     <div class="card-body">
         {% if achievement_text %}
@@ -137,7 +137,7 @@
         {% if categories %}
         <div class="table-responsive">
             <table class="table table-sm table-hover">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>Категория</th>
                         <th class="text-end">Сумма (₽)</th>
