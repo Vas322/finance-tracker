@@ -85,7 +85,7 @@
         <div class="small-box text-bg-success h-100 w-100">
             <div class="inner">
                 {% set pct = (income_total * 100 // income_planned) if income_planned > 0 else 0 %}
-                <h3>{{ income_total|money }} ₽ <sup class="fs-5">из {{ income_planned|money }} ₽</sup></h3>
+                <h3>{{ income_total|money }} ₽ <span class="fs-6 fw-normal text-white-50">из {{ income_planned|money }} ₽</span></h3>
                 <p>Доходы</p>
                 <div class="text-white-50 small">
                     <div>Аванс: {{ income_advance|money }} ₽{% if income_advance_date %} ({{ income_advance_date.strftime('%d.%m') }}){% endif %}</div>
