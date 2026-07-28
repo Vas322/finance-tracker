@@ -47,7 +47,7 @@
                 <div class="text-dark text-opacity-75 small">
                     <div class="progress" style="height:6px;">
                         {% if total_budget > 0 %}
-                        <div class="progress-bar bg-light" role="progressbar" style="width: {{ total_pct if total_pct <= 100 else 100 }}%;"></div>
+                        <div class="progress-bar {{ 'bg-danger' if total_pct > 100 else 'bg-success' }}" role="progressbar" style="width: {{ total_pct if total_pct <= 100 else 100 }}%;"></div>
                         {% endif %}
                     </div>
                 </div>
