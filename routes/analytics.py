@@ -3,6 +3,7 @@ from datetime import date
 from database import get_db
 from services.analytics_service import get_analytics_period, get_period_summary, get_trend_data, get_category_breakdown
 from services.period_service import get_next_income_date
+from services.operation_service import get_latest_advance_date
 
 bp = Blueprint('analytics', __name__)
 
@@ -14,6 +15,14 @@ def analytics():
     date_to = request.args.get('date_to', '')
 
     period = get_analytics_period(filter_key, date_from, date_to)
+
+    # Для текущего цикла расширяем период до последнего аванса (как на дашборде)
+    if filter_key == 'current_cycle':
+        adv_date = get_latest_advance_date()
+        if adv_date and period['prev_start'] <= adv_date < period['start']:
+            period['start'] = adv_date
+            period['label'] = f'{adv_date.strftime("%d.%m")}–{period["end"].strftime("%d.%m")}'
+
     summary = get_period_summary(
         period['start'], period['end'],
         prev_start=period['prev_start'], prev_end=period['prev_end']
