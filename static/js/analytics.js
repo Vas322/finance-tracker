@@ -56,12 +56,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 tooltip: {
                     callbacks: {
                         label: function(ctx) {
-                            return ctx.dataset.label + ': ' + ctx.raw.toLocaleString('ru-RU') + ' ₽';
+                            return ctx.dataset.label + ': ' + (ctx.raw / 100).toLocaleString('ru-RU', {minimumFractionDigits: 2}) + ' ₽';
                         },
                         afterBody: function(ctx) {
                             const i = ctx[0].dataIndex;
                             const balance = trendPeriods[i].balance;
-                            return 'Баланс: ' + balance.toLocaleString('ru-RU') + ' ₽';
+                            return 'Баланс: ' + (balance / 100).toLocaleString('ru-RU', {minimumFractionDigits: 2}) + ' ₽';
                         }
                     }
                 },
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return value.toLocaleString('ru-RU') + ' ₽';
+                            return (value / 100).toLocaleString('ru-RU', {minimumFractionDigits: 2}) + ' ₽';
                         }
                     }
                 }
