@@ -1,7 +1,8 @@
+from typing import Optional
 from flask import Blueprint, request, redirect, url_for, flash, render_template, jsonify
 from database import get_db
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from services.savings_service import (
     get_all_accounts, get_account, create_account, update_account,
     archive_account, delete_account as svc_delete_account,
@@ -9,6 +10,16 @@ from services.savings_service import (
 )
 
 bp = Blueprint('savings', __name__, url_prefix='/savings')
+
+
+def _parse_amount(raw_value: Optional[str]) -> Optional[int]:
+    """Конвертирует сумму в рублях в копейки; пустое поле — 0, некорректный ввод — None."""
+    if raw_value is None or raw_value == '':
+        return 0
+    try:
+        return int(Decimal(raw_value) * 100)
+    except (ValueError, InvalidOperation):
+        return None
 
 
 @bp.route('/')
@@ -30,7 +41,10 @@ def savings_index():
 @bp.route('/create', methods=['POST'])
 def savings_create():
     name = request.form['name']
-    target_amount = int(Decimal(request.form.get('target_amount', '0')) * 100)
+    target_amount = _parse_amount(request.form.get('target_amount'))
+    if target_amount is None:
+        flash('Некорректная сумма цели', 'error')
+        return redirect(url_for('savings.savings_index'))
     target_date = request.form.get('target_date', '') or None
     icon = request.form.get('icon', 'bi-piggy-bank')
     color = request.form.get('color', '#17a2b8')
@@ -42,7 +56,13 @@ def savings_create():
 @bp.route('/deposit', methods=['POST'])
 def savings_deposit():
     account_id = int(request.form['account_id'])
-    amount = int(Decimal(request.form['amount']) * 100)
+    amount = _parse_amount(request.form.get('amount'))
+    if amount is None:
+        flash('Некорректная сумма', 'error')
+        return redirect(url_for('savings.savings_index'))
+    if amount <= 0:
+        flash('Сумма должна быть больше нуля', 'error')
+        return redirect(url_for('savings.savings_index'))
     date_str = request.form.get('date', date.today().strftime('%Y-%m-%d'))
     comment = request.form.get('comment', '')
     try:
@@ -56,7 +76,13 @@ def savings_deposit():
 @bp.route('/withdraw', methods=['POST'])
 def savings_withdraw():
     account_id = int(request.form['account_id'])
-    amount = int(Decimal(request.form['amount']) * 100)
+    amount = _parse_amount(request.form.get('amount'))
+    if amount is None:
+        flash('Некорректная сумма', 'error')
+        return redirect(url_for('savings.savings_index'))
+    if amount <= 0:
+        flash('Сумма должна быть больше нуля', 'error')
+        return redirect(url_for('savings.savings_index'))
     date_str = request.form.get('date', date.today().strftime('%Y-%m-%d'))
     comment = request.form.get('comment', '')
     try:
@@ -70,7 +96,10 @@ def savings_withdraw():
 @bp.route('/update/<int:account_id>', methods=['POST'])
 def savings_update(account_id: int):
     name = request.form['name']
-    target_amount = int(Decimal(request.form.get('target_amount', '0')) * 100)
+    target_amount = _parse_amount(request.form.get('target_amount'))
+    if target_amount is None:
+        flash('Некорректная сумма цели', 'error')
+        return redirect(url_for('savings.savings_index'))
     target_date = request.form.get('target_date', '') or None
     icon = request.form.get('icon', 'bi-piggy-bank')
     color = request.form.get('color', '#17a2b8')
