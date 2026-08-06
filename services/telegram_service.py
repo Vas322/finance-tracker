@@ -376,7 +376,7 @@ def _polling_loop():
                     _save_last_update_id(uid)
                     offset = uid
                     _process_update(update)
-        except (URLError, json.JSONDecodeError, ConnectionError):
+        except Exception:
             time.sleep(10)
 
 
