@@ -166,6 +166,44 @@ def init_db():
 
     migrate_amounts_to_cents()
 
+    # Создание таблиц накоплений (в отдельной транзакции)
+    with get_db() as conn2:
+        conn2.execute('''
+            CREATE TABLE IF NOT EXISTS savings_accounts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                target_amount INTEGER DEFAULT 0,
+                target_date TEXT,
+                balance INTEGER NOT NULL DEFAULT 0,
+                icon TEXT DEFAULT 'bi-piggy-bank',
+                color TEXT DEFAULT '#17a2b8',
+                is_active INTEGER DEFAULT 1,
+                sort_order INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            )
+        ''')
+        conn2.execute('''
+            CREATE TABLE IF NOT EXISTS savings_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                savings_account_id INTEGER NOT NULL,
+                amount INTEGER NOT NULL,
+                type TEXT NOT NULL,
+                date TEXT NOT NULL,
+                comment TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY (savings_account_id) REFERENCES savings_accounts(id)
+            )
+        ''')
+
+        # Seed дефолтного счёта накоплений
+        existing = conn2.execute('SELECT COUNT(*) FROM savings_accounts').fetchone()[0]
+        if existing == 0:
+            conn2.execute('''
+                INSERT INTO savings_accounts (name, target_amount, icon, color, balance, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', ('Копилка', 0, 'bi-piggy-bank', '#17a2b8', 0, 1))
+
     from seeds import seed_default_user, seed_planned_salary, seed_categories, seed_regular_payments
     seed_default_user()
     seed_planned_salary()

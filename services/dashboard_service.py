@@ -5,6 +5,7 @@ from services.period_service import get_period_dates, get_period, get_regular_cy
 from services.balance_service import get_expenses_for_period, get_income_for_period, update_period_balance
 from services.regular_service import get_regular_total, get_paid_regular_payments_this_month, get_paid_regulars_in_period, get_skipped_total
 from services.operation_service import get_latest_advance, get_latest_advance_date
+from services.savings_service import get_savings_total
 
 
 def compute_dashboard_stats(today=None):
@@ -97,4 +98,5 @@ def compute_dashboard_stats(today=None):
         'unpaid_regular_month': unpaid_regular_month,
         'remaining_received': 0,
         'total_expense_without_regulars': total_expense_without_regulars,
+        'savings_total': get_savings_total(),
     }

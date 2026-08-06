@@ -41,7 +41,7 @@
 <!-- БЛОК 1: Состояние счёта (small-box) -->
 {% set today_color = 'danger' if today_light == 'red' else 'warning' if today_light == 'yellow' else 'success' %}
 <div class="row">
-    <div class="col-md-6 mb-3 d-flex">
+    <div class="col-md-4 mb-3 d-flex">
         <div class="small-box text-bg-{{ today_color }} h-100 w-100">
             <div class="inner">
                 <h3>{{ can_spend_today|money }} ₽</h3>
@@ -55,7 +55,7 @@
             </svg>
         </div>
     </div>
-    <div class="col-md-6 mb-3 d-flex">
+    <div class="col-md-4 mb-3 d-flex">
         <div class="small-box text-bg-primary h-100 w-100">
             <div class="inner">
                 <h3>{{ daily_limit|money }} ₽</h3>
@@ -66,6 +66,20 @@
             </div>
             <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+            </svg>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3 d-flex">
+        <div class="small-box text-bg-info h-100 w-100">
+            <div class="inner">
+                <h3>{{ savings_total|money }} ₽</h3>
+                <p>Копилка</p>
+                <div class="text-white-50 small">
+                    <a href="{{ url_for('savings.savings_index') }}" class="text-white text-opacity-75">Управление →</a>
+                </div>
+            </div>
+            <svg class="small-box-icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
             </svg>
         </div>
     </div>
@@ -250,6 +264,9 @@
             <i class="bi bi-clock"></i> Применить регулярные
         </button>
     </form>
+    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#savingsQuickModal">
+        <i class="bi bi-piggy-bank"></i> Отложить в копилку
+    </button>
 </div>
 
 <!-- БЫСТРЫЕ ШАБЛОНЫ -->
@@ -487,6 +504,46 @@
                         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
                         <button type="submit" class="btn btn-primary btn-sm">💾 Сохранить</button>
                     </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Быстрое откладывание -->
+<div class="modal fade" id="savingsQuickModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-piggy-bank me-1"></i> Отложить в копилку</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('savings.savings_deposit') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label small">Счёт накоплений</label>
+                        <select name="account_id" class="form-select form-select-sm" required>
+                            {% for a in accounts %}
+                            <option value="{{ a.id }}">{{ a.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Сумма (₽)</label>
+                        <input type="number" name="amount" step="0.01" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Дата</label>
+                        <input type="date" name="date" class="form-control form-control-sm" value="{{ today.strftime('%Y-%m-%d') }}">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Комментарий</label>
+                        <input type="text" name="comment" class="form-control form-control-sm" placeholder="Например: отложил премию">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-info btn-sm"><i class="bi bi-piggy-bank"></i> Отложить</button>
                 </div>
             </form>
         </div>

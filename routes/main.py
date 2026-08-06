@@ -14,6 +14,7 @@ from services.category_service import get_all_category_names, get_income_categor
 from services.vacation_service import get_upcoming_vacation
 from services.dashboard_service import compute_dashboard_stats
 from services.telegram_service import notify_traffic_change
+from services.savings_service import get_all_accounts
 
 bp = Blueprint('main', __name__)
 
@@ -180,7 +181,9 @@ def index():
                             due_payments=due_payments,
                             upcoming_vacation=upcoming_vacation,
                             upcoming_regulars=upcoming_regulars,
-                           page=page, total_pages=total_pages)
+                           page=page, total_pages=total_pages,
+                           savings_total=stats['savings_total'],
+                           accounts=get_all_accounts())
 
 
 @bp.route('/apply_regular', methods=['POST'])

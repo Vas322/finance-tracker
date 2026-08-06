@@ -111,6 +111,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{{ url_for('savings.savings_index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('savings.') %}active{% endif %}">
+                            <i class="nav-icon bi bi-bank"></i>
+                            <p>Накопления</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{{ url_for('vacations.vacations') }}" class="nav-link {% if request.endpoint == 'vacations.vacations' %}active{% endif %}">
                             <i class="nav-icon bi bi-sun"></i>
                             <p>Отпуска</p>

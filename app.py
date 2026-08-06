@@ -33,6 +33,7 @@ def create_app() -> Flask:
     from routes.vacations import bp as vacations_bp
     from routes.ideas import bp as ideas_bp
     from routes.quick_templates import bp as quick_templates_bp
+    from routes.savings import bp as savings_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(operations_bp)
@@ -46,6 +47,7 @@ def create_app() -> Flask:
     app.register_blueprint(vacations_bp)
     app.register_blueprint(ideas_bp)
     app.register_blueprint(quick_templates_bp)
+    app.register_blueprint(savings_bp)
 
     @app.before_request
     def check_auth():
