@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
     document.querySelectorAll('.edit-row-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const id = this.dataset.id;
@@ -48,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             const response = await fetch('/edit_full_category/' + id, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
                 body: JSON.stringify({
                     name: newName,
                     subcategories: subcats
