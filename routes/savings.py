@@ -114,8 +114,11 @@ def savings_update(account_id: int):
 
 @bp.route('/archive/<int:account_id>', methods=['POST'])
 def savings_archive(account_id: int):
-    archive_account(account_id)
-    flash('Счёт архивирован', 'info')
+    try:
+        archive_account(account_id)
+        flash('Счёт архивирован', 'info')
+    except ValueError as e:
+        flash(str(e), 'error')
     return redirect(url_for('savings.savings_index'))
 
 

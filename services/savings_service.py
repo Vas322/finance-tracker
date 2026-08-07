@@ -61,6 +61,13 @@ def update_account(account_id: int, **kwargs):
 
 def archive_account(account_id: int):
     with get_db() as conn:
+        row = conn.execute(
+            'SELECT balance FROM savings_accounts WHERE id = ?', (account_id,)
+        ).fetchone()
+        if not row:
+            return
+        if row['balance'] != 0:
+            raise ValueError('Нельзя архивировать счёт с остатком')
         conn.execute(
             'UPDATE savings_accounts SET is_active = 0, updated_at = datetime(\'now\') WHERE id = ?',
             (account_id,)
