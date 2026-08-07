@@ -101,6 +101,90 @@
     {% endfor %}
 </div>
 
+{% if archived_accounts %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h5 class="mb-0"><i class="bi bi-archive me-1"></i> Архивные счета</h5>
+    </div>
+</div>
+<div class="row">
+    {% for account in archived_accounts %}
+    <div class="col-md-6 mb-3 d-flex">
+        <div class="card card-secondary h-100 w-100">
+            <div class="card-header d-flex justify-content-between align-items-center bg-secondary border-secondary">
+                <h5 class="card-title mb-0 text-white">
+                    <i class="bi {{ account.icon }} me-1"></i> {{ account.name }}
+                </h5>
+                <span class="text-white fw-bold">{{ account.balance|money }} ₽</span>
+            </div>
+            <div class="card-body">
+                {% if account.target_amount > 0 %}
+                {% set pct = namespace(value=0) %}
+                {% if account.balance >= account.target_amount %}
+                    {% set pct.value = 100 %}
+                {% elif account.target_amount > 0 %}
+                    {% set pct.value = (account.balance * 100 // account.target_amount) %}
+                {% endif %}
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>Цель: {{ account.target_amount|money }} ₽</span>
+                        <span>{{ pct.value }}%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar {% if pct.value >= 100 %}bg-success{% endif %}"
+                             role="progressbar" style="width: {{ pct.value }}%;"
+                             aria-valuenow="{{ pct.value }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    {% if account.target_date %}
+                    <div class="small text-muted mt-1">Дедлайн: {{ account.target_date }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- История транзакций -->
+                {% if account.transactions %}
+                <div class="small">
+                    <div class="fw-bold mb-1">Последние движения:</div>
+                    {% for t in account.transactions[:10] %}
+                    <div class="d-flex justify-content-between border-bottom py-1">
+                        <span>
+                            {% if t.type == 'deposit' %}<span class="text-success">+{{ t.amount|money }} ₽</span>
+                            {% else %}<span class="text-danger">{{ t.amount|money }} ₽</span>{% endif %}
+                            <span class="text-muted ms-1">{{ t.date }}</span>
+                        </span>
+                        <span class="text-muted">{{ t.comment or '' }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted small py-2">Нет движений</div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#withdrawModal"
+                            data-account-id="{{ account.id }}" data-account-name="{{ account.name }}">
+                        <i class="bi bi-dash-circle"></i> Снять
+                    </button>
+                    <form method="POST" action="{{ url_for('savings.savings_restore', account_id=account.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-success" title="Разархивировать">
+                            <i class="bi bi-arrow-counterclockwise"></i> Разархивировать
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('savings.savings_delete', account_id=account.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-danger" title="Удалить"
+                                onclick="return confirm('Удалить счёт «{{ account.name }}»?')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <!-- Модальное окно: Создать счёт -->
 <div class="modal fade" id="createModal" tabindex="-1">
     <div class="modal-dialog">

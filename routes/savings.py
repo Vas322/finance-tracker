@@ -5,7 +5,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from services.savings_service import (
     get_all_accounts, get_account, create_account, update_account,
-    archive_account, delete_account as svc_delete_account,
+    archive_account, reactivate_account, delete_account as svc_delete_account,
     deposit, withdraw, get_transactions, get_savings_stats, get_savings_total
 )
 
@@ -24,18 +24,22 @@ def _parse_amount(raw_value: Optional[str]) -> Optional[int]:
 
 @bp.route('/')
 def savings_index():
-    accounts = get_all_accounts()
+    all_accounts = get_all_accounts(active_only=False)
     stats = get_savings_stats()
-    accounts_data = []
-    for a in accounts:
+    active_accounts = []
+    archived_accounts = []
+    for a in all_accounts:
         a_dict = dict(a)
         a_dict['transactions'] = get_transactions(a['id'], limit=10)
         if a['target_amount'] > 0:
             a_dict['progress_pct'] = min(100, int(a['balance'] * 100 / a['target_amount']))
         else:
             a_dict['progress_pct'] = None
-        accounts_data.append(a_dict)
-    return render_template('savings.html', accounts=accounts_data, stats=stats, today=date.today())
+        if a['is_active']:
+            active_accounts.append(a_dict)
+        else:
+            archived_accounts.append(a_dict)
+    return render_template('savings.html', accounts=active_accounts, archived_accounts=archived_accounts, stats=stats, today=date.today())
 
 
 @bp.route('/create', methods=['POST'])
@@ -112,6 +116,13 @@ def savings_update(account_id: int):
 def savings_archive(account_id: int):
     archive_account(account_id)
     flash('Счёт архивирован', 'info')
+    return redirect(url_for('savings.savings_index'))
+
+
+@bp.route('/restore/<int:account_id>', methods=['POST'])
+def savings_restore(account_id: int):
+    reactivate_account(account_id)
+    flash('Счёт разархивирован', 'success')
     return redirect(url_for('savings.savings_index'))
 
 

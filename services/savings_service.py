@@ -67,6 +67,14 @@ def archive_account(account_id: int):
         )
 
 
+def reactivate_account(account_id: int):
+    with get_db() as conn:
+        conn.execute(
+            'UPDATE savings_accounts SET is_active = 1, updated_at = datetime(\'now\') WHERE id = ?',
+            (account_id,)
+        )
+
+
 def delete_account(account_id: int):
     with get_db() as conn:
         row = conn.execute(
