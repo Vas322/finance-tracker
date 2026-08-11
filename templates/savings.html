@@ -48,11 +48,31 @@
                 </div>
                 {% endif %}
 
+                {% if account.bank or account.start_date or account.end_date or account.interest_rate %}
+                <div class="mb-2 small">
+                    {% if account.bank %}<div class="text-muted"><i class="bi bi-bank me-1"></i>{{ account.bank }}</div>{% endif %}
+                    {% if account.start_date %}<div class="text-muted">Начало: {{ account.start_date }}</div>{% endif %}
+                    {% if account.end_date %}<div class="text-muted">Окончание: {{ account.end_date }}</div>
+                    {% elif account.start_date %}<div class="text-muted">Срок: бессрочный</div>{% endif %}
+                    {% if account.interest_rate %}
+                    <div class="text-muted">Ставка: {{ account.interest_rate }}% годовых</div>
+                    <div class="fw-bold">Накопленный доход: {{ account.accrued_income|money }} ₽</div>
+                    <div class="fw-bold">Прогнозируемый доход: {{ account.projected_income|money }} ₽</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
                 <!-- История транзакций -->
                 {% if account.transactions %}
                 <div class="small">
+                    {% if account.transactions|length > 2 %}
+                    <div class="fw-bold mb-1">
+                        <a href="#" class="toggle-movements" data-target="#acc-more-{{ account.id }}">Последние движения: <span class="movements-indicator">▾</span></a>
+                    </div>
+                    {% else %}
                     <div class="fw-bold mb-1">Последние движения:</div>
-                    {% for t in account.transactions[:10] %}
+                    {% endif %}
+                    {% for t in account.transactions[:2] %}
                     <div class="d-flex justify-content-between border-bottom py-1">
                         <span>
                             {% if t.type == 'deposit' %}<span class="text-success">+{{ t.amount|money }} ₽</span>
@@ -62,6 +82,20 @@
                         <span class="text-muted">{{ t.comment or '' }}</span>
                     </div>
                     {% endfor %}
+                    {% if account.transactions|length > 2 %}
+                    <div id="acc-more-{{ account.id }}" style="display:none;">
+                        {% for t in account.transactions[2:] %}
+                        <div class="d-flex justify-content-between border-bottom py-1">
+                            <span>
+                                {% if t.type == 'deposit' %}<span class="text-success">+{{ t.amount|money }} ₽</span>
+                                {% else %}<span class="text-danger">{{ t.amount|money }} ₽</span>{% endif %}
+                                <span class="text-muted ms-1">{{ t.date }}</span>
+                            </span>
+                            <span class="text-muted">{{ t.comment or '' }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 {% else %}
                 <div class="text-center text-muted small py-2">Нет движений</div>
@@ -141,11 +175,31 @@
                 </div>
                 {% endif %}
 
+                {% if account.bank or account.start_date or account.end_date or account.interest_rate %}
+                <div class="mb-2 small">
+                    {% if account.bank %}<div class="text-muted"><i class="bi bi-bank me-1"></i>{{ account.bank }}</div>{% endif %}
+                    {% if account.start_date %}<div class="text-muted">Начало: {{ account.start_date }}</div>{% endif %}
+                    {% if account.end_date %}<div class="text-muted">Окончание: {{ account.end_date }}</div>
+                    {% elif account.start_date %}<div class="text-muted">Срок: бессрочный</div>{% endif %}
+                    {% if account.interest_rate %}
+                    <div class="text-muted">Ставка: {{ account.interest_rate }}% годовых</div>
+                    <div class="fw-bold">Накопленный доход: {{ account.accrued_income|money }} ₽</div>
+                    <div class="fw-bold">Прогнозируемый доход: {{ account.projected_income|money }} ₽</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
                 <!-- История транзакций -->
                 {% if account.transactions %}
                 <div class="small">
+                    {% if account.transactions|length > 2 %}
+                    <div class="fw-bold mb-1">
+                        <a href="#" class="toggle-movements" data-target="#acc-more-{{ account.id }}-arch">Последние движения: <span class="movements-indicator">▾</span></a>
+                    </div>
+                    {% else %}
                     <div class="fw-bold mb-1">Последние движения:</div>
-                    {% for t in account.transactions[:10] %}
+                    {% endif %}
+                    {% for t in account.transactions[:2] %}
                     <div class="d-flex justify-content-between border-bottom py-1">
                         <span>
                             {% if t.type == 'deposit' %}<span class="text-success">+{{ t.amount|money }} ₽</span>
@@ -155,6 +209,20 @@
                         <span class="text-muted">{{ t.comment or '' }}</span>
                     </div>
                     {% endfor %}
+                    {% if account.transactions|length > 2 %}
+                    <div id="acc-more-{{ account.id }}-arch" style="display:none;">
+                        {% for t in account.transactions[2:] %}
+                        <div class="d-flex justify-content-between border-bottom py-1">
+                            <span>
+                                {% if t.type == 'deposit' %}<span class="text-success">+{{ t.amount|money }} ₽</span>
+                                {% else %}<span class="text-danger">{{ t.amount|money }} ₽</span>{% endif %}
+                                <span class="text-muted ms-1">{{ t.date }}</span>
+                            </span>
+                            <span class="text-muted">{{ t.comment or '' }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 {% else %}
                 <div class="text-center text-muted small py-2">Нет движений</div>
@@ -226,6 +294,56 @@
                         <label class="form-label small">Цвет</label>
                         <input type="color" name="color" class="form-control form-control-color form-control-sm" value="#17a2b8">
                     </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Дата начала депозита</label>
+                        <input type="date" name="start_date" class="form-control form-control-sm deposit-start-date" value="{{ today.strftime('%Y-%m-%d') }}">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Срок</label>
+                        <div class="d-flex flex-column gap-1">
+                            <div class="form-check me-3">
+                                <input class="form-check-input term-radio" type="radio" name="create_term_mode" value="date" data-term-input="create_end_date_wrap" data-custom-type="create" checked>
+                                <label class="form-check-label small">По дате окончания</label>
+                            </div>
+                            <div class="form-check me-3">
+                                <input class="form-check-input term-radio" type="radio" name="create_term_mode" value="months" data-term-input="create_duration_months_wrap" data-custom-type="create">
+                                <label class="form-check-label small">По продолжительности (мес)</label>
+                            </div>
+                            <div class="form-check me-3">
+                                <input class="form-check-input term-radio" type="radio" name="create_term_mode" value="none" data-term-input="" data-custom-type="create">
+                                <label class="form-check-label small">Бессрочный</label>
+                            </div>
+                        </div>
+                        <div id="create_end_date_wrap" class="mt-1">
+                            <input type="date" name="end_date" class="form-control form-control-sm">
+                        </div>
+                        <div id="create_duration_months_wrap" class="mt-1" style="display:none;">
+                            <input type="number" name="duration_months" min="1" step="1" class="form-control form-control-sm" placeholder="Например: 12">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">% годовых</label>
+                        <input type="number" name="interest_rate" step="0.01" min="0" class="form-control form-control-sm" placeholder="Например: 7.5">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Банк / место</label>
+                        <select name="bank" id="create_bank" class="form-select form-select-sm bank-select" data-custom-type="create">
+                            <option value="">Наличные</option>
+                            <option value="Сбербанк">Сбербанк</option>
+                            <option value="ВТБ">ВТБ</option>
+                            <option value="Тинькофф">Тинькофф</option>
+                            <option value="Альфа-Банк">Альфа-Банк</option>
+                            <option value="Райффайзен">Райффайзен</option>
+                            <option value="Газпромбанк">Газпромбанк</option>
+                            <option value="ОТП Банк">ОТП Банк</option>
+                            <option value="Почта Банк">Почта Банк</option>
+                            <option value="Хоум Кредит">Хоум Кредит</option>
+                            <option value="Совкомбанк">Совкомбанк</option>
+                            <option value="МКБ">МКБ</option>
+                            <option value="__other__">Другое значение...</option>
+                        </select>
+                        <input type="text" name="bank_custom" id="create_bank_custom" class="form-control form-control-sm mt-1 bank-custom" data-custom-type="create" style="display:none;" placeholder="Укажите свой вариант">
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
@@ -244,7 +362,7 @@
                 <h5 class="modal-title"><i class="bi bi-pencil me-1"></i> Редактировать счёт</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="{{ url_for('savings.savings_update', account_id=0) }}" id="editForm">
+            <form method="POST" action="{{ url_for('savings.savings_update', account_id=0) }}" id="editForm" data-action-url="{{ url_for('savings.savings_update', account_id=0) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="account_id" id="edit_account_id">
                 <div class="modal-body">
@@ -278,6 +396,56 @@
                     <div class="mb-2">
                         <label class="form-label small">Цвет</label>
                         <input type="color" name="color" id="edit_color" class="form-control form-control-color form-control-sm">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Дата начала депозита</label>
+                        <input type="date" name="start_date" id="edit_start_date" class="form-control form-control-sm">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Срок</label>
+                        <div class="d-flex flex-column gap-1">
+                            <div class="form-check me-3">
+                                <input class="form-check-input term-radio" type="radio" name="edit_term_mode" value="date" data-term-input="edit_end_date_wrap" data-custom-type="edit">
+                                <label class="form-check-label small">По дате окончания</label>
+                            </div>
+                            <div class="form-check me-3">
+                                <input class="form-check-input term-radio" type="radio" name="edit_term_mode" value="months" data-term-input="edit_duration_months_wrap" data-custom-type="edit">
+                                <label class="form-check-label small">По продолжительности (мес)</label>
+                            </div>
+                            <div class="form-check me-3">
+                                <input class="form-check-input term-radio" type="radio" name="edit_term_mode" value="none" data-term-input="" data-custom-type="edit">
+                                <label class="form-check-label small">Бессрочный</label>
+                            </div>
+                        </div>
+                        <div id="edit_end_date_wrap" class="mt-1">
+                            <input type="date" name="end_date" id="edit_end_date" class="form-control form-control-sm">
+                        </div>
+                        <div id="edit_duration_months_wrap" class="mt-1" style="display:none;">
+                            <input type="number" name="duration_months" id="edit_duration_months" min="1" step="1" class="form-control form-control-sm" placeholder="Например: 12">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">% годовых</label>
+                        <input type="number" name="interest_rate" id="edit_interest_rate" step="0.01" min="0" class="form-control form-control-sm" placeholder="Например: 7.5">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Банк / место</label>
+                        <select name="bank" id="edit_bank" class="form-select form-select-sm bank-select" data-custom-type="edit">
+                            <option value="">Наличные</option>
+                            <option value="Сбербанк">Сбербанк</option>
+                            <option value="ВТБ">ВТБ</option>
+                            <option value="Тинькофф">Тинькофф</option>
+                            <option value="Альфа-Банк">Альфа-Банк</option>
+                            <option value="Райффайзен">Райффайзен</option>
+                            <option value="Газпромбанк">Газпромбанк</option>
+                            <option value="ОТП Банк">ОТП Банк</option>
+                            <option value="Почта Банк">Почта Банк</option>
+                            <option value="Хоум Кредит">Хоум Кредит</option>
+                            <option value="Совкомбанк">Совкомбанк</option>
+                            <option value="МКБ">МКБ</option>
+                            <option value="__other__">Другое значение...</option>
+                        </select>
+                        <input type="text" name="bank_custom" id="edit_bank_custom" class="form-control form-control-sm mt-1 bank-custom" data-custom-type="edit" style="display:none;" placeholder="Укажите свой вариант">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -390,7 +558,8 @@ document.addEventListener('DOMContentLoaded', function() {
             var button = event.relatedTarget;
             var accountId = button.getAttribute('data-account-id');
             var form = document.getElementById('editForm');
-            form.action = form.action.replace(/\/\d+$/, '/' + accountId);
+            var actionUrl = form.getAttribute('data-action-url');
+            form.action = actionUrl.substring(0, actionUrl.lastIndexOf('/') + 1) + accountId;
             document.getElementById('edit_account_id').value = accountId;
 
             // Загружаем данные счёта через API
@@ -402,7 +571,103 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('edit_target_date').value = data.target_date || '';
                     document.getElementById('edit_icon').value = data.icon || 'bi-piggy-bank';
                     document.getElementById('edit_color').value = data.color || '#17a2b8';
+                    document.getElementById('edit_start_date').value = data.start_date || '';
+                    document.getElementById('edit_end_date').value = data.end_date || '';
+                    document.getElementById('edit_duration_months').value = data.duration_months || '';
+                    document.getElementById('edit_interest_rate').value = data.interest_rate || '';
+                    document.getElementById('edit_bank_custom').value = '';
+                    if (data.end_date) {
+                        setTermMode('edit', 'date');
+                    } else if (data.duration_months) {
+                        setTermMode('edit', 'months');
+                    } else {
+                        setTermMode('edit', 'none');
+                    }
+                    setBankValue('edit', data.bank || '');
                 });
+        });
+    }
+
+    // Переключение полей срока
+    function setTermMode(prefix, mode) {
+        var radios = document.querySelectorAll('input.term-radio[name="' + prefix + '_term_mode"]');
+        for (var i = 0; i < radios.length; i++) {
+            if (radios[i].value === mode) {
+                radios[i].checked = true;
+            }
+            var targetId = radios[i].getAttribute('data-term-input');
+            var target = document.getElementById(targetId);
+            if (target) {
+                target.style.display = (radios[i].value === mode) ? '' : 'none';
+            }
+        }
+    }
+
+    // Переключение поля "Другое значение" банка
+    function setBankValue(prefix, value) {
+        var select = document.getElementById(prefix + '_bank');
+        var custom = document.getElementById(prefix + '_bank_custom');
+        var isKnown = false;
+        for (var i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === value) {
+                isKnown = true;
+                break;
+            }
+        }
+        if (value === '__other__' || (value && !isKnown)) {
+            // Банк не из списка или "__other__" — показываем кастомное поле
+            select.value = '__other__';
+            custom.value = (value === '__other__') ? '' : value;
+            custom.style.display = '';
+        } else {
+            select.value = value || '';
+            custom.value = '';
+            custom.style.display = 'none';
+        }
+    }
+
+    var termRadios = document.querySelectorAll('.term-radio');
+    for (var i = 0; i < termRadios.length; i++) {
+        termRadios[i].addEventListener('change', function() {
+            var mode = this.value;
+            var prefix = this.getAttribute('data-custom-type');
+            setTermMode(prefix, mode);
+        });
+    }
+
+    var bankSelects = document.querySelectorAll('.bank-select');
+    for (var i = 0; i < bankSelects.length; i++) {
+        bankSelects[i].addEventListener('change', function() {
+            var prefix = this.getAttribute('data-custom-type');
+            setBankValue(prefix, this.value);
+        });
+    }
+
+    // Заполнение по умолчанию для модалки создания
+    setTermMode('create', 'date');
+    setBankValue('create', '');
+
+    // Переключение дополнительных движений
+    var toggleMovements = document.querySelectorAll('.toggle-movements');
+    for (var i = 0; i < toggleMovements.length; i++) {
+        toggleMovements[i].addEventListener('click', function(event) {
+            event.preventDefault();
+            var target = document.querySelector(this.getAttribute('data-target'));
+            if (!target) {
+                return;
+            }
+            var indicator = this.querySelector('.movements-indicator');
+            if (target.style.display === 'none') {
+                target.style.display = '';
+                if (indicator) {
+                    indicator.textContent = '▴';
+                }
+            } else {
+                target.style.display = 'none';
+                if (indicator) {
+                    indicator.textContent = '▾';
+                }
+            }
         });
     }
 });

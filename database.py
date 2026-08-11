@@ -177,6 +177,11 @@ def init_db():
                 balance INTEGER NOT NULL DEFAULT 0,
                 icon TEXT DEFAULT 'bi-piggy-bank',
                 color TEXT DEFAULT '#17a2b8',
+                start_date TEXT,
+                end_date TEXT,
+                duration_months INTEGER,
+                interest_rate TEXT,
+                bank TEXT,
                 is_active INTEGER DEFAULT 1,
                 sort_order INTEGER DEFAULT 0,
                 created_at TEXT DEFAULT (datetime('now')),
@@ -203,6 +208,24 @@ def init_db():
                 INSERT INTO savings_accounts (name, target_amount, icon, color, balance, sort_order)
                 VALUES (?, ?, ?, ?, ?, ?)
             ''', ('Копилка', 0, 'bi-piggy-bank', '#17a2b8', 0, 1))
+
+        # Миграция существующих БД: депозитные поля накоплений
+        savings_migrations = (
+            ('start_date', 'TEXT'),
+            ('end_date', 'TEXT'),
+            ('duration_months', 'INTEGER'),
+            ('interest_rate', 'TEXT'),
+            ('bank', 'TEXT'),
+        )
+        for col_name, col_type in savings_migrations:
+            try:
+                conn2.execute(
+                    f'ALTER TABLE savings_accounts ADD COLUMN {col_name} {col_type}'
+                )
+            except Exception:
+                pass
+
+    migrate_interest_rate_to_text()
 
     from seeds import seed_default_user, seed_planned_salary, seed_categories, seed_regular_payments
     seed_default_user()
@@ -370,4 +393,55 @@ def migrate_idea_fields():
             pass
 
         conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('ideas_migrated_v2', '1')")
+        conn.commit()
+
+
+def migrate_interest_rate_to_text():
+    """
+    Миграция interest_rate из REAL в TEXT для существующих БД.
+    float запрещён для финансовых данных, поэтому ставка хранится как текст.
+    """
+    with get_db() as conn:
+        # Проверка: уже мигрировано (флаг в settings)
+        migrated = conn.execute(
+            "SELECT value FROM settings WHERE key = 'interest_rate_text_migrated'"
+        ).fetchone()
+        if migrated and migrated['value'] == '1':
+            return
+
+        try:
+            col_info = conn.execute("PRAGMA table_info('savings_accounts')").fetchall()
+            col_types = {c['name']: c['type'].upper() for c in col_info}
+        except Exception:
+            return
+
+        if col_types.get('interest_rate', '') != 'TEXT' and 'interest_rate' in col_types:
+            # Переименуем старую колонку, добавим новую TEXT, перенесём данные,
+            # затем удалим старую (требуется SQLite 3.35+).
+            try:
+                conn.execute(
+                    "ALTER TABLE savings_accounts ADD COLUMN interest_rate_text TEXT"
+                )
+                conn.execute(
+                    "UPDATE savings_accounts SET interest_rate_text = CAST(interest_rate AS TEXT)"
+                )
+                conn.execute(
+                    "ALTER TABLE savings_accounts RENAME COLUMN interest_rate TO interest_rate_real"
+                )
+                conn.execute("ALTER TABLE savings_accounts DROP COLUMN interest_rate_real")
+                conn.execute(
+                    "ALTER TABLE savings_accounts RENAME COLUMN interest_rate_text TO interest_rate"
+                )
+            except Exception:
+                # Не все версии SQLite поддерживают RENAME/DROP.
+                # Как минимум гарантируем, что при чтении строка корректна.
+                conn.execute(
+                    "UPDATE savings_accounts SET interest_rate = CAST(interest_rate AS TEXT) "
+                    "WHERE interest_rate IS NOT NULL"
+                )
+
+        conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+            ('interest_rate_text_migrated', '1')
+        )
         conn.commit()

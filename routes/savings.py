@@ -1,15 +1,22 @@
 from typing import Optional
 from flask import Blueprint, request, redirect, url_for, flash, render_template, jsonify
-from database import get_db
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from services.savings_service import (
     get_all_accounts, get_account, create_account, update_account,
     archive_account, reactivate_account, delete_account as svc_delete_account,
-    deposit, withdraw, get_transactions, get_savings_stats, get_savings_total
+    deposit, withdraw, get_transactions, get_savings_stats, get_savings_total,
+    accrued_income, projected_income
 )
 
 bp = Blueprint('savings', __name__, url_prefix='/savings')
+
+# Для расчёта накопленного дохода методом среднего дневного баланса нужно учитывать
+# все движения по счёту (даже если их много), поэтому берём большой лимит.
+MAX_TXNS_FOR_ACCRUAL = 10000
+
+# Значение select "Другое значение..." для поля "Банк / место".
+BANK_OTHER = '__other__'
 
 
 def _parse_amount(raw_value: Optional[str]) -> Optional[int]:
@@ -22,6 +29,55 @@ def _parse_amount(raw_value: Optional[str]) -> Optional[int]:
         return None
 
 
+def _parse_optional_date(raw_value: Optional[str]) -> Optional[str]:
+    """Пустое поле — None; некорректная ISO-дата — ValueError."""
+    if raw_value is None or raw_value == '':
+        return None
+    try:
+        date.fromisoformat(raw_value)
+    except ValueError:
+        raise ValueError('Некорректная дата')
+    return raw_value
+
+
+def _parse_optional_int(raw_value: Optional[str]) -> Optional[int]:
+    if raw_value is None or raw_value == '' or raw_value == '0':
+        return None
+    try:
+        return int(raw_value)
+    except (ValueError, TypeError):
+        return None
+
+
+def _parse_optional_rate(raw_value: Optional[str]) -> Optional[Decimal]:
+    if raw_value is None or raw_value == '':
+        return None
+    try:
+        val = Decimal(raw_value)
+    except (ValueError, InvalidOperation):
+        return None
+    if val == 0:
+        return None
+    return val
+
+
+def _parse_optional_text(raw_value: Optional[str]) -> Optional[str]:
+    """Пустая строка — None."""
+    if raw_value is None or raw_value.strip() == '':
+        return None
+    return raw_value.strip()
+
+
+def _parse_account_id(raw_value: Optional[str]) -> Optional[int]:
+    """Пустое/некорректное значение — None."""
+    if raw_value is None or raw_value == '':
+        return None
+    try:
+        return int(raw_value)
+    except (TypeError, ValueError):
+        return None
+
+
 @bp.route('/')
 def savings_index():
     all_accounts = get_all_accounts(active_only=False)
@@ -30,9 +86,11 @@ def savings_index():
     archived_accounts = []
     for a in all_accounts:
         a_dict = dict(a)
-        a_dict['transactions'] = get_transactions(a['id'], limit=10)
+        a_dict['transactions'] = get_transactions(a['id'], limit=MAX_TXNS_FOR_ACCRUAL)
+        a_dict['accrued_income'] = accrued_income(a_dict['transactions'], a['start_date'], a['interest_rate'])
+        a_dict['projected_income'] = projected_income(a['balance'], a['end_date'], a['interest_rate'])
         if a['target_amount'] > 0:
-            a_dict['progress_pct'] = min(100, int(a['balance'] * 100 / a['target_amount']))
+            a_dict['progress_pct'] = min(100, a['balance'] * 100 // a['target_amount'])
         else:
             a_dict['progress_pct'] = None
         if a['is_active']:
@@ -44,22 +102,42 @@ def savings_index():
 
 @bp.route('/create', methods=['POST'])
 def savings_create():
-    name = request.form['name']
+    name = request.form.get('name', '').strip()
+    if not name:
+        flash('Название обязательно', 'error')
+        return redirect(url_for('savings.savings_index'))
     target_amount = _parse_amount(request.form.get('target_amount'))
     if target_amount is None:
         flash('Некорректная сумма цели', 'error')
         return redirect(url_for('savings.savings_index'))
-    target_date = request.form.get('target_date', '') or None
     icon = request.form.get('icon', 'bi-piggy-bank')
     color = request.form.get('color', '#17a2b8')
-    create_account(name, target_amount, target_date, icon, color)
+    try:
+        target_date = _parse_optional_date(request.form.get('target_date'))
+        start_date = _parse_optional_date(request.form.get('start_date'))
+        end_date = _parse_optional_date(request.form.get('end_date'))
+    except ValueError:
+        flash('Некорректная дата', 'error')
+        return redirect(url_for('savings.savings_index'))
+    duration_months = _parse_optional_int(request.form.get('duration_months'))
+    interest_rate = _parse_optional_rate(request.form.get('interest_rate'))
+    bank = _parse_optional_text(request.form.get('bank'))
+    if bank == BANK_OTHER:
+        bank = _parse_optional_text(request.form.get('bank_custom'))
+    create_account(name, target_amount, target_date, icon, color,
+                   start_date=start_date, end_date=end_date,
+                   duration_months=duration_months,
+                   interest_rate=interest_rate, bank=bank)
     flash(f'Счёт «{name}» создан', 'success')
     return redirect(url_for('savings.savings_index'))
 
 
 @bp.route('/deposit', methods=['POST'])
 def savings_deposit():
-    account_id = int(request.form['account_id'])
+    account_id = _parse_account_id(request.form.get('account_id'))
+    if account_id is None or not get_account(account_id):
+        flash('Некорректный идентификатор счёта', 'error')
+        return redirect(url_for('savings.savings_index'))
     amount = _parse_amount(request.form.get('amount'))
     if amount is None:
         flash('Некорректная сумма', 'error')
@@ -79,7 +157,10 @@ def savings_deposit():
 
 @bp.route('/withdraw', methods=['POST'])
 def savings_withdraw():
-    account_id = int(request.form['account_id'])
+    account_id = _parse_account_id(request.form.get('account_id'))
+    if account_id is None or not get_account(account_id):
+        flash('Некорректный идентификатор счёта', 'error')
+        return redirect(url_for('savings.savings_index'))
     amount = _parse_amount(request.form.get('amount'))
     if amount is None:
         flash('Некорректная сумма', 'error')
@@ -99,15 +180,31 @@ def savings_withdraw():
 
 @bp.route('/update/<int:account_id>', methods=['POST'])
 def savings_update(account_id: int):
-    name = request.form['name']
+    name = request.form.get('name', '').strip()
+    if not name:
+        flash('Название обязательно', 'error')
+        return redirect(url_for('savings.savings_index'))
     target_amount = _parse_amount(request.form.get('target_amount'))
     if target_amount is None:
         flash('Некорректная сумма цели', 'error')
         return redirect(url_for('savings.savings_index'))
-    target_date = request.form.get('target_date', '') or None
     icon = request.form.get('icon', 'bi-piggy-bank')
     color = request.form.get('color', '#17a2b8')
-    update_account(account_id, name=name, target_amount=target_amount, target_date=target_date, icon=icon, color=color)
+    try:
+        target_date = _parse_optional_date(request.form.get('target_date'))
+        start_date = _parse_optional_date(request.form.get('start_date'))
+        end_date = _parse_optional_date(request.form.get('end_date'))
+    except ValueError:
+        flash('Некорректная дата', 'error')
+        return redirect(url_for('savings.savings_index'))
+    duration_months = _parse_optional_int(request.form.get('duration_months'))
+    interest_rate = _parse_optional_rate(request.form.get('interest_rate'))
+    bank = _parse_optional_text(request.form.get('bank'))
+    if bank == BANK_OTHER:
+        bank = _parse_optional_text(request.form.get('bank_custom'))
+    update_account(account_id, name=name, target_amount=target_amount, target_date=target_date,
+                   icon=icon, color=color, start_date=start_date, end_date=end_date,
+                   duration_months=duration_months, interest_rate=interest_rate, bank=bank)
     flash('Счёт обновлён', 'success')
     return redirect(url_for('savings.savings_index'))
 
