@@ -231,20 +231,23 @@ def _resolve_effective_date(today: date, payment_day_str: str) -> Optional[date]
 
 def get_due_regular_payments(today: date):
     cycle_start = get_regular_cycle_start(today)
-    prev_cycle_start = get_regular_cycle_start(cycle_start - timedelta(days=1))
-    paid_ids = _get_paid_ids(prev_cycle_start, today)
-    skipped_ids = _get_skipped_ids(cycle_start) | _get_skipped_ids(prev_cycle_start)
-    handled_ids = paid_ids | skipped_ids
+    skipped_ids = _get_skipped_ids(cycle_start)
     due = []
     with get_db() as conn:
         payments = conn.execute('SELECT * FROM regular_payments').fetchall()
         for p in payments:
             if not p['day'] or not p['category']:
                 continue
-            if p['id'] in handled_ids:
+            if p['id'] in skipped_ids:
                 continue
             payment_date = _resolve_effective_date(today, p['day'])
             if payment_date is None or payment_date > today:
+                continue
+            paid = conn.execute(
+                "SELECT 1 FROM operations WHERE regular_payment_id = ? AND type = 'Расход' AND date >= ? LIMIT 1",
+                (p['id'], payment_date.strftime('%Y-%m-%d'))
+            ).fetchone()
+            if paid:
                 continue
             due.append({
                 'id': p['id'],
